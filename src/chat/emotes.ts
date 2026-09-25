@@ -27,7 +27,7 @@ export const EMOTE_CDN = {
   '7tv': 'https://cdn.7tv.app/emote',
 } as const
 
-/** 7TV's global set, which the archive doesn't save per VOD (the old site added it the same way). */
+/** 7TV's global set, fetched live only for VODs saved before the archive kept global sets. */
 export const SEVENTV_GLOBAL = 'https://7tv.io/v3/emote-sets/global'
 
 export function emoteImage(e: Pick<Emote, 'provider' | 'id'>): EmoteImage {
@@ -83,7 +83,7 @@ export class EmoteSet {
 export interface LoadEmotesOptions {
   client: ArchiveClient
   vodId: string
-  /** For 7TV's global set; defaults to the global fetch. */
+  /** For 7TV's global set on older VODs; defaults to the global fetch. */
   fetch?: Fetch
   signal?: AbortSignal
 }
@@ -99,21 +99,27 @@ async function quietly<T>(load: () => Promise<T>): Promise<T | null> {
 }
 
 /**
- * The emotes for a VOD. When the archive saved the VOD's sets (after the stream ended), only those are used, plus
- * 7TV's global set, so old chat shows what was an emote back then. VODs with no saved sets get the channel's current
- * and global 7TV / BTTV / FFZ sets, which the archive caches. Failures leave a set empty rather than failing chat.
+ * The emotes for a VOD. When the archive saved the VOD's sets, only those are used, so old chat shows what was an
+ * emote back then: the channel's sets first, then the global sets saved with them. Rows saved before the archive kept
+ * global sets (or whose 7TV global capture failed) get 7TV's current global set instead. VODs with no saved sets get
+ * the channel's current and global 7TV / BTTV / FFZ sets, which the archive caches. Failures leave a set empty
+ * rather than failing chat.
  */
 export async function loadEmotes(opts: LoadEmotesOptions): Promise<EmoteSet> {
   const set = new EmoteSet()
   const saved = await quietly(() => opts.client.vodEmotes(opts.vodId, opts.signal))
   if (saved) {
     set.add('7tv', saved['7tv_emotes']).add('ffz', saved.ffz_emotes).add('bttv', saved.bttv_emotes)
-    const global = await quietly(async () => {
-      const fetcher = opts.fetch ?? ((input: string, init?: RequestInit) => globalThis.fetch(input, init))
-      const res = await fetcher(SEVENTV_GLOBAL, { signal: opts.signal })
-      return res.ok ? ((await res.json()) as { emotes?: RawThirdPartyEmote[] }) : null
-    })
-    set.add('7tv', global?.emotes)
+    const globals = saved.global_emotes
+    set.add('7tv', globals?.['7tv']).add('ffz', globals?.ffz).add('bttv', globals?.bttv)
+    if (!globals?.['7tv']?.length) {
+      const live = await quietly(async () => {
+        const fetcher = opts.fetch ?? ((input: string, init?: RequestInit) => globalThis.fetch(input, init))
+        const res = await fetcher(SEVENTV_GLOBAL, { signal: opts.signal })
+        return res.ok ? ((await res.json()) as { emotes?: RawThirdPartyEmote[] }) : null
+      })
+      set.add('7tv', live?.emotes)
+    }
   } else {
     const current = await quietly(() => opts.client.thirdPartyEmotes(opts.signal))
     if (current) set.add('7tv', current['7tv']).add('ffz', current.ffz).add('bttv', current.bttv)

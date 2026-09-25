@@ -170,6 +170,28 @@ describe('loadEmotes', () => {
     expect(fetch.mock.calls.some(([u]) => u.includes('third-party'))).toBe(false)
   })
 
+  it('uses the global sets saved with the VOD, after its channel sets, and skips the live 7TV fetch', async () => {
+    const fetch = vi.fn(async (url: string) => {
+      if (url.includes('/emotes?'))
+        return json({
+          total: 1, limit: 1, skip: 0,
+          data: [{
+            ffz_emotes: [{ id: 1, name: 'Same' }], bttv_emotes: [], '7tv_emotes': [],
+            global_emotes: { '7tv': [{ id: 'old', name: 'EZ' }, { id: 'g2', name: 'Same' }], bttv: [], ffz: [{ id: 9, code: 'ZrehplaR' }] },
+            global_emotes_source: 'captured',
+          }],
+        })
+      if (url === SEVENTV_GLOBAL) return json({ emotes: [{ id: 'today', name: 'EZ' }] })
+      return json({}, 404)
+    })
+    const set = await load(fetch)
+    expect(set.find('EZ')).toEqual({ provider: '7tv', id: 'old', code: 'EZ' })
+    expect(set.find('ZrehplaR')?.provider).toBe('ffz')
+    // A channel emote wins over a global with the same code only within its provider's lookup order: 7TV first.
+    expect(set.find('Same')?.provider).toBe('7tv')
+    expect(fetch.mock.calls.some(([u]) => u === SEVENTV_GLOBAL)).toBe(false)
+  })
+
   it("uses the archive-cached current sets when nothing was saved, and survives failures", async () => {
     const fetch = vi.fn(async (url: string) => {
       if (url.includes('/emotes?')) return json({ total: 0, limit: 1, skip: 0, data: [] })

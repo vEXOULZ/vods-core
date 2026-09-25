@@ -149,6 +149,11 @@ export interface RawEmoteSets {
   ffz_emotes?: RawThirdPartyEmote[] | null
   bttv_emotes?: RawThirdPartyEmote[] | null
   '7tv_emotes'?: RawThirdPartyEmote[] | null
+  /** The providers' global sets as they were when the VOD was archived; null on rows saved before they were kept. */
+  global_emotes?: { '7tv'?: RawThirdPartyEmote[] | null; bttv?: RawThirdPartyEmote[] | null; ffz?: RawThirdPartyEmote[] | null } | null
+  /** `captured` with the VOD, or `backfilled` later (today's globals at backfill time). */
+  global_emotes_source?: 'captured' | 'backfilled' | null
+  global_emotes_at?: string | null
 }
 
 export interface RawThirdPartyEmote {
