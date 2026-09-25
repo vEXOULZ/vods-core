@@ -22,9 +22,8 @@ export interface EmoteImage {
 export const EMOTE_CDN = {
   twitch: 'https://static-cdn.jtvnw.net/emoticons/v2',
   ffz: 'https://cdn.frankerfacez.com/emote',
-  // BTTV through a CORS-friendly mirror (its own CDN breaks on some mobile browsers). 7TV from its own CDN: 7TV moved
-  // to new emote ids and redirects old ones, which the mirror can't follow (it 404s), while cdn.7tv.app does.
-  bttv: 'https://emotes.overpowered.tv/bttv',
+  // Every provider's own CDN (no third-party mirrors). 7TV redirects emotes that moved to new ids; its CDN follows.
+  bttv: 'https://cdn.betterttv.net/emote',
   '7tv': 'https://cdn.7tv.app/emote',
 } as const
 

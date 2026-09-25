@@ -1,12 +1,15 @@
 import { toSeconds } from '../time'
-import type { Chapter, GameUpload, Upload, Vod } from '../types'
+import type { Chapter, GamePlayed, GameUpload, Upload, Vod } from '../types'
 import type { RawChapter, RawGameUpload, RawUpload, RawVod } from './types'
+
+/** Name used for chapters where the stream had no Twitch category. */
+export const NO_CATEGORY = 'No category'
 
 export function normalizeChapter(c: RawChapter): Chapter {
   const start = Number(c.start) || 0
   const length = Math.max(0, Number(c.end) || 0)
   return {
-    name: c.name,
+    name: c.name?.trim() || NO_CATEGORY,
     gameId: c.gameId ?? null,
     image: c.image ?? null,
     start,
@@ -55,6 +58,30 @@ export function normalizeVod(raw: RawVod): Vod {
     thumbnail: raw.thumbnail_url ?? null,
     streamId: raw.stream_id ?? null,
   }
+}
+
+/** Every game across these VODs with how many VODs it's in, most played first (ties: most recent, then name). */
+export function aggregateGames(vods: readonly Pick<Vod, 'createdAt' | 'chapters'>[]): GamePlayed[] {
+  const games = new Map<string, GamePlayed>()
+  for (const v of vods) {
+    for (const c of new Map(v.chapters.map((c) => [c.name, c])).values()) {
+      const g = games.get(c.name)
+      if (!g) {
+        games.set(c.name, { name: c.name, gameId: c.gameId, image: c.image, vods: 1, lastPlayed: v.createdAt })
+        continue
+      }
+      g.vods++
+      if (v.createdAt > g.lastPlayed) {
+        g.lastPlayed = v.createdAt
+        if (c.image) g.image = c.image
+      }
+      g.gameId ??= c.gameId
+      g.image ??= c.image
+    }
+  }
+  return [...games.values()].sort(
+    (a, b) => b.vods - a.vods || b.lastPlayed.getTime() - a.lastPlayed.getTime() || a.name.localeCompare(b.name),
+  )
 }
 
 /** Distinct game names in chapter order, e.g. for the poster fan. */

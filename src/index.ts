@@ -3,7 +3,7 @@ export { toSeconds, toHMS, toClock, parseTimestamp } from './time'
 export type * from './types'
 
 export { ArchiveClient, ApiError, type ArchiveClientOptions, type Fetch } from './api/client'
-export { normalizeVod, normalizeChapter, normalizeUploads, gamesOf } from './api/normalize'
+export { normalizeVod, normalizeChapter, normalizeUploads, gamesOf, aggregateGames, NO_CATEGORY } from './api/normalize'
 export { toQueryString, vodListQuery, type QueryObject, type QueryValue, type VodFilter, type VodListOptions } from './api/query'
 export type * from './api/types'
 

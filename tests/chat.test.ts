@@ -117,6 +117,14 @@ describe('messages', () => {
   it('builds emote image URLs per provider', () => {
     expect(emoteImage({ provider: 'ffz', id: '42' }).large).toBe('https://cdn.frankerfacez.com/emote/42/4')
     expect(emoteImage({ provider: '7tv', id: 'sev' }).src).toBe('https://cdn.7tv.app/emote/sev/1x.webp')
+    expect(emoteImage({ provider: 'bttv', id: 'bt' }).src).toBe('https://cdn.betterttv.net/emote/bt/1x')
+  })
+
+  it('only uses the providers own CDNs', () => {
+    for (const provider of ['twitch', 'ffz', 'bttv', '7tv'] as const) {
+      const { src } = emoteImage({ provider, id: 'x' })
+      expect(new URL(src).hostname).toMatch(/(^|\.)(jtvnw\.net|frankerfacez\.com|betterttv\.net|7tv\.app)$/)
+    }
   })
 
   it('resolves badges from the channel set before the global one, skipping empty ones', () => {

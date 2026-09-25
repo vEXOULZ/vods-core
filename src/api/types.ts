@@ -8,7 +8,8 @@ export interface Page<T> {
 }
 
 export interface RawChapter {
-  name: string
+  /** null when the stream had no Twitch category set. */
+  name: string | null
   gameId?: string | null
   image?: string | null
   start: number

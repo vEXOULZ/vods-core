@@ -1,5 +1,5 @@
-import type { Vod, VodPage } from '../types'
-import { normalizeVod } from './normalize'
+import type { GamePlayed, Vod, VodPage } from '../types'
+import { aggregateGames, normalizeChapter, normalizeVod } from './normalize'
 import { toQueryString, vodListQuery, type QueryObject, type VodListOptions } from './query'
 import type { Page, RawBadges, RawCommentPage, RawEmoteSets, RawStream, RawVod } from './types'
 
@@ -57,6 +57,25 @@ export class ArchiveClient {
   async listVods(opts: VodListOptions = {}, signal?: AbortSignal): Promise<VodPage> {
     const page = await this.find<RawVod>('vods', vodListQuery(opts), signal)
     return { total: page.total, vods: page.data.map(normalizeVod) }
+  }
+
+  /**
+   * Every game played across the archive (from the VODs' chapters), most played first. The API has no endpoint for
+   * this, so it pages through /vods asking only for dates and chapters.
+   */
+  async gamesPlayed(signal?: AbortSignal): Promise<GamePlayed[]> {
+    const perPage = 50
+    const rows: { createdAt: Date; chapters: ReturnType<typeof normalizeChapter>[] }[] = []
+    for (let skip = 0; ; skip += perPage) {
+      const page = await this.find<Pick<RawVod, 'createdAt' | 'chapters'>>(
+        'vods',
+        { $select: ['createdAt', 'chapters'], $limit: perPage, $skip: skip, $sort: { createdAt: -1 } },
+        signal,
+      )
+      for (const v of page.data) rows.push({ createdAt: new Date(v.createdAt), chapters: (v.chapters ?? []).map(normalizeChapter) })
+      if (!page.data.length || skip + page.data.length >= page.total) break
+    }
+    return aggregateGames(rows)
   }
 
   /** One VOD, or null when it doesn't exist. */

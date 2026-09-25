@@ -58,6 +58,18 @@ export interface Vod {
   streamId: string | null
 }
 
+/** A game that appears in the archive's chapters, for game pickers. */
+export interface GamePlayed {
+  name: string
+  gameId: string | null
+  /** Box art URL template from Twitch, if any. */
+  image: string | null
+  /** How many VODs have at least one chapter of it. */
+  vods: number
+  /** Newest VOD it appears in. */
+  lastPlayed: Date
+}
+
 export interface VodPage {
   total: number
   vods: Vod[]
