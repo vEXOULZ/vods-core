@@ -1,0 +1,209 @@
+{
+  "id": "2466813018",
+  "chapters": [
+    {
+      "end": 11608,
+      "name": "White Knuckle",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1535286692_IGDB-40x53.jpg",
+      "start": 0,
+      "gameId": "1535286692",
+      "duration": "00:00:00",
+      "restricted": false
+    },
+    {
+      "end": 4718,
+      "name": "Balatro",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/745589378_IGDB-40x53.jpg",
+      "start": 11608,
+      "gameId": "745589378",
+      "duration": "03:13:28",
+      "restricted": false
+    },
+    {
+      "end": 19457,
+      "name": "Artifact",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/16937_IGDB-40x53.jpg",
+      "start": 16326,
+      "gameId": "16937",
+      "duration": "04:32:06",
+      "restricted": true
+    },
+    {
+      "end": 8772,
+      "name": "Risk of Rain 2",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509110_IGDB-40x53.jpg",
+      "start": 35783,
+      "gameId": "509110",
+      "duration": "09:56:23",
+      "restricted": false
+    },
+    {
+      "end": 3,
+      "name": "Artifact",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/16937_IGDB-40x53.jpg",
+      "start": 44555,
+      "gameId": "16937",
+      "duration": "12:22:35",
+      "restricted": true
+    },
+    {
+      "end": 5062,
+      "name": "Risk of Rain 2",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509110_IGDB-40x53.jpg",
+      "start": 44558,
+      "gameId": "509110",
+      "duration": "12:22:38",
+      "restricted": false
+    },
+    {
+      "end": 2641,
+      "name": "Balatro",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/745589378_IGDB-40x53.jpg",
+      "start": 49620,
+      "gameId": "745589378",
+      "duration": "13:47:00",
+      "restricted": false
+    },
+    {
+      "end": 1136,
+      "name": "White Knuckle",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1535286692_IGDB-40x53.jpg",
+      "start": 52261,
+      "gameId": "1535286692",
+      "duration": "14:31:01",
+      "restricted": false
+    },
+    {
+      "end": 3812,
+      "name": "NO-SKIN",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1924423660_IGDB-40x53.jpg",
+      "start": 53397,
+      "gameId": "1924423660",
+      "duration": "14:49:57",
+      "restricted": false
+    },
+    {
+      "end": 12392,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 57209,
+      "gameId": "509658",
+      "duration": "15:53:29",
+      "restricted": false
+    },
+    {
+      "end": 3408,
+      "name": "White Knuckle",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1535286692_IGDB-40x53.jpg",
+      "start": 69601,
+      "gameId": "1535286692",
+      "duration": "19:20:01",
+      "restricted": false
+    },
+    {
+      "end": 653,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 73009,
+      "gameId": "509658",
+      "duration": "20:16:49",
+      "restricted": false
+    },
+    {
+      "end": 3965,
+      "name": "Risk of Rain 2",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509110_IGDB-40x53.jpg",
+      "start": 73662,
+      "gameId": "509110",
+      "duration": "20:27:42",
+      "restricted": false
+    },
+    {
+      "end": 281,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 77627,
+      "gameId": "509658",
+      "duration": "21:33:47",
+      "restricted": false
+    },
+    {
+      "end": 4412,
+      "name": "STRAFTAT",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1917258634_IGDB-40x53.jpg",
+      "start": 77908,
+      "gameId": "1917258634",
+      "duration": "21:38:28",
+      "restricted": false
+    },
+    {
+      "end": 4260,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 82320,
+      "gameId": "509658",
+      "duration": "22:52:00",
+      "restricted": false
+    }
+  ],
+  "title": "24h 🐈 adopting cats 🐈 live birth stream 🐈 woke up 14h before stream started 🐈 becoming a cat mom 🐈 !vods !discord !shop",
+  "duration": "24:03:00",
+  "thumbnail_url": "https://i.ytimg.com/vi/ZO2OLIbp_Hc/mqdefault.jpg",
+  "youtube": [
+    {
+      "id": "UmliJ3Wy7fA",
+      "part": 1,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/UmliJ3Wy7fA/mqdefault.jpg"
+    },
+    {
+      "id": "VfSAuRTSfNE",
+      "part": 2,
+      "type": "vod",
+      "duration": 5526.016,
+      "thumbnail_url": "https://i.ytimg.com/vi/VfSAuRTSfNE/mqdefault.jpg"
+    },
+    {
+      "id": "yBU1ZbMuVc4",
+      "part": 3,
+      "type": "vod",
+      "duration": 8771.99,
+      "thumbnail_url": "https://i.ytimg.com/vi/yBU1ZbMuVc4/mqdefault.jpg"
+    },
+    {
+      "id": "RDi_IuQ0ars",
+      "part": 4,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/RDi_IuQ0ars/mqdefault.jpg"
+    },
+    {
+      "id": "b9AeY6QXcD0",
+      "part": 5,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/b9AeY6QXcD0/mqdefault.jpg"
+    },
+    {
+      "id": "Z8y5LuPBNEQ",
+      "part": 6,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/Z8y5LuPBNEQ/mqdefault.jpg"
+    },
+    {
+      "id": "ZO2OLIbp_Hc",
+      "part": 7,
+      "type": "vod",
+      "duration": 9622.016,
+      "thumbnail_url": "https://i.ytimg.com/vi/ZO2OLIbp_Hc/mqdefault.jpg"
+    }
+  ],
+  "stream_id": "315014763380",
+  "drive": [],
+  "platform": "twitch",
+  "createdAt": "2025-05-24T03:01:00.000Z",
+  "updatedAt": "2025-05-27T19:30:46.430Z",
+  "games": []
+}

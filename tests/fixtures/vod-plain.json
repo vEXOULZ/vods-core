@@ -1,0 +1,100 @@
+{
+  "id": "2703890458",
+  "chapters": [
+    {
+      "end": 2110,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 0,
+      "gameId": "509658",
+      "duration": "00:00:00",
+      "restricted": false
+    },
+    {
+      "end": 3394,
+      "name": "MOONROT",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1648333914_IGDB-40x53.jpg",
+      "start": 2110,
+      "gameId": "1648333914",
+      "duration": "00:35:10",
+      "restricted": false
+    },
+    {
+      "end": 4718,
+      "name": "Make Good Choices",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/479977659_IGDB-40x53.jpg",
+      "start": 5504,
+      "gameId": "479977659",
+      "duration": "01:31:44",
+      "restricted": false
+    },
+    {
+      "end": 836,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 10222,
+      "gameId": "509658",
+      "duration": "02:50:22",
+      "restricted": false
+    },
+    {
+      "end": 1905,
+      "name": "The Oily Depths",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1765142695_IGDB-40x53.jpg",
+      "start": 11058,
+      "gameId": "1765142695",
+      "duration": "03:04:18",
+      "restricted": false
+    },
+    {
+      "end": 11644,
+      "name": "Creature Kitchen",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1049660771_IGDB-40x53.jpg",
+      "start": 12963,
+      "gameId": "1049660771",
+      "duration": "03:36:03",
+      "restricted": false
+    },
+    {
+      "end": 393,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 24607,
+      "gameId": "509658",
+      "duration": "06:50:07",
+      "restricted": false
+    }
+  ],
+  "title": "help 🍕 help me 🍕 slop horror -> twilight princess? 🍕 smite me 🍕 !discord !shop !vods",
+  "duration": "06:56:40",
+  "thumbnail_url": "https://i.ytimg.com/vi/1npf9NXVZ-U/mqdefault.jpg",
+  "youtube": [
+    {
+      "id": "fXMxH-dFEMo",
+      "part": 1,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/fXMxH-dFEMo/mqdefault.jpg"
+    },
+    {
+      "id": "eYmcAKQ8-A0",
+      "part": 2,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/eYmcAKQ8-A0/mqdefault.jpg"
+    },
+    {
+      "id": "1npf9NXVZ-U",
+      "part": 3,
+      "type": "vod",
+      "duration": 3400,
+      "thumbnail_url": "https://i.ytimg.com/vi/1npf9NXVZ-U/mqdefault.jpg"
+    }
+  ],
+  "stream_id": "317309253877",
+  "drive": [],
+  "platform": "twitch",
+  "createdAt": "2026-02-21T17:00:17.000Z",
+  "updatedAt": "2026-02-28T00:10:42.863Z",
+  "games": []
+}

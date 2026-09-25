@@ -1,0 +1,351 @@
+{
+  "id": "2279668961",
+  "chapters": [
+    {
+      "end": 1593,
+      "name": "Visage",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/494082_IGDB-40x53.jpg",
+      "start": 0,
+      "gameId": "494082",
+      "duration": "00:00:00",
+      "restricted": false
+    },
+    {
+      "end": 6,
+      "name": "Darkness Under My Bed",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/490957891_IGDB-40x53.jpg",
+      "start": 1593,
+      "gameId": "490957891",
+      "duration": "00:26:33",
+      "restricted": false
+    },
+    {
+      "end": 99,
+      "name": "Visage",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/494082_IGDB-40x53.jpg",
+      "start": 1599,
+      "gameId": "494082",
+      "duration": "00:26:39",
+      "restricted": false
+    },
+    {
+      "end": 487,
+      "name": "Darkness Under My Bed",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/490957891_IGDB-40x53.jpg",
+      "start": 1698,
+      "gameId": "490957891",
+      "duration": "00:28:18",
+      "restricted": false
+    },
+    {
+      "end": 887,
+      "name": "Bleeding Roots",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/2015333519_IGDB-40x53.jpg",
+      "start": 2185,
+      "gameId": "2015333519",
+      "duration": "00:36:25",
+      "restricted": false
+    },
+    {
+      "end": 7126,
+      "name": "It Was a Human",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1838943521_IGDB-40x53.jpg",
+      "start": 3072,
+      "gameId": "1838943521",
+      "duration": "00:51:12",
+      "restricted": false
+    },
+    {
+      "end": 1282,
+      "name": "Liminal Void",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/201059784-40x53.jpg",
+      "start": 10198,
+      "gameId": "201059784",
+      "duration": "02:49:58",
+      "restricted": false
+    },
+    {
+      "end": 2346,
+      "name": "You Feel Normal.",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/641362855-40x53.jpg",
+      "start": 11480,
+      "gameId": "641362855",
+      "duration": "03:11:20",
+      "restricted": false
+    },
+    {
+      "end": 5113,
+      "name": "From the Darkness",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/220074709_IGDB-40x53.jpg",
+      "start": 13826,
+      "gameId": "220074709",
+      "duration": "03:50:26",
+      "restricted": false
+    },
+    {
+      "end": 199,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 18939,
+      "gameId": "509658",
+      "duration": "05:15:39",
+      "restricted": false
+    },
+    {
+      "end": 5546,
+      "name": "Artifact",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/16937_IGDB-40x53.jpg",
+      "start": 19138,
+      "gameId": "16937",
+      "duration": "05:18:58",
+      "restricted": true
+    },
+    {
+      "end": 14836,
+      "name": "I'm Only Sleeping",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/498592_IGDB-40x53.jpg",
+      "start": 24684,
+      "gameId": "498592",
+      "duration": "06:51:24",
+      "restricted": false
+    },
+    {
+      "end": 832,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 39520,
+      "gameId": "509658",
+      "duration": "10:58:40",
+      "restricted": false
+    },
+    {
+      "end": 3780,
+      "name": "Cosmodread",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1232841260_IGDB-40x53.jpg",
+      "start": 40352,
+      "gameId": "1232841260",
+      "duration": "11:12:32",
+      "restricted": false
+    },
+    {
+      "end": 1129,
+      "name": "VRChat",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/499003_IGDB-40x53.jpg",
+      "start": 44132,
+      "gameId": "499003",
+      "duration": "12:15:32",
+      "restricted": false
+    },
+    {
+      "end": 1934,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 45261,
+      "gameId": "509658",
+      "duration": "12:34:21",
+      "restricted": false
+    },
+    {
+      "end": 7898,
+      "name": "The Legend of Zelda: The Wind Waker HD",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/368205_IGDB-40x53.jpg",
+      "start": 47195,
+      "gameId": "368205",
+      "duration": "13:06:35",
+      "restricted": false
+    },
+    {
+      "end": 390,
+      "name": "Art",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509660-40x53.jpg",
+      "start": 55093,
+      "gameId": "509660",
+      "duration": "15:18:13",
+      "restricted": false
+    },
+    {
+      "end": 9,
+      "name": "The Legend of Zelda: The Wind Waker HD",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/368205_IGDB-40x53.jpg",
+      "start": 55483,
+      "gameId": "368205",
+      "duration": "15:24:43",
+      "restricted": false
+    },
+    {
+      "end": 434,
+      "name": "Art",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509660-40x53.jpg",
+      "start": 55492,
+      "gameId": "509660",
+      "duration": "15:24:52",
+      "restricted": false
+    },
+    {
+      "end": 6752,
+      "name": "The Legend of Zelda: The Wind Waker HD",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/368205_IGDB-40x53.jpg",
+      "start": 55926,
+      "gameId": "368205",
+      "duration": "15:32:06",
+      "restricted": false
+    },
+    {
+      "end": 584,
+      "name": "Art",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509660-40x53.jpg",
+      "start": 62678,
+      "gameId": "509660",
+      "duration": "17:24:38",
+      "restricted": false
+    },
+    {
+      "end": 1951,
+      "name": "The Legend of Zelda: The Wind Waker HD",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/368205_IGDB-40x53.jpg",
+      "start": 63262,
+      "gameId": "368205",
+      "duration": "17:34:22",
+      "restricted": false
+    },
+    {
+      "end": 2526,
+      "name": "Unspoken",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/802850725_IGDB-40x53.jpg",
+      "start": 65213,
+      "gameId": "802850725",
+      "duration": "18:06:53",
+      "restricted": false
+    },
+    {
+      "end": 931,
+      "name": "The Sirena Expedition",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1134828984_IGDB-40x53.jpg",
+      "start": 67739,
+      "gameId": "1134828984",
+      "duration": "18:48:59",
+      "restricted": false
+    },
+    {
+      "end": 1761,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 68670,
+      "gameId": "509658",
+      "duration": "19:04:30",
+      "restricted": false
+    },
+    {
+      "end": 213,
+      "name": "This is Not Your House",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/1799771372_IGDB-40x53.jpg",
+      "start": 70431,
+      "gameId": "1799771372",
+      "duration": "19:33:51",
+      "restricted": false
+    },
+    {
+      "end": 2183,
+      "name": "Flan's MS",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/983206279_IGDB-40x53.jpg",
+      "start": 70644,
+      "gameId": "983206279",
+      "duration": "19:37:24",
+      "restricted": false
+    },
+    {
+      "end": 1517,
+      "name": "Lost Diskettes Vol. 1",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/910777761_IGDB-40x53.jpg",
+      "start": 72827,
+      "gameId": "910777761",
+      "duration": "20:13:47",
+      "restricted": false
+    },
+    {
+      "end": 5864,
+      "name": "Artifact",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/16937_IGDB-40x53.jpg",
+      "start": 74344,
+      "gameId": "16937",
+      "duration": "20:39:04",
+      "restricted": true
+    },
+    {
+      "end": 6332,
+      "name": "Just Chatting",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x53.jpg",
+      "start": 80208,
+      "gameId": "509658",
+      "duration": "22:16:48",
+      "restricted": false
+    }
+  ],
+  "title": "24h of PAIN and HORROR 🥠 VISAGE 🥠 VR horror game 🥠 finishing wind wokege 🥠 spinning wheels 🥠 !discord !vods",
+  "duration": "24:02:20",
+  "thumbnail_url": "https://i.ytimg.com/vi/TRMfykWdn6s/mqdefault.jpg",
+  "youtube": [
+    {
+      "id": "UcVYs-BHHeM",
+      "part": 1,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/UcVYs-BHHeM/mqdefault.jpg"
+    },
+    {
+      "id": "fL_7vOrTM38",
+      "part": 2,
+      "type": "vod",
+      "duration": 8338.006,
+      "thumbnail_url": "https://i.ytimg.com/vi/fL_7vOrTM38/mqdefault.jpg"
+    },
+    {
+      "id": "3HNE01xW8pY",
+      "part": 3,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/3HNE01xW8pY/mqdefault.jpg"
+    },
+    {
+      "id": "ifMeLPYxwOs",
+      "part": 4,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/ifMeLPYxwOs/mqdefault.jpg"
+    },
+    {
+      "id": "cXkCaBvkDF4",
+      "part": 5,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/cXkCaBvkDF4/mqdefault.jpg"
+    },
+    {
+      "id": "JaevNig61Fw",
+      "part": 6,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/JaevNig61Fw/mqdefault.jpg"
+    },
+    {
+      "id": "oILL_xkkbBg",
+      "part": 7,
+      "type": "vod",
+      "duration": 6459.99,
+      "thumbnail_url": "https://i.ytimg.com/vi/oILL_xkkbBg/mqdefault.jpg"
+    },
+    {
+      "id": "TRMfykWdn6s",
+      "part": 8,
+      "type": "vod",
+      "duration": 6332.118,
+      "thumbnail_url": "https://i.ytimg.com/vi/TRMfykWdn6s/mqdefault.jpg"
+    }
+  ],
+  "stream_id": "43135784553",
+  "drive": [],
+  "platform": "twitch",
+  "createdAt": "2024-10-19T03:00:10.000Z",
+  "updatedAt": "2024-10-20T22:52:00.001Z",
+  "games": []
+}
