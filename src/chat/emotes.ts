@@ -22,16 +22,13 @@ export interface EmoteImage {
 export const EMOTE_CDN = {
   twitch: 'https://static-cdn.jtvnw.net/emoticons/v2',
   ffz: 'https://cdn.frankerfacez.com/emote',
-  // BTTV and 7TV through a CORS-friendly mirror; their own CDNs break on some mobile browsers.
-  bttv: 'https://emotes.overpowered.tv/bttv',
-  '7tv': 'https://emotes.overpowered.tv/7tv',
+  // Every provider's own CDN (no third-party mirrors). 7TV redirects emotes that moved to new ids; its CDN follows.
+  bttv: 'https://cdn.betterttv.net/emote',
+  '7tv': 'https://cdn.7tv.app/emote',
 } as const
 
-export const EMOTE_API = {
-  ffz: 'https://api.frankerfacez.com/v1',
-  bttv: 'https://api.betterttv.net/3',
-  '7tv': 'https://7tv.io/v3',
-} as const
+/** 7TV's global set, which the archive doesn't save per VOD (the old site added it the same way). */
+export const SEVENTV_GLOBAL = 'https://7tv.io/v3/emote-sets/global'
 
 export function emoteImage(e: Pick<Emote, 'provider' | 'id'>): EmoteImage {
   const id = encodeURIComponent(e.id)
@@ -83,71 +80,43 @@ export class EmoteSet {
   }
 }
 
-async function getJson<T>(fetcher: Fetch, url: string, signal?: AbortSignal): Promise<T | null> {
+export interface LoadEmotesOptions {
+  client: ArchiveClient
+  vodId: string
+  /** For 7TV's global set; defaults to the global fetch. */
+  fetch?: Fetch
+  signal?: AbortSignal
+}
+
+/** Runs `load`, treating any failure except an abort as "nothing". */
+async function quietly<T>(load: () => Promise<T>): Promise<T | null> {
   try {
-    const res = await fetcher(url, { signal })
-    if (!res.ok) return null
-    return (await res.json()) as T
+    return await load()
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
     return null
   }
 }
 
-/** Channel sets from the providers, for VODs the archive saved no emotes for. */
-async function loadChannelSets(set: EmoteSet, twitchId: string, fetcher: Fetch, signal?: AbortSignal) {
-  const id = encodeURIComponent(twitchId)
-  await Promise.all([
-    getJson<RawThirdPartyEmote[]>(fetcher, `${EMOTE_API.bttv}/cached/emotes/global`, signal).then(async (global) => {
-      set.add('bttv', global)
-      const channel = await getJson<{ sharedEmotes?: RawThirdPartyEmote[]; channelEmotes?: RawThirdPartyEmote[] }>(
-        fetcher,
-        `${EMOTE_API.bttv}/cached/users/twitch/${id}`,
-        signal,
-      )
-      set.add('bttv', [...(channel?.sharedEmotes ?? []), ...(channel?.channelEmotes ?? [])])
-    }),
-    getJson<{ room?: { set: number }; sets?: Record<string, { emoticons?: RawThirdPartyEmote[] }> }>(
-      fetcher,
-      `${EMOTE_API.ffz}/room/id/${id}`,
-      signal,
-    ).then((d) => {
-      if (d?.room && d.sets) set.add('ffz', d.sets[String(d.room.set)]?.emoticons)
-    }),
-    getJson<{ emote_set?: { emotes?: RawThirdPartyEmote[] } }>(fetcher, `${EMOTE_API['7tv']}/users/twitch/${id}`, signal).then(
-      (d) => set.add('7tv', d?.emote_set?.emotes),
-    ),
-  ])
-}
-
-export interface LoadEmotesOptions {
-  client: ArchiveClient
-  vodId: string
-  twitchId: string
-  /** For the third-party APIs; defaults to the global fetch. */
-  fetch?: Fetch
-  signal?: AbortSignal
-}
-
 /**
- * The emotes for a VOD: the sets the archive saved for it, or the channel's current sets when there are none.
- * 7TV global emotes are always added. Failures leave a set empty rather than failing chat.
+ * The emotes for a VOD. When the archive saved the VOD's sets (after the stream ended), only those are used, plus
+ * 7TV's global set, so old chat shows what was an emote back then. VODs with no saved sets get the channel's current
+ * and global 7TV / BTTV / FFZ sets, which the archive caches. Failures leave a set empty rather than failing chat.
  */
 export async function loadEmotes(opts: LoadEmotesOptions): Promise<EmoteSet> {
-  const fetcher = opts.fetch ?? ((input: string, init?: RequestInit) => globalThis.fetch(input, init))
   const set = new EmoteSet()
-  let saved: RawEmoteSets | null = null
-  try {
-    saved = await opts.client.vodEmotes(opts.vodId, opts.signal)
-  } catch (e) {
-    if ((e as Error).name === 'AbortError') throw e
-  }
+  const saved = await quietly(() => opts.client.vodEmotes(opts.vodId, opts.signal))
   if (saved) {
     set.add('7tv', saved['7tv_emotes']).add('ffz', saved.ffz_emotes).add('bttv', saved.bttv_emotes)
+    const global = await quietly(async () => {
+      const fetcher = opts.fetch ?? ((input: string, init?: RequestInit) => globalThis.fetch(input, init))
+      const res = await fetcher(SEVENTV_GLOBAL, { signal: opts.signal })
+      return res.ok ? ((await res.json()) as { emotes?: RawThirdPartyEmote[] }) : null
+    })
+    set.add('7tv', global?.emotes)
   } else {
-    await loadChannelSets(set, opts.twitchId, fetcher, opts.signal)
+    const current = await quietly(() => opts.client.thirdPartyEmotes(opts.signal))
+    if (current) set.add('7tv', current['7tv']).add('ffz', current.ffz).add('bttv', current.bttv)
   }
-  const global = await getJson<{ emotes?: RawThirdPartyEmote[] }>(fetcher, `${EMOTE_API['7tv']}/emote-sets/global`, opts.signal)
-  set.add('7tv', global?.emotes)
   return set
 }

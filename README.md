@@ -54,11 +54,11 @@ const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0
 | module | what |
 |---|---|
 | `config` | `defineVodsConfig`: validates the channel settings and parses numbers (the old `REACT_APP_DEFAULT_DELAY` was a string and got concatenated). |
-| `api` | `ArchiveClient`: `listVods` (title / game / date filters, combinable), `getVod`, `liveStream`, `vodEmotes`, `badges`, `commentsAt` / `commentsAfter`. Normalizes VODs: chapter `end` becomes an absolute time (the API sends the length), `duration` becomes seconds. |
+| `api` | `ArchiveClient`: `listVods` (title / exact game / date filters, combinable), `getVod`, `gamesPlayed`, `liveStream`, `vodEmotes`, `thirdPartyEmotes`, `badges`, `commentsAt` / `commentsAfter`. Normalizes VODs: chapter `end` becomes an absolute time (the API's `length`, or its older length-as-`end`), `duration` becomes seconds, box art prefers the `{width}x{height}` template, and chapters without a Twitch category are named `NO_CATEGORY`. |
 | `time` | `parseTimestamp` (`1h2m3s`, `1:02:03`, seconds), `toHMS`, `toClock`, `toSeconds`. |
 | `timeline` | `Timeline`: VOD time ↔ YouTube part + offset, restricted (cut) chapters, the start delay, chapter at a time, part spans, `?t=` / `?part=` resolution. |
 | `player` | `WatchPlayer`: drives the YouTube IFrame player across parts: seeks, auto-advance, part errors (`missing` / `blocked` / `processing`), VOD-time ticks. `mountYouTube` wires the real player. |
-| `chat` | `ChatReplay` (paged, prefetching, seek-aware), `loadEmotes` (archive sets, else BTTV/FFZ/7TV channel sets, plus 7TV globals), `tokenize` / `resolveBadges` / `toChatMessage` (render-ready tokens, never HTML). |
+| `chat` | `ChatReplay` (paged, prefetching, seek-aware), `loadEmotes` (the sets the archive saved for the VOD plus 7TV globals; for VODs without saved sets, the channel's current sets, which the archive caches), `tokenize` / `resolveBadges` / `toChatMessage` (render-ready tokens, never HTML). |
 | `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface an account-backed store can implement later. |
 | `vue` | `createVods`, `useVods`, `useWatch`, `useChat`, `useProgress`. Import from `@vexoulz/vods-core/vue`. |
 

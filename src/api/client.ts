@@ -1,7 +1,7 @@
-import type { Vod, VodPage } from '../types'
-import { normalizeVod } from './normalize'
+import type { GamePlayed, Vod, VodPage } from '../types'
+import { normalizeGamePlayed, normalizeVod } from './normalize'
 import { toQueryString, vodListQuery, type QueryObject, type VodListOptions } from './query'
-import type { Page, RawBadges, RawCommentPage, RawEmoteSets, RawStream, RawVod } from './types'
+import type { Page, RawBadges, RawCommentPage, RawEmoteSets, RawGamePlayed, RawStream, RawThirdPartyEmotes, RawVod } from './types'
 
 export class ApiError extends Error {
   constructor(
@@ -57,6 +57,16 @@ export class ArchiveClient {
   async listVods(opts: VodListOptions = {}, signal?: AbortSignal): Promise<VodPage> {
     const page = await this.find<RawVod>('vods', vodListQuery(opts), signal)
     return { total: page.total, vods: page.data.map(normalizeVod) }
+  }
+
+  /** Every game played across the archive (from the VODs' chapters), most played first. */
+  async gamesPlayed(signal?: AbortSignal): Promise<GamePlayed[]> {
+    return (await this.get<RawGamePlayed[]>('/v1/games-played', signal)).map(normalizeGamePlayed)
+  }
+
+  /** The channel's and global 7TV / BTTV / FFZ emotes, fetched and cached by the archive. */
+  thirdPartyEmotes(signal?: AbortSignal): Promise<RawThirdPartyEmotes> {
+    return this.get<RawThirdPartyEmotes>('/v1/emotes/third-party', signal)
   }
 
   /** One VOD, or null when it doesn't exist. */

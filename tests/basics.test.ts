@@ -61,11 +61,11 @@ describe('Feathers query strings', () => {
     const from = new Date('2025-01-01T00:00:00Z')
     const to = new Date('2025-02-01T00:00:00Z')
     expect(toQueryString(vodListQuery({ title: ' doom ' }))).toBe('?title[$iLike]=%25doom%25&$limit=20&$skip=0&$sort[createdAt]=-1')
-    expect(toQueryString(vodListQuery({ game: 'Risk of Rain 2' }))).toBe('?chapters[name]=Risk%20of%20Rain%202&$limit=20&$skip=0&$sort[createdAt]=-1')
+    expect(toQueryString(vodListQuery({ game: 'Risk of Rain 2' }))).toBe('?chapters[name][$eq]=Risk%20of%20Rain%202&$limit=20&$skip=0&$sort[createdAt]=-1')
     expect(toQueryString(vodListQuery({ from, to }))).toBe(
       '?createdAt[$gte]=2025-01-01T00%3A00%3A00.000Z&createdAt[$lte]=2025-02-01T00%3A00%3A00.000Z&$limit=20&$skip=0&$sort[createdAt]=-1',
     )
-    expect(toQueryString(vodListQuery({ title: 'a', game: 'b' }))).toBe('?title[$iLike]=%25a%25&chapters[name]=b&$limit=20&$skip=0&$sort[createdAt]=-1')
+    expect(toQueryString(vodListQuery({ title: 'a', game: 'b' }))).toBe('?title[$iLike]=%25a%25&chapters[name][$eq]=b&$limit=20&$skip=0&$sort[createdAt]=-1')
   })
 
   it('escapes LIKE wildcards in title searches', () => {

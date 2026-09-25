@@ -1,5 +1,24 @@
 # @vexoulz/vods-core
 
+## 0.2.0
+
+### Minor Changes
+
+- ffa7254: Uses the archive API's new endpoints.
+  
+  - `ArchiveClient.gamesPlayed()` reads `/v1/games-played` (every game with VOD and chapter counts, latest box art).
+  - The game filter is exact (`chapters[name][$eq]`); `NO_CATEGORY` finds uncategorised chapters (`chapters[gameId]=null`).
+  - `loadEmotes` keeps a VOD with saved sets to those (plus 7TV's global set, from `SEVENTV_GLOBAL`), so old chat shows
+    what was an emote back then. VODs without saved sets use the archive-cached current sets (`/v1/emotes/third-party`,
+    new `ArchiveClient.thirdPartyEmotes()`) instead of calling BTTV / FFZ / 7TV from the browser. **Breaking:** its
+    `twitchId` option and the `EMOTE_API` export are gone.
+  - Emote images load from each provider's official CDN (`cdn.7tv.app`, `cdn.betterttv.net`, `cdn.frankerfacez.com`,
+    `static-cdn.jtvnw.net`), which fixes 7TV emotes whose ids were migrated.
+  - Chapters use the archive's `length` and `imageTemplate` when present; VODs use `duration_seconds`. Chapters with no
+    Twitch category are named `NO_CATEGORY` instead of crashing name-based code.
+  - `useChat` renders the messages on screen again once emotes or badges finish loading, so comments that arrive first
+    (e.g. right after a seek) no longer stay plain text.
+
 ## 0.1.0
 
 ### Minor Changes

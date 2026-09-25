@@ -1,5 +1,5 @@
 import { onScopeDispose, ref, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
-import type { RawBadges } from '../api/types'
+import type { RawBadges, RawComment } from '../api/types'
 import { loadEmotes, type EmoteSet } from '../chat/emotes'
 import { toChatMessage, type ChatMessage } from '../chat/message'
 import { ChatReplay, type ReplayOptions } from '../chat/replay'
@@ -21,7 +21,7 @@ export interface UseChatOptions extends ReplayOptions {
  * tokens (emotes, badges) as they arrive. Emotes and badges load once per VOD and never block chat.
  */
 export function useChat(opts: UseChatOptions) {
-  const { client, config, fetch } = useVodsContext()
+  const { client, fetch } = useVodsContext()
   const messages = shallowRef<ChatMessage[]>([])
   const error = shallowRef<Error | null>(null)
   const max = opts.max ?? 200
@@ -35,10 +35,11 @@ export function useChat(opts: UseChatOptions) {
     ctrl?.abort()
     const mine = (ctrl = new AbortController())
     replay = new ChatReplay(client, vodId, opts)
+    shown = []
     messages.value = []
     emotes.value = null
     badges.value = null
-    loadEmotes({ client, vodId, twitchId: config.twitchId, fetch, signal: mine.signal })
+    loadEmotes({ client, vodId, fetch, signal: mine.signal })
       .then((set) => !mine.signal.aborted && (emotes.value = set))
       .catch(() => undefined)
     client
@@ -46,6 +47,12 @@ export function useChat(opts: UseChatOptions) {
       .then((b) => !mine.signal.aborted && (badges.value = b))
       .catch(() => undefined)
   }
+
+  // The comments on screen, kept raw so they can be rendered again once emotes or badges arrive (comments often come
+  // in before those have loaded, e.g. right after a seek).
+  let shown: RawComment[] = []
+  const render = (list: RawComment[]) => list.map((c) => toChatMessage(c, emotes.value, badges.value))
+  watch([emotes, badges], () => (messages.value = render(shown)))
 
   const clock = () => toValue(opts.time) - (opts.offset?.value ?? 0)
   const busy = ref(false)
@@ -57,9 +64,11 @@ export function useChat(opts: UseChatOptions) {
     try {
       const { reset, comments } = await r.update(clock())
       if (r !== replay) return
-      const fresh = comments.map((c) => toChatMessage(c, emotes.value, badges.value))
-      const next = reset ? fresh : messages.value.concat(fresh)
-      if (reset || fresh.length) messages.value = next.length > max ? next.slice(next.length - max) : next
+      if (reset || comments.length) {
+        const next = reset ? comments : shown.concat(comments)
+        shown = next.length > max ? next.slice(next.length - max) : next
+        messages.value = render(shown)
+      }
       error.value = null
     } catch (e) {
       if ((e as Error).name !== 'AbortError') error.value = e as Error

@@ -8,12 +8,17 @@ export interface Page<T> {
 }
 
 export interface RawChapter {
-  name: string
+  /** null when the stream had no Twitch category set. */
+  name: string | null
   gameId?: string | null
   image?: string | null
+  /** Box art with `{width}x{height}` in place of the baked size. */
+  imageTemplate?: string | null
   start: number
   /** Careful: the chapter's LENGTH in seconds, not its end time. */
   end: number
+  /** The chapter's length again, under an honest name. */
+  length?: number | null
   restricted?: boolean | null
 }
 
@@ -50,6 +55,7 @@ export interface RawVod {
   title: string | null
   /** "HH:MM:SS". */
   duration: string
+  duration_seconds?: number | null
   chapters: RawChapter[] | null
   youtube: RawUpload[] | null
   drive: RawDrive[] | null
@@ -66,6 +72,28 @@ export interface RawStream {
   started_at: string | null
   platform: string
   is_live: boolean | null
+}
+
+/** `/v1/games-played`: one entry per distinct game across every VOD's chapters. */
+export interface RawGamePlayed {
+  name: string
+  gameId: string | null
+  image: string | null
+  imageTemplate?: string | null
+  /** VODs it appears in. */
+  vods: number
+  /** Chapters of it across those VODs. */
+  chapters: number
+  lastPlayed: string
+}
+
+/** `/v1/emotes/third-party`: the channel's and global sets, cached by the archive; `failed` names providers that
+ *  couldn't be reached. */
+export interface RawThirdPartyEmotes {
+  '7tv'?: RawThirdPartyEmote[] | null
+  bttv?: RawThirdPartyEmote[] | null
+  ffz?: RawThirdPartyEmote[] | null
+  failed?: string[]
 }
 
 export interface RawBadgeVersion {

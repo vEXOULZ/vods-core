@@ -1,6 +1,8 @@
 // Feathers REST query strings, serialized the way the old site's @feathersjs/rest-client (qs) did:
 // ?createdAt[$gte]=…&$limit=20&$sort[createdAt]=-1
 
+import { NO_CATEGORY } from './normalize'
+
 export type QueryValue = string | number | boolean | null | undefined | QueryObject | QueryValue[]
 export interface QueryObject {
   [key: string]: QueryValue
@@ -34,7 +36,7 @@ export function toQueryString(query: QueryObject): string {
 export interface VodFilter {
   /** Case-insensitive title substring. */
   title?: string
-  /** Exact game (chapter) name. */
+  /** Exact game (chapter) name; `NO_CATEGORY` finds chapters without a Twitch category. */
   game?: string
   /** Created at or after. */
   from?: Date
@@ -61,7 +63,8 @@ export function vodListQuery(opts: VodListOptions = {}): QueryObject {
   const title = opts.title?.trim()
   if (title) q.title = { $iLike: `%${likeEscape(title)}%` }
   const game = opts.game?.trim()
-  if (game) q.chapters = { name: game }
+  // Exact match (plain `chapters[name]` is a substring match). Uncategorised chapters have no name, only a null id.
+  if (game) q.chapters = game === NO_CATEGORY ? { gameId: 'null' } : { name: { $eq: game } }
   if (opts.from || opts.to) {
     const range: QueryObject = {}
     if (opts.from) range.$gte = opts.from.toISOString()

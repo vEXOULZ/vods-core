@@ -1,14 +1,18 @@
 import { toSeconds } from '../time'
-import type { Chapter, GameUpload, Upload, Vod } from '../types'
-import type { RawChapter, RawGameUpload, RawUpload, RawVod } from './types'
+import type { Chapter, GamePlayed, GameUpload, Upload, Vod } from '../types'
+import type { RawChapter, RawGamePlayed, RawGameUpload, RawUpload, RawVod } from './types'
+
+/** Name used for chapters where the stream had no Twitch category. */
+export const NO_CATEGORY = 'No category'
 
 export function normalizeChapter(c: RawChapter): Chapter {
   const start = Number(c.start) || 0
-  const length = Math.max(0, Number(c.end) || 0)
+  // `length` where the archive sends it; older rows only have the length under `end`.
+  const length = Math.max(0, Number(c.length ?? c.end) || 0)
   return {
-    name: c.name,
+    name: c.name?.trim() || NO_CATEGORY,
     gameId: c.gameId ?? null,
-    image: c.image ?? null,
+    image: c.imageTemplate ?? c.image ?? null,
     start,
     end: start + length,
     restricted: !!c.restricted,
@@ -42,7 +46,7 @@ export function normalizeGameUpload(g: RawGameUpload): GameUpload {
 }
 
 export function normalizeVod(raw: RawVod): Vod {
-  const duration = toSeconds(raw.duration ?? '')
+  const duration = typeof raw.duration_seconds === 'number' ? raw.duration_seconds : toSeconds(raw.duration ?? '')
   return {
     id: raw.id,
     title: raw.title ?? '',
@@ -54,6 +58,17 @@ export function normalizeVod(raw: RawVod): Vod {
     games: (raw.games ?? []).map(normalizeGameUpload),
     thumbnail: raw.thumbnail_url ?? null,
     streamId: raw.stream_id ?? null,
+  }
+}
+
+export function normalizeGamePlayed(g: RawGamePlayed): GamePlayed {
+  return {
+    name: g.name?.trim() || NO_CATEGORY,
+    gameId: g.gameId ?? null,
+    image: g.imageTemplate ?? g.image ?? null,
+    vods: g.vods,
+    chapters: g.chapters,
+    lastPlayed: new Date(g.lastPlayed),
   }
 }
 
