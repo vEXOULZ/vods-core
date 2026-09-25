@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { RawComment, RawCommentPage } from '../src/api/types'
-import { EmoteSet, emoteImage, loadEmotes } from '../src/chat/emotes'
+import { EmoteSet, emoteImage, loadEmotes, SEVENTV_GLOBAL } from '../src/chat/emotes'
 import { resolveBadges, tokenize, toChatMessage } from '../src/chat/message'
 import { ChatReplay, type CommentSource } from '../src/chat/replay'
 import { ArchiveClient } from '../src/api/client'
@@ -154,28 +154,32 @@ describe('messages', () => {
 describe('loadEmotes', () => {
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
   const load = (fetch: (url: string) => Promise<Response>) =>
-    loadEmotes({ client: new ArchiveClient({ apiBase: 'https://api.example', fetch }), vodId: '1' })
+    loadEmotes({ client: new ArchiveClient({ apiBase: 'https://api.example', fetch }), vodId: '1', fetch })
 
-  it('puts the sets saved for the VOD first, then the archive-cached current sets', async () => {
+  it("keeps a VOD with saved sets to those (plus 7TV globals), never today's channel emotes", async () => {
     const fetch = vi.fn(async (url: string) => {
       if (url.includes('/emotes?')) return json({ total: 1, limit: 1, skip: 0, data: [{ ffz_emotes: [{ id: 1, name: 'a' }], bttv_emotes: [], '7tv_emotes': [] }] })
-      if (url.endsWith('/v1/emotes/third-party')) return json({ '7tv': [{ id: 'g', code: 'EZ', provider: '7tv' }], bttv: [], ffz: [{ id: 2, code: 'a', provider: 'ffz' }], failed: [] })
+      if (url === SEVENTV_GLOBAL) return json({ emotes: [{ id: 'g', name: 'EZ' }] })
+      if (url.endsWith('/v1/emotes/third-party')) return json({ bttv: [{ id: 'n', code: 'NewEmote', provider: 'bttv' }] })
       return json({}, 404)
     })
     const set = await load(fetch)
     expect(set.find('a')).toEqual({ provider: 'ffz', id: '1', code: 'a' })
     expect(set.find('EZ')?.provider).toBe('7tv')
-    // Only the archive is called: no provider APIs from the browser.
-    expect(fetch.mock.calls.every(([u]) => u.startsWith('https://api.example/'))).toBe(true)
+    expect(set.find('NewEmote')).toBeNull()
+    expect(fetch.mock.calls.some(([u]) => u.includes('third-party'))).toBe(false)
   })
 
-  it('survives either source failing', async () => {
-    const set = await load(async (url) => {
-      if (url.includes('/emotes?')) throw new TypeError('network down')
-      return json({ bttv: [{ id: 'b', code: 'Clap', provider: 'bttv' }], failed: ['7tv', 'ffz'] })
+  it("uses the archive-cached current sets when nothing was saved, and survives failures", async () => {
+    const fetch = vi.fn(async (url: string) => {
+      if (url.includes('/emotes?')) return json({ total: 0, limit: 1, skip: 0, data: [] })
+      if (url.endsWith('/v1/emotes/third-party')) return json({ bttv: [{ id: 'b', code: 'Clap', provider: 'bttv' }], failed: ['7tv', 'ffz'] })
+      return json({}, 404)
     })
+    const set = await load(fetch)
     expect(set.find('Clap')?.provider).toBe('bttv')
-    const none = await load(async () => json({}, 500))
-    expect(none.size).toBe(0)
+    // Only the archive is called: no provider APIs from the browser.
+    expect(fetch.mock.calls.every(([u]) => u.startsWith('https://api.example/'))).toBe(true)
+    expect((await load(async () => json({}, 500))).size).toBe(0)
   })
 })

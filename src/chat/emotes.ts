@@ -1,5 +1,5 @@
 // Emote sets and image URLs. Lookup order matches the old site: native Twitch fragments first, then 7TV, FFZ, BTTV.
-import type { ArchiveClient } from '../api/client'
+import type { ArchiveClient, Fetch } from '../api/client'
 import type { RawEmoteSets, RawThirdPartyEmote } from '../api/types'
 
 export type EmoteProvider = 'twitch' | '7tv' | 'ffz' | 'bttv'
@@ -26,6 +26,9 @@ export const EMOTE_CDN = {
   bttv: 'https://cdn.betterttv.net/emote',
   '7tv': 'https://cdn.7tv.app/emote',
 } as const
+
+/** 7TV's global set, which the archive doesn't save per VOD (the old site added it the same way). */
+export const SEVENTV_GLOBAL = 'https://7tv.io/v3/emote-sets/global'
 
 export function emoteImage(e: Pick<Emote, 'provider' | 'id'>): EmoteImage {
   const id = encodeURIComponent(e.id)
@@ -80,6 +83,8 @@ export class EmoteSet {
 export interface LoadEmotesOptions {
   client: ArchiveClient
   vodId: string
+  /** For 7TV's global set; defaults to the global fetch. */
+  fetch?: Fetch
   signal?: AbortSignal
 }
 
@@ -94,17 +99,24 @@ async function quietly<T>(load: () => Promise<T>): Promise<T | null> {
 }
 
 /**
- * The emotes for a VOD: the sets the archive saved for it come first, then the channel's current and the global
- * 7TV / BTTV / FFZ sets, which the archive fetches from the providers and caches (so viewers never call them).
- * Failures leave a set empty rather than failing chat.
+ * The emotes for a VOD. When the archive saved the VOD's sets (after the stream ended), only those are used, plus
+ * 7TV's global set, so old chat shows what was an emote back then. VODs with no saved sets get the channel's current
+ * and global 7TV / BTTV / FFZ sets, which the archive caches. Failures leave a set empty rather than failing chat.
  */
 export async function loadEmotes(opts: LoadEmotesOptions): Promise<EmoteSet> {
-  const [saved, current] = await Promise.all([
-    quietly(() => opts.client.vodEmotes(opts.vodId, opts.signal)),
-    quietly(() => opts.client.thirdPartyEmotes(opts.signal)),
-  ])
   const set = new EmoteSet()
-  if (saved) set.add('7tv', saved['7tv_emotes']).add('ffz', saved.ffz_emotes).add('bttv', saved.bttv_emotes)
-  if (current) set.add('7tv', current['7tv']).add('ffz', current.ffz).add('bttv', current.bttv)
+  const saved = await quietly(() => opts.client.vodEmotes(opts.vodId, opts.signal))
+  if (saved) {
+    set.add('7tv', saved['7tv_emotes']).add('ffz', saved.ffz_emotes).add('bttv', saved.bttv_emotes)
+    const global = await quietly(async () => {
+      const fetcher = opts.fetch ?? ((input: string, init?: RequestInit) => globalThis.fetch(input, init))
+      const res = await fetcher(SEVENTV_GLOBAL, { signal: opts.signal })
+      return res.ok ? ((await res.json()) as { emotes?: RawThirdPartyEmote[] }) : null
+    })
+    set.add('7tv', global?.emotes)
+  } else {
+    const current = await quietly(() => opts.client.thirdPartyEmotes(opts.signal))
+    if (current) set.add('7tv', current['7tv']).add('ffz', current.ffz).add('bttv', current.bttv)
+  }
   return set
 }

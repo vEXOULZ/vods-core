@@ -20,7 +20,7 @@ export {
   type WatchPlayerOptions,
 } from './player'
 
-export { EmoteSet, loadEmotes, emoteImage, EMOTE_CDN, type Emote, type EmoteImage, type EmoteProvider, type LoadEmotesOptions } from './chat/emotes'
+export { EmoteSet, loadEmotes, emoteImage, EMOTE_CDN, SEVENTV_GLOBAL, type Emote, type EmoteImage, type EmoteProvider, type LoadEmotesOptions } from './chat/emotes'
 export { tokenize, resolveBadges, toChatMessage, type Token, type Badge, type ChatMessage } from './chat/message'
 export { ChatReplay, type CommentSource, type ReplayOptions, type ReplayUpdate } from './chat/replay'
 
