@@ -116,7 +116,7 @@ describe('messages', () => {
 
   it('builds emote image URLs per provider', () => {
     expect(emoteImage({ provider: 'ffz', id: '42' }).large).toBe('https://cdn.frankerfacez.com/emote/42/4')
-    expect(emoteImage({ provider: '7tv', id: 'sev' }).src).toBe('https://emotes.overpowered.tv/7tv/sev/1x.webp')
+    expect(emoteImage({ provider: '7tv', id: 'sev' }).src).toBe('https://cdn.7tv.app/emote/sev/1x.webp')
   })
 
   it('resolves badges from the channel set before the global one, skipping empty ones', () => {
