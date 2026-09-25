@@ -1,7 +1,7 @@
 import type { GamePlayed, Vod, VodPage } from '../types'
-import { aggregateGames, normalizeChapter, normalizeVod } from './normalize'
+import { normalizeGamePlayed, normalizeVod } from './normalize'
 import { toQueryString, vodListQuery, type QueryObject, type VodListOptions } from './query'
-import type { Page, RawBadges, RawCommentPage, RawEmoteSets, RawStream, RawVod } from './types'
+import type { Page, RawBadges, RawCommentPage, RawEmoteSets, RawGamePlayed, RawStream, RawThirdPartyEmotes, RawVod } from './types'
 
 export class ApiError extends Error {
   constructor(
@@ -59,23 +59,14 @@ export class ArchiveClient {
     return { total: page.total, vods: page.data.map(normalizeVod) }
   }
 
-  /**
-   * Every game played across the archive (from the VODs' chapters), most played first. The API has no endpoint for
-   * this, so it pages through /vods asking only for dates and chapters.
-   */
+  /** Every game played across the archive (from the VODs' chapters), most played first. */
   async gamesPlayed(signal?: AbortSignal): Promise<GamePlayed[]> {
-    const perPage = 50
-    const rows: { createdAt: Date; chapters: ReturnType<typeof normalizeChapter>[] }[] = []
-    for (let skip = 0; ; skip += perPage) {
-      const page = await this.find<Pick<RawVod, 'createdAt' | 'chapters'>>(
-        'vods',
-        { $select: ['createdAt', 'chapters'], $limit: perPage, $skip: skip, $sort: { createdAt: -1 } },
-        signal,
-      )
-      for (const v of page.data) rows.push({ createdAt: new Date(v.createdAt), chapters: (v.chapters ?? []).map(normalizeChapter) })
-      if (!page.data.length || skip + page.data.length >= page.total) break
-    }
-    return aggregateGames(rows)
+    return (await this.get<RawGamePlayed[]>('/v1/games-played', signal)).map(normalizeGamePlayed)
+  }
+
+  /** The channel's and global 7TV / BTTV / FFZ emotes, fetched and cached by the archive. */
+  thirdPartyEmotes(signal?: AbortSignal): Promise<RawThirdPartyEmotes> {
+    return this.get<RawThirdPartyEmotes>('/v1/emotes/third-party', signal)
   }
 
   /** One VOD, or null when it doesn't exist. */

@@ -153,29 +153,29 @@ describe('messages', () => {
 
 describe('loadEmotes', () => {
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
+  const load = (fetch: (url: string) => Promise<Response>) =>
+    loadEmotes({ client: new ArchiveClient({ apiBase: 'https://api.example', fetch }), vodId: '1' })
 
-  it('uses the sets saved for the VOD, plus 7TV globals', async () => {
+  it('puts the sets saved for the VOD first, then the archive-cached current sets', async () => {
     const fetch = vi.fn(async (url: string) => {
       if (url.includes('/emotes?')) return json({ total: 1, limit: 1, skip: 0, data: [{ ffz_emotes: [{ id: 1, name: 'a' }], bttv_emotes: [], '7tv_emotes': [] }] })
-      if (url.includes('emote-sets/global')) return json({ emotes: [{ id: 'g', name: 'EZ' }] })
+      if (url.endsWith('/v1/emotes/third-party')) return json({ '7tv': [{ id: 'g', code: 'EZ', provider: '7tv' }], bttv: [], ffz: [{ id: 2, code: 'a', provider: 'ffz' }], failed: [] })
       return json({}, 404)
     })
-    const set = await loadEmotes({ client: new ArchiveClient({ apiBase: 'https://api.example', fetch }), vodId: '1', twitchId: '2', fetch })
-    expect(set.find('a')?.provider).toBe('ffz')
+    const set = await load(fetch)
+    expect(set.find('a')).toEqual({ provider: 'ffz', id: '1', code: 'a' })
     expect(set.find('EZ')?.provider).toBe('7tv')
-    expect(fetch.mock.calls.some(([u]) => u.includes('betterttv'))).toBe(false)
+    // Only the archive is called: no provider APIs from the browser.
+    expect(fetch.mock.calls.every(([u]) => u.startsWith('https://api.example/'))).toBe(true)
   })
 
-  it('falls back to the channel sets, and survives providers failing', async () => {
-    const fetch = vi.fn(async (url: string) => {
-      if (url.includes('/emotes?')) return json({ total: 0, limit: 1, skip: 0, data: [] })
-      if (url.includes('betterttv') && url.includes('global')) return json([{ id: 'b', code: 'Clap' }])
-      if (url.includes('betterttv')) return json({ sharedEmotes: [{ id: 's', code: 'catJAM' }], channelEmotes: [] })
-      if (url.includes('frankerfacez')) throw new TypeError('network down')
-      return json({}, 500)
+  it('survives either source failing', async () => {
+    const set = await load(async (url) => {
+      if (url.includes('/emotes?')) throw new TypeError('network down')
+      return json({ bttv: [{ id: 'b', code: 'Clap', provider: 'bttv' }], failed: ['7tv', 'ffz'] })
     })
-    const set = await loadEmotes({ client: new ArchiveClient({ apiBase: 'https://api.example', fetch }), vodId: '1', twitchId: '2', fetch })
     expect(set.find('Clap')?.provider).toBe('bttv')
-    expect(set.find('catJAM')?.provider).toBe('bttv')
+    const none = await load(async () => json({}, 500))
+    expect(none.size).toBe(0)
   })
 })

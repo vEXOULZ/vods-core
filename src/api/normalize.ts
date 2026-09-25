@@ -1,17 +1,18 @@
 import { toSeconds } from '../time'
 import type { Chapter, GamePlayed, GameUpload, Upload, Vod } from '../types'
-import type { RawChapter, RawGameUpload, RawUpload, RawVod } from './types'
+import type { RawChapter, RawGamePlayed, RawGameUpload, RawUpload, RawVod } from './types'
 
 /** Name used for chapters where the stream had no Twitch category. */
 export const NO_CATEGORY = 'No category'
 
 export function normalizeChapter(c: RawChapter): Chapter {
   const start = Number(c.start) || 0
-  const length = Math.max(0, Number(c.end) || 0)
+  // `length` where the archive sends it; older rows only have the length under `end`.
+  const length = Math.max(0, Number(c.length ?? c.end) || 0)
   return {
     name: c.name?.trim() || NO_CATEGORY,
     gameId: c.gameId ?? null,
-    image: c.image ?? null,
+    image: c.imageTemplate ?? c.image ?? null,
     start,
     end: start + length,
     restricted: !!c.restricted,
@@ -45,7 +46,7 @@ export function normalizeGameUpload(g: RawGameUpload): GameUpload {
 }
 
 export function normalizeVod(raw: RawVod): Vod {
-  const duration = toSeconds(raw.duration ?? '')
+  const duration = typeof raw.duration_seconds === 'number' ? raw.duration_seconds : toSeconds(raw.duration ?? '')
   return {
     id: raw.id,
     title: raw.title ?? '',
@@ -60,28 +61,15 @@ export function normalizeVod(raw: RawVod): Vod {
   }
 }
 
-/** Every game across these VODs with how many VODs it's in, most played first (ties: most recent, then name). */
-export function aggregateGames(vods: readonly Pick<Vod, 'createdAt' | 'chapters'>[]): GamePlayed[] {
-  const games = new Map<string, GamePlayed>()
-  for (const v of vods) {
-    for (const c of new Map(v.chapters.map((c) => [c.name, c])).values()) {
-      const g = games.get(c.name)
-      if (!g) {
-        games.set(c.name, { name: c.name, gameId: c.gameId, image: c.image, vods: 1, lastPlayed: v.createdAt })
-        continue
-      }
-      g.vods++
-      if (v.createdAt > g.lastPlayed) {
-        g.lastPlayed = v.createdAt
-        if (c.image) g.image = c.image
-      }
-      g.gameId ??= c.gameId
-      g.image ??= c.image
-    }
+export function normalizeGamePlayed(g: RawGamePlayed): GamePlayed {
+  return {
+    name: g.name?.trim() || NO_CATEGORY,
+    gameId: g.gameId ?? null,
+    image: g.imageTemplate ?? g.image ?? null,
+    vods: g.vods,
+    chapters: g.chapters,
+    lastPlayed: new Date(g.lastPlayed),
   }
-  return [...games.values()].sort(
-    (a, b) => b.vods - a.vods || b.lastPlayed.getTime() - a.lastPlayed.getTime() || a.name.localeCompare(b.name),
-  )
 }
 
 /** Distinct game names in chapter order, e.g. for the poster fan. */

@@ -3,7 +3,7 @@ export { toSeconds, toHMS, toClock, parseTimestamp } from './time'
 export type * from './types'
 
 export { ArchiveClient, ApiError, type ArchiveClientOptions, type Fetch } from './api/client'
-export { normalizeVod, normalizeChapter, normalizeUploads, gamesOf, aggregateGames, NO_CATEGORY } from './api/normalize'
+export { normalizeVod, normalizeChapter, normalizeUploads, gamesOf, normalizeGamePlayed, NO_CATEGORY } from './api/normalize'
 export { toQueryString, vodListQuery, type QueryObject, type QueryValue, type VodFilter, type VodListOptions } from './api/query'
 export type * from './api/types'
 
@@ -20,7 +20,7 @@ export {
   type WatchPlayerOptions,
 } from './player'
 
-export { EmoteSet, loadEmotes, emoteImage, EMOTE_CDN, EMOTE_API, type Emote, type EmoteImage, type EmoteProvider, type LoadEmotesOptions } from './chat/emotes'
+export { EmoteSet, loadEmotes, emoteImage, EMOTE_CDN, type Emote, type EmoteImage, type EmoteProvider, type LoadEmotesOptions } from './chat/emotes'
 export { tokenize, resolveBadges, toChatMessage, type Token, type Badge, type ChatMessage } from './chat/message'
 export { ChatReplay, type CommentSource, type ReplayOptions, type ReplayUpdate } from './chat/replay'
 

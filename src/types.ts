@@ -5,7 +5,7 @@ export type UploadType = 'vod' | 'live'
 export interface Chapter {
   name: string
   gameId: string | null
-  /** Box art URL template from Twitch, if any. */
+  /** Twitch box art: a `{width}x{height}` template when the archive has one, else a URL with a small baked size. */
   image: string | null
   /** VOD seconds. */
   start: number
@@ -62,10 +62,12 @@ export interface Vod {
 export interface GamePlayed {
   name: string
   gameId: string | null
-  /** Box art URL template from Twitch, if any. */
+  /** Same as `Chapter.image`. */
   image: string | null
   /** How many VODs have at least one chapter of it. */
   vods: number
+  /** How many chapters of it, across those VODs. */
+  chapters: number
   /** Newest VOD it appears in. */
   lastPlayed: Date
 }

@@ -21,7 +21,7 @@ export interface UseChatOptions extends ReplayOptions {
  * tokens (emotes, badges) as they arrive. Emotes and badges load once per VOD and never block chat.
  */
 export function useChat(opts: UseChatOptions) {
-  const { client, config, fetch } = useVodsContext()
+  const { client } = useVodsContext()
   const messages = shallowRef<ChatMessage[]>([])
   const error = shallowRef<Error | null>(null)
   const max = opts.max ?? 200
@@ -38,7 +38,7 @@ export function useChat(opts: UseChatOptions) {
     messages.value = []
     emotes.value = null
     badges.value = null
-    loadEmotes({ client, vodId, twitchId: config.twitchId, fetch, signal: mine.signal })
+    loadEmotes({ client, vodId, signal: mine.signal })
       .then((set) => !mine.signal.aborted && (emotes.value = set))
       .catch(() => undefined)
     client

@@ -1,44 +1,30 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ArchiveClient } from '../src/api/client'
-import { aggregateGames, NO_CATEGORY, normalizeChapter } from '../src/api/normalize'
-import type { Chapter } from '../src/types'
+import { NO_CATEGORY, normalizeChapter, normalizeVod } from '../src/api/normalize'
+import { toQueryString, vodListQuery } from '../src/api/query'
 
-const ch = (name: string, image: string | null = null): Chapter => ({ name, gameId: null, image, start: 0, end: 1, restricted: false })
-
-describe('aggregateGames', () => {
-  it('counts VODs per game (not chapters) and sorts most played first', () => {
-    const games = aggregateGames([
-      { createdAt: new Date('2026-01-03'), chapters: [ch('A'), ch('B', 'b-new'), ch('A')] },
-      { createdAt: new Date('2026-01-02'), chapters: [ch('B', 'b-old')] },
-      { createdAt: new Date('2026-01-01'), chapters: [ch('C'), ch('B')] },
-    ])
-    expect(games.map((g) => [g.name, g.vods])).toEqual([
-      ['B', 3],
-      ['A', 1],
-      ['C', 1],
-    ])
-    expect(games[0]!.image).toBe('b-new')
-    expect(games[0]!.lastPlayed).toEqual(new Date('2026-01-03'))
+describe('ArchiveClient.gamesPlayed', () => {
+  it('reads /v1/games-played, preferring box-art templates', async () => {
+    const fetch = vi.fn(async (_url: string) =>
+      new Response(
+        JSON.stringify([
+          { name: 'A', gameId: '1', image: 'a-40x53.jpg', imageTemplate: 'a-{width}x{height}.jpg', vods: 3, chapters: 5, lastPlayed: '2026-01-03T00:00:00Z' },
+          { name: 'No category', gameId: null, image: null, imageTemplate: null, vods: 1, chapters: 1, lastPlayed: '2024-08-31T00:00:00Z' },
+        ]),
+      ),
+    )
+    const games = await new ArchiveClient({ apiBase: 'https://api.example', fetch }).gamesPlayed()
+    expect(fetch.mock.calls[0]![0]).toBe('https://api.example/v1/games-played')
+    expect(games[0]).toEqual({ name: 'A', gameId: '1', image: 'a-{width}x{height}.jpg', vods: 3, chapters: 5, lastPlayed: new Date('2026-01-03T00:00:00Z') })
+    expect(games[1]!.name).toBe(NO_CATEGORY)
   })
 })
 
-describe('ArchiveClient.gamesPlayed', () => {
-  it('pages through the VODs asking only for dates and chapters', async () => {
-    const vod = (d: string, name: string) => ({ createdAt: d, chapters: [{ name, start: 0, end: 10 }] })
-    const pages = [
-      { total: 3, limit: 50, skip: 0, data: [vod('2026-01-03', 'A'), vod('2026-01-02', 'B')] },
-      { total: 3, limit: 50, skip: 50, data: [vod('2026-01-01', 'A')] },
-    ]
-    const fetch = vi.fn(async (_url: string) => new Response(JSON.stringify(pages.shift())))
-    const games = await new ArchiveClient({ apiBase: 'https://api.example', fetch }).gamesPlayed()
-    expect(games.map((g) => [g.name, g.vods])).toEqual([
-      ['A', 2],
-      ['B', 1],
-    ])
-    expect(fetch).toHaveBeenCalledTimes(2)
-    const first = decodeURIComponent(fetch.mock.calls[0]![0])
-    expect(first).toContain('$select[0]=createdAt&$select[1]=chapters')
-    expect(first).toContain('$skip=0')
+describe('game filter', () => {
+  const qs = (game: string) => decodeURIComponent(toQueryString(vodListQuery({ game })))
+  it('matches the name exactly, and uncategorised chapters by their null id', () => {
+    expect(qs('The Wind Waker')).toContain('chapters[name][$eq]=The Wind Waker')
+    expect(qs(NO_CATEGORY)).toContain('chapters[gameId]=null')
   })
 })
 
@@ -46,5 +32,18 @@ describe('normalizeChapter', () => {
   it('names chapters without a Twitch category (the archive stores null)', () => {
     expect(normalizeChapter({ name: null, gameId: null, image: null, start: 0, end: 75 }).name).toBe(NO_CATEGORY)
     expect(normalizeChapter({ name: '  ', start: 0, end: 1 }).name).toBe(NO_CATEGORY)
+  })
+
+  it('prefers `length` and the box-art template when the archive sends them', () => {
+    const c = normalizeChapter({ name: 'A', image: 'a-40x53.jpg', imageTemplate: 'a-{width}x{height}.jpg', start: 100, end: 999, length: 50 })
+    expect([c.start, c.end, c.image]).toEqual([100, 150, 'a-{width}x{height}.jpg'])
+  })
+})
+
+describe('normalizeVod', () => {
+  it('prefers duration_seconds over the HH:MM:SS string', () => {
+    const raw = { id: '1', title: 't', duration: '01:00:00', duration_seconds: 3601, chapters: [], youtube: [], drive: [], createdAt: '2026-01-01T00:00:00Z' }
+    expect(normalizeVod(raw).duration).toBe(3601)
+    expect(normalizeVod({ ...raw, duration_seconds: undefined }).duration).toBe(3600)
   })
 })
