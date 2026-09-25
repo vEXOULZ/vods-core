@@ -1,0 +1,64 @@
+// Normalized shapes every page works with. Built from the raw API types by api/normalize.ts.
+
+export type UploadType = 'vod' | 'live'
+
+export interface Chapter {
+  name: string
+  gameId: string | null
+  /** Box art URL template from Twitch, if any. */
+  image: string | null
+  /** VOD seconds. */
+  start: number
+  /** VOD seconds (absolute), unlike the API's length-as-`end`. */
+  end: number
+  /** Cut from the YouTube uploads (DMCA), so it can't be watched. */
+  restricted: boolean
+}
+
+export interface Upload {
+  /** YouTube video id. */
+  id: string
+  type: UploadType
+  /** 1-based part number as uploaded. */
+  part: number
+  /** Seconds, or null while YouTube is still processing it. */
+  duration: number | null
+  thumbnail: string | null
+}
+
+export interface DriveFile {
+  id: string
+  type: UploadType
+}
+
+/** A per-game upload (`/games/:id` pages): one game's stretch of a VOD as its own video. */
+export interface GameUpload {
+  id: string
+  vodId: string
+  start: number
+  end: number
+  videoId: string
+  gameId: string | null
+  gameName: string | null
+  title: string | null
+  thumbnail: string | null
+}
+
+export interface Vod {
+  id: string
+  title: string
+  createdAt: Date
+  /** Seconds. */
+  duration: number
+  chapters: Chapter[]
+  uploads: Upload[]
+  drive: DriveFile[]
+  games: GameUpload[]
+  thumbnail: string | null
+  streamId: string | null
+}
+
+export interface VodPage {
+  total: number
+  vods: Vod[]
+}

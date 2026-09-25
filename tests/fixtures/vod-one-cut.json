@@ -1,0 +1,99 @@
+{
+  "id": "2510563806",
+  "chapters": [
+    {
+      "end": 54865,
+      "name": "RimWorld",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/394568-40x53.jpg",
+      "start": 0,
+      "gameId": "394568",
+      "duration": "00:00:00",
+      "restricted": false
+    },
+    {
+      "end": 18226,
+      "name": "Artifact",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/16937_IGDB-40x53.jpg",
+      "start": 54865,
+      "gameId": "16937",
+      "duration": "15:14:25",
+      "restricted": true
+    },
+    {
+      "end": 13429,
+      "name": "RimWorld",
+      "image": "https://static-cdn.jtvnw.net/ttv-boxart/394568-40x53.jpg",
+      "start": 73091,
+      "gameId": "394568",
+      "duration": "20:18:11",
+      "restricted": false
+    }
+  ],
+  "title": "24h of rimworld ⚗️ maybe something else idk ⚗️ you're rimming my world ⚗️ help ⚗️ help ⚗️ !discord !shop !vods",
+  "duration": "24:02:00",
+  "thumbnail_url": "https://i.ytimg.com/vi/Au9cQFSZknI/mqdefault.jpg",
+  "youtube": [
+    {
+      "id": "_pbsqXz1Bts",
+      "part": 1,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/_pbsqXz1Bts/mqdefault.jpg"
+    },
+    {
+      "id": "TST70XkDDhk",
+      "part": 2,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/TST70XkDDhk/mqdefault.jpg"
+    },
+    {
+      "id": "bqEj_yf76Ng",
+      "part": 3,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/bqEj_yf76Ng/mqdefault.jpg"
+    },
+    {
+      "id": "WU9oPpDMAYg",
+      "part": 4,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/WU9oPpDMAYg/mqdefault.jpg"
+    },
+    {
+      "id": "7NI4pOR8EKA",
+      "part": 5,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/7NI4pOR8EKA/mqdefault.jpg"
+    },
+    {
+      "id": "2pPiM_q-cTw",
+      "part": 6,
+      "type": "vod",
+      "duration": 865,
+      "thumbnail_url": "https://i.ytimg.com/vi/2pPiM_q-cTw/mqdefault.jpg"
+    },
+    {
+      "id": "fLk5aXLxaJA",
+      "part": 7,
+      "type": "vod",
+      "duration": 10800,
+      "thumbnail_url": "https://i.ytimg.com/vi/fLk5aXLxaJA/mqdefault.jpg"
+    },
+    {
+      "id": "Au9cQFSZknI",
+      "part": 8,
+      "type": "vod",
+      "duration": 2629,
+      "thumbnail_url": "https://i.ytimg.com/vi/Au9cQFSZknI/mqdefault.jpg"
+    }
+  ],
+  "stream_id": "315417752052",
+  "drive": [],
+  "platform": "twitch",
+  "createdAt": "2025-07-12T16:00:59.000Z",
+  "updatedAt": "2025-07-16T21:50:15.593Z",
+  "games": []
+}

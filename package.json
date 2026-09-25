@@ -1,0 +1,51 @@
+{
+  "name": "@vexoulz/vods-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Headless VOD engine for the vexoulz vods site: archive API client, part/restricted time math, YouTube player control, chat replay, watch progress",
+  "repository": "github:vEXOULZ/vods-core",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vue": {
+      "types": "./dist/types/vue/index.d.ts",
+      "import": "./dist/vue.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "fixtures": "node scripts/fetch-fixtures.mjs",
+    "prepare": "npm run build",
+    "changeset": "changeset",
+    "release": "changeset version"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^22.0.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.0",
+    "vitest": "^4.1.0",
+    "vue": "^3.5.26"
+  }
+}
