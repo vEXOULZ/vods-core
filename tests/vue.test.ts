@@ -74,6 +74,28 @@ describe('vue composables', () => {
     expect(chat.messages.value.map((m) => m.id)).toEqual(['c0', 'c1', 'c2'])
   })
 
+  it('useChat renders messages again once emotes arrive after them', async () => {
+    const page = { comments: [{ id: 'c0', vod_id: 'v', display_name: 'u', content_offset_seconds: 0, message: [{ text: 'SHEESH' }], user_badges: null, user_color: null }] }
+    let releaseEmotes!: () => void
+    const emotesReady = new Promise<void>((r) => (releaseEmotes = r))
+    const { run } = setup(async (url) => {
+      if (url.includes('/comments')) return json(page)
+      if (url.includes('/emotes?')) {
+        await emotesReady
+        return json({ total: 1, limit: 1, skip: 0, data: [{ '7tv_emotes': [{ id: 's', code: 'SHEESH' }] }] })
+      }
+      return json({}, 404)
+    })
+    const time = ref(0)
+    const chat = run(() => useChat({ vodId: 'v', time, playing: ref(true), backlog: 10 }))
+    time.value = 1
+    await flush()
+    expect(chat.messages.value[0]!.tokens.some((t) => t.kind === 'emote')).toBe(false)
+    releaseEmotes()
+    await flush()
+    expect(chat.messages.value[0]!.tokens.some((t) => t.kind === 'emote')).toBe(true)
+  })
+
   it('useProgress saves on pause and offers it back', async () => {
     const { run, ctx } = setup(async () => json({}, 404))
     const time = ref(0)

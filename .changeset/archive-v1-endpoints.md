@@ -14,3 +14,5 @@ Uses the archive API's new endpoints.
   `static-cdn.jtvnw.net`), which fixes 7TV emotes whose ids were migrated.
 - Chapters use the archive's `length` and `imageTemplate` when present; VODs use `duration_seconds`. Chapters with no
   Twitch category are named `NO_CATEGORY` instead of crashing name-based code.
+- `useChat` renders the messages on screen again once emotes or badges finish loading, so comments that arrive first
+  (e.g. right after a seek) no longer stay plain text.
