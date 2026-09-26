@@ -1,5 +1,12 @@
 # @vexoulz/vods-core
 
+## 0.5.0
+
+### Minor Changes
+
+- c03996a: `vodThumbnail(vod)` and `watchPath(vod, t?)`: the thumbnail and watch-page path the vods site shows for a VOD, so
+  other sites linking to a VOD (the stream card on vexoulz.net) pick the same ones.
+
 ## 0.4.0
 
 ### Minor Changes
