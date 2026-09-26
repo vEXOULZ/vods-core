@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ArchiveClient } from '../src/api/client'
-import { NO_CATEGORY, normalizeChapter, normalizeVod } from '../src/api/normalize'
+import { NO_CATEGORY, gamesOf, normalizeChapter, normalizeVod } from '../src/api/normalize'
+import { restrictedSpans } from '../src/timeline'
 import { toQueryString, vodListQuery } from '../src/api/query'
 
 describe('ArchiveClient.gamesPlayed', () => {
@@ -50,5 +51,29 @@ describe('normalizeVod', () => {
     const raw = { id: '1', title: 't', duration: '01:00:00', duration_seconds: 3601, chapters: [], youtube: [], drive: [], createdAt: '2026-01-01T00:00:00Z' }
     expect(normalizeVod(raw).duration).toBe(3601)
     expect(normalizeVod({ ...raw, duration_seconds: undefined }).duration).toBe(3600)
+  })
+  it('reads merged_into', () => {
+    const raw = { id: 'b', title: 't', duration: '00:00:00', chapters: [], youtube: [], drive: [], createdAt: '2026-01-01T00:00:00Z' }
+    expect(normalizeVod(raw).mergedInto).toBeNull()
+    expect(normalizeVod({ ...raw, merged_into: { id: 'a', offset: 7322 } }).mergedInto).toEqual({ id: 'a', offset: 7322 })
+  })
+})
+
+describe('merge gap chapters', () => {
+  const raw = {
+    id: 'a', title: 't', duration: '02:00:00', youtube: [], drive: [], createdAt: '2026-01-01T00:00:00Z',
+    chapters: [
+      { name: 'Game', start: 0, end: 3000 },
+      { name: 'Technical difficulties', start: 3000, end: 240, restricted: true, kind: 'gap' as const },
+      { name: 'Game', start: 3240, end: 3960 },
+    ],
+  }
+  it('keeps kind and counts as a cut', () => {
+    const vod = normalizeVod(raw)
+    expect(vod.chapters.map((c) => c.kind)).toEqual([null, 'gap', null])
+    expect(restrictedSpans(vod.chapters)).toEqual([{ start: 3000, end: 3240 }])
+  })
+  it('is not a game', () => {
+    expect(gamesOf(normalizeVod(raw))).toEqual(['Game'])
   })
 })

@@ -15,7 +15,8 @@ export function normalizeChapter(c: RawChapter): Chapter {
     image: c.imageTemplate ?? c.image ?? null,
     start,
     end: start + length,
-    restricted: !!c.restricted,
+    restricted: !!c.restricted || c.kind === 'gap',
+    kind: c.kind === 'gap' ? 'gap' : null,
   }
 }
 
@@ -58,6 +59,7 @@ export function normalizeVod(raw: RawVod): Vod {
     games: (raw.games ?? []).map(normalizeGameUpload),
     thumbnail: raw.thumbnail_url ?? null,
     streamId: raw.stream_id ?? null,
+    mergedInto: raw.merged_into?.id ? { id: raw.merged_into.id, offset: Number(raw.merged_into.offset) || 0 } : null,
   }
 }
 
@@ -74,7 +76,7 @@ export function normalizeGamePlayed(g: RawGamePlayed): GamePlayed {
   }
 }
 
-/** Distinct game names in chapter order, e.g. for the poster fan. */
+/** Distinct game names in chapter order, e.g. for the poster fan. A merge's gap chapters aren't games. */
 export function gamesOf(vod: Vod): string[] {
-  return [...new Set(vod.chapters.map((c) => c.name))]
+  return [...new Set(vod.chapters.filter((c) => c.kind !== 'gap').map((c) => c.name))]
 }
