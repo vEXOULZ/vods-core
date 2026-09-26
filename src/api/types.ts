@@ -85,6 +85,10 @@ export interface RawGamePlayed {
   /** Chapters of it across those VODs. */
   chapters: number
   lastPlayed: string
+  /** Total length of its chapters, in seconds. Older archives don't send it. */
+  seconds?: number
+  /** The same, without chapters cut from the YouTube uploads. */
+  watchableSeconds?: number
 }
 
 /** `/v1/emotes/third-party`: the channel's and global sets, cached by the archive; `failed` names providers that

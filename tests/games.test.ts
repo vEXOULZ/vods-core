@@ -8,15 +8,20 @@ describe('ArchiveClient.gamesPlayed', () => {
     const fetch = vi.fn(async (_url: string) =>
       new Response(
         JSON.stringify([
-          { name: 'A', gameId: '1', image: 'a-40x53.jpg', imageTemplate: 'a-{width}x{height}.jpg', vods: 3, chapters: 5, lastPlayed: '2026-01-03T00:00:00Z' },
+          { name: 'A', gameId: '1', image: 'a-40x53.jpg', imageTemplate: 'a-{width}x{height}.jpg', vods: 3, chapters: 5, lastPlayed: '2026-01-03T00:00:00Z', seconds: 7200, watchableSeconds: 5400 },
           { name: 'No category', gameId: null, image: null, imageTemplate: null, vods: 1, chapters: 1, lastPlayed: '2024-08-31T00:00:00Z' },
         ]),
       ),
     )
     const games = await new ArchiveClient({ apiBase: 'https://api.example', fetch }).gamesPlayed()
     expect(fetch.mock.calls[0]![0]).toBe('https://api.example/v1/games-played')
-    expect(games[0]).toEqual({ name: 'A', gameId: '1', image: 'a-{width}x{height}.jpg', vods: 3, chapters: 5, lastPlayed: new Date('2026-01-03T00:00:00Z') })
+    expect(games[0]).toEqual({
+      name: 'A', gameId: '1', image: 'a-{width}x{height}.jpg', vods: 3, chapters: 5,
+      lastPlayed: new Date('2026-01-03T00:00:00Z'), seconds: 7200, watchableSeconds: 5400,
+    })
     expect(games[1]!.name).toBe(NO_CATEGORY)
+    // An archive without the time fields.
+    expect([games[1]!.seconds, games[1]!.watchableSeconds]).toEqual([null, null])
   })
 })
 

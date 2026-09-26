@@ -70,6 +70,10 @@ export interface GamePlayed {
   chapters: number
   /** Newest VOD it appears in. */
   lastPlayed: Date
+  /** How long it was streamed in total (its chapters' lengths), in seconds; null when the archive doesn't say. */
+  seconds: number | null
+  /** The part of that you can still watch (without chapters cut from the YouTube uploads). */
+  watchableSeconds: number | null
 }
 
 export interface VodPage {
