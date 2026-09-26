@@ -90,6 +90,15 @@ describe('WatchPlayer', () => {
     vi.advanceTimersByTime(1000)
     expect(times).toEqual([0, 10])
   })
+
+  it('reports playback speed changes', () => {
+    const w = new WatchPlayer(new Timeline(vod))
+    const rates: number[] = []
+    w.on('rate', (r) => rates.push(r))
+    w.handleRate(2)
+    w.handleRate(0.5)
+    expect(rates).toEqual([2, 0.5])
+  })
 })
 
 function memoryStorage(): KeyValueStorage & { data: Map<string, string> } {

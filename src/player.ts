@@ -51,6 +51,8 @@ export interface PlayerEvents {
   partError: (index: number, status: PartStatus) => void
   /** The last part ended. */
   ended: () => void
+  /** Playback speed changed (1 = normal), e.g. from YouTube's settings menu. */
+  rate: (rate: number) => void
 }
 
 type Listeners = { [K in keyof PlayerEvents]: Set<PlayerEvents[K]> }
@@ -66,7 +68,7 @@ export class WatchPlayer {
   private player: PlayerLike | null = null
   private index = -1
   private timer: ReturnType<typeof setInterval> | undefined
-  private readonly listeners: Listeners = { time: new Set(), playing: new Set(), part: new Set(), partError: new Set(), ended: new Set() }
+  private readonly listeners: Listeners = { time: new Set(), playing: new Set(), part: new Set(), partError: new Set(), ended: new Set(), rate: new Set() }
   readonly status: PartStatus[]
   private readonly tickMs: number
   private readonly skipBroken: boolean
@@ -170,6 +172,11 @@ export class WatchPlayer {
     }
   }
 
+  /** Wire this to the YT.Player `onPlaybackRateChange` event. */
+  handleRate(rate: number): void {
+    this.emit('rate', rate)
+  }
+
   handleError(code: number): void {
     const index = this.index
     if (index < 0) return
@@ -215,6 +222,7 @@ interface YTNamespace {
         onReady?: (e: { target: PlayerLike }) => void
         onStateChange?: (e: { data: number }) => void
         onError?: (e: { data: number }) => void
+        onPlaybackRateChange?: (e: { data: number }) => void
       }
     },
   ) => PlayerLike
@@ -272,6 +280,7 @@ export async function mountYouTube(
         },
         onStateChange: (e) => watch.handleState(e.data),
         onError: (e) => watch.handleError(e.data),
+        onPlaybackRateChange: (e) => watch.handleRate(e.data),
       },
     })
   })
