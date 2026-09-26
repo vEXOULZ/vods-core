@@ -1,6 +1,6 @@
 {
   "name": "@vexoulz/vods-core",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "description": "Headless VOD engine for the vexoulz vods site: archive API client, part/restricted time math, YouTube player control, chat replay, watch progress",
