@@ -1,5 +1,12 @@
 # @vexoulz/vods-core
 
+## 0.6.1
+
+### Patch Changes
+
+- c05bf2c: Chat: seeking past the last message is an empty chat instead of an error, and legacy-route errors show their
+  `msg` (it said "true").
+
 ## 0.6.0
 
 ### Minor Changes
