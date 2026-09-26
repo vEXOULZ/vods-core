@@ -30,26 +30,19 @@ export const EMOTE_CDN = {
 /** 7TV's global set, fetched live only for VODs saved before the archive kept global sets. */
 export const SEVENTV_GLOBAL = 'https://7tv.io/v3/emote-sets/global'
 
+// Each provider's image URL for a size, and the sizes it serves (srcset descriptor → size in the URL), smallest first.
+const IMAGES: Record<EmoteProvider, { url: (id: string, size: string) => string; sizes: Record<string, string> }> = {
+  twitch: { url: (id, s) => `${EMOTE_CDN.twitch}/${id}/default/dark/${s}`, sizes: { '1x': '1.0', '2x': '2.0', '4x': '3.0' } },
+  '7tv': { url: (id, s) => `${EMOTE_CDN['7tv']}/${id}/${s}.webp`, sizes: { '1x': '1x', '2x': '2x', '3x': '3x', '4x': '4x' } },
+  ffz: { url: (id, s) => `${EMOTE_CDN.ffz}/${id}/${s}`, sizes: { '1x': '1', '2x': '2', '4x': '4' } },
+  bttv: { url: (id, s) => `${EMOTE_CDN.bttv}/${id}/${s}`, sizes: { '1x': '1x', '2x': '2x', '3x': '3x' } },
+}
+
 export function emoteImage(e: Pick<Emote, 'provider' | 'id'>): EmoteImage {
+  const { url, sizes } = IMAGES[e.provider]
   const id = encodeURIComponent(e.id)
-  switch (e.provider) {
-    case 'twitch': {
-      const u = (s: string) => `${EMOTE_CDN.twitch}/${id}/default/dark/${s}`
-      return { src: u('1.0'), srcset: `${u('1.0')} 1x, ${u('2.0')} 2x, ${u('3.0')} 4x`, large: u('3.0') }
-    }
-    case '7tv': {
-      const u = (s: string) => `${EMOTE_CDN['7tv']}/${id}/${s}.webp`
-      return { src: u('1x'), srcset: `${u('1x')} 1x, ${u('2x')} 2x, ${u('3x')} 3x, ${u('4x')} 4x`, large: u('4x') }
-    }
-    case 'ffz': {
-      const u = (s: string) => `${EMOTE_CDN.ffz}/${id}/${s}`
-      return { src: u('1'), srcset: `${u('1')} 1x, ${u('2')} 2x, ${u('4')} 4x`, large: u('4') }
-    }
-    case 'bttv': {
-      const u = (s: string) => `${EMOTE_CDN.bttv}/${id}/${s}`
-      return { src: u('1x'), srcset: `${u('1x')} 1x, ${u('2x')} 2x, ${u('3x')} 3x`, large: u('3x') }
-    }
-  }
+  const urls = Object.entries(sizes).map(([d, s]) => [d, url(id, s)] as const)
+  return { src: urls[0]![1], srcset: urls.map(([d, u]) => `${u} ${d}`).join(', '), large: urls.at(-1)![1] }
 }
 
 /** Code → emote, per third-party provider. */

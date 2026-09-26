@@ -1,5 +1,5 @@
 export { createVods, useVodsContext, VODS_KEY, type VodsContext } from './context'
-export { useVods } from './useVods'
+export { useVods, type UseVodsOptions } from './useVods'
 export { useWatch } from './useWatch'
 export { useChat, type UseChatOptions } from './useChat'
 export { useProgress } from './useProgress'

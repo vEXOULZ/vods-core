@@ -1,4 +1,5 @@
-import { onScopeDispose, ref, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
+import { onScopeDispose, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
+import type { ArchiveClient } from '../api/client'
 import type { RawBadges, RawComment } from '../api/types'
 import { loadEmotes, type EmoteSet } from '../chat/emotes'
 import { toChatMessage, type ChatMessage } from '../chat/message'
@@ -20,6 +21,20 @@ export interface UseChatOptions extends ReplayOptions {
  * Chat replay synced to the player. The chat clock is VOD time minus the viewer's offset; comments are resolved to
  * tokens (emotes, badges) as they arrive. Emotes and badges load once per VOD and never block chat.
  */
+// The channel's and Twitch's global badges don't change per VOD: fetched once per client (a failure is retried next
+// time).
+const badgeRequests = new WeakMap<ArchiveClient, Promise<RawBadges>>()
+
+function loadBadges(client: ArchiveClient): Promise<RawBadges> {
+  let request = badgeRequests.get(client)
+  if (!request) {
+    request = client.badges()
+    request.catch(() => badgeRequests.delete(client))
+    badgeRequests.set(client, request)
+  }
+  return request
+}
+
 export function useChat(opts: UseChatOptions) {
   const { client, fetch } = useVodsContext()
   const messages = shallowRef<ChatMessage[]>([])
@@ -42,24 +57,32 @@ export function useChat(opts: UseChatOptions) {
     loadEmotes({ client, vodId, fetch, signal: mine.signal })
       .then((set) => !mine.signal.aborted && (emotes.value = set))
       .catch(() => undefined)
-    client
-      .badges(mine.signal)
+    loadBadges(client)
       .then((b) => !mine.signal.aborted && (badges.value = b))
       .catch(() => undefined)
   }
 
   // The comments on screen, kept raw so they can be rendered again once emotes or badges arrive (comments often come
-  // in before those have loaded, e.g. right after a seek).
+  // in before those have loaded, e.g. right after a seek). Each comment is converted once per emotes/badges pair.
   let shown: RawComment[] = []
-  const render = (list: RawComment[]) => list.map((c) => toChatMessage(c, emotes.value, badges.value))
-  watch([emotes, badges], () => (messages.value = render(shown)))
+  let converted = new WeakMap<RawComment, ChatMessage>()
+  const toMessage = (c: RawComment) => {
+    let m = converted.get(c)
+    if (!m) converted.set(c, (m = toChatMessage(c, emotes.value, badges.value)))
+    return m
+  }
+  const render = (list: RawComment[]) => list.map(toMessage)
+  watch([emotes, badges], () => {
+    converted = new WeakMap()
+    messages.value = render(shown)
+  })
 
   const clock = () => toValue(opts.time) - (opts.offset?.value ?? 0)
-  const busy = ref(false)
+  let busy = false
 
   async function tick() {
-    if (!replay || !opts.playing.value || busy.value) return
-    busy.value = true
+    if (!replay || !opts.playing.value || busy) return
+    busy = true
     const r = replay
     try {
       const { reset, comments } = await r.update(clock())
@@ -73,7 +96,7 @@ export function useChat(opts: UseChatOptions) {
     } catch (e) {
       if ((e as Error).name !== 'AbortError') error.value = e as Error
     } finally {
-      busy.value = false
+      busy = false
     }
   }
 
