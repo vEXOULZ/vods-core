@@ -69,6 +69,8 @@ export function normalizeGamePlayed(g: RawGamePlayed): GamePlayed {
     vods: g.vods,
     chapters: g.chapters,
     lastPlayed: new Date(g.lastPlayed),
+    seconds: g.seconds ?? null,
+    watchableSeconds: g.watchableSeconds ?? g.seconds ?? null,
   }
 }
 
