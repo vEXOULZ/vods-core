@@ -39,8 +39,9 @@ export class ArchiveClient {
     if (!res.ok) {
       let message = `HTTP ${res.status}`
       try {
-        const body = (await res.json()) as { message?: string; error?: string }
-        message = body.message ?? body.error ?? message
+        // Feathers errors carry `message`; the legacy routes send `{error: true, msg}`.
+        const body = (await res.json()) as { message?: string; msg?: string; error?: unknown }
+        message = body.message ?? body.msg ?? (typeof body.error === 'string' ? body.error : undefined) ?? message
       } catch {
         // not JSON
       }
@@ -98,7 +99,12 @@ export class ArchiveClient {
   /** The 200-comment page containing `offset` (VOD seconds). */
   commentsAt(vodId: string, offset: number, signal?: AbortSignal): Promise<RawCommentPage> {
     const q = toQueryString({ content_offset_seconds: Math.max(0, Math.floor(offset)) })
-    return this.get<RawCommentPage>(`/v1/vods/${encodeURIComponent(vodId)}/comments${q}`, signal)
+    return this.get<RawCommentPage>(`/v1/vods/${encodeURIComponent(vodId)}/comments${q}`, signal).catch((e: unknown) => {
+      // The archive answers 500 when nothing was said at or after the offset (past the last message): no chat, not
+      // an error.
+      if (e instanceof ApiError && e.status === 500 && e.message.startsWith('Failed to retrieve comments from offset')) return { comments: [] }
+      throw e
+    })
   }
 
   /** The page after `cursor` (from the previous page). */
