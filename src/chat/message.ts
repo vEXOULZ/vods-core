@@ -53,26 +53,42 @@ export function tokenize(fragments: readonly RawFragment[] | null | undefined, e
   return out
 }
 
+// "set/version" → Badge for a badges payload, channel set first so it wins over global. Built once per payload.
+const badgeIndexes = new WeakMap<RawBadges, Map<string, Badge>>()
+
+function badgeIndex(badges: RawBadges): Map<string, Badge> {
+  let index = badgeIndexes.get(badges)
+  if (index) return index
+  index = new Map()
+  for (const sets of [badges.channel, badges.global]) {
+    for (const set of sets ?? []) {
+      for (const v of set.versions) {
+        const key = `${set.set_id}/${v.id}`
+        if (index.has(key)) continue
+        index.set(key, {
+          setId: set.set_id,
+          version: v.id,
+          title: v.title ?? set.set_id,
+          src: v.image_url_1x,
+          srcset: `${v.image_url_1x} 1x, ${v.image_url_2x} 2x, ${v.image_url_4x} 4x`,
+          large: v.image_url_4x,
+        })
+      }
+    }
+  }
+  badgeIndexes.set(badges, index)
+  return index
+}
+
 /** Badge images for a comment's badges, channel set first, then global. Unknown badges are skipped. */
 export function resolveBadges(userBadges: readonly RawUserBadge[] | null | undefined, badges?: RawBadges | null): Badge[] {
   if (!badges || !userBadges) return []
+  const index = badgeIndex(badges)
   const out: Badge[] = []
   for (const b of userBadges) {
     const setId = b._id ?? b.setID
-    if (!setId) continue
-    for (const sets of [badges.channel, badges.global]) {
-      const version = sets?.find((s) => s.set_id === setId)?.versions.find((v) => v.id === b.version)
-      if (!version) continue
-      out.push({
-        setId,
-        version: b.version,
-        title: version.title ?? setId,
-        src: version.image_url_1x,
-        srcset: `${version.image_url_1x} 1x, ${version.image_url_2x} 2x, ${version.image_url_4x} 4x`,
-        large: version.image_url_4x,
-      })
-      break
-    }
+    const badge = setId ? index.get(`${setId}/${b.version}`) : undefined
+    if (badge) out.push(badge)
   }
   return out
 }

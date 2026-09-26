@@ -111,14 +111,9 @@ export class ChatReplay {
 
   private adopt(page: RawCommentPage, replace: boolean): void {
     const comments = (page.comments ?? []).filter((c) => c.message && c.message.length > 0)
-    if (replace) {
-      this.buffer = comments
-      this.index = 0
-    } else {
-      // Drop what was already shown so the buffer doesn't grow for the whole VOD.
-      this.buffer = this.buffer.slice(this.index).concat(comments)
-      this.index = 0
-    }
+    // When appending, drop what was already shown so the buffer doesn't grow for the whole VOD.
+    this.buffer = replace ? comments : this.buffer.slice(this.index).concat(comments)
+    this.index = 0
     this.cursor = page.cursor || undefined
   }
 

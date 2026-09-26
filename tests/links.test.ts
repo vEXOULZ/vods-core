@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeVod, vodThumbnail, watchPath, type RawVod } from '../src'
+import { boxArt, normalizeVod, vodThumbnail, watchPath, type RawVod } from '../src'
 
 const raw: RawVod = {
   id: '42',
@@ -32,5 +32,18 @@ describe('watchPath', () => {
     expect(watchPath(normalizeVod(raw))).toBe('/vods/42')
     expect(watchPath({ id: '42', uploads: [{ type: 'live' }] }, 90.5)).toBe('/live/42?t=90s')
     expect(watchPath({ id: '42', uploads: [] })).toBe('/youtube/42')
+  })
+})
+
+describe('boxArt', () => {
+  it('fills templates and resizes baked-in sizes', () => {
+    expect(boxArt('https://static-cdn.jtvnw.net/ttv-boxart/509658-{width}x{height}.jpg')).toBe(
+      'https://static-cdn.jtvnw.net/ttv-boxart/509658-144x192.jpg',
+    )
+    expect(boxArt('https://static-cdn.jtvnw.net/ttv-boxart/491327_IGDB-40x53.jpg', 60)).toBe(
+      'https://static-cdn.jtvnw.net/ttv-boxart/491327_IGDB-60x80.jpg',
+    )
+    expect(boxArt('https://x/a-40x53.jpg?v=2')).toBe('https://x/a-144x192.jpg?v=2')
+    expect(boxArt(null)).toBeNull()
   })
 })

@@ -41,6 +41,20 @@ describe('vue composables', () => {
     expect(urls.at(-1)).toContain('$skip=20')
   })
 
+  it('useVods appends the next page of the same filters, and starts over otherwise', async () => {
+    const { run } = setup(async (url) => json({ total: 3, limit: 20, skip: 0, data: [{ ...rawFixture('vod-plain'), id: url }] }))
+    const filters = ref<{ page: number; title?: string }>({ page: 1 })
+    const { vods, page } = run(() => useVods(filters, { append: true }))
+    await flush()
+    filters.value = { page: 2 }
+    await flush()
+    expect(vods.value).toHaveLength(2)
+    expect(page.value).toBe(2)
+    filters.value = { page: 1, title: 'x' }
+    await flush()
+    expect(vods.value).toHaveLength(1)
+  })
+
   it('useWatch builds the timeline, and flags a missing VOD', async () => {
     const { run } = setup(async (url) => (url.includes('/vods/404') ? json({ message: 'Not found' }, 404) : json(rawFixture('vod-one-cut'))))
     const id = ref('2510563806')
