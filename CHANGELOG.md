@@ -1,5 +1,12 @@
 # @vexoulz/vods-core
 
+## 0.4.0
+
+### Minor Changes
+
+- c7e6b41: `GamePlayed` gains `seconds` and `watchableSeconds`: how long each game was streamed in total, and how much of that
+  can still be watched (without chapters cut from the uploads). Both are null when the archive doesn't send them.
+
 ## 0.3.0
 
 ### Minor Changes
