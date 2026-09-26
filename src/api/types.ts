@@ -20,6 +20,8 @@ export interface RawChapter {
   /** The chapter's length again, under an honest name. */
   length?: number | null
   restricted?: boolean | null
+  /** "gap" on the cut a merge puts between two VODs of one broadcast; absent on every other chapter. */
+  kind?: 'gap' | null
 }
 
 export interface RawUpload {
@@ -62,6 +64,8 @@ export interface RawVod {
   games?: RawGameUpload[] | null
   thumbnail_url?: string | null
   stream_id?: string | null
+  /** Set on a VOD merged into another one: its footage now starts `offset` seconds into VOD `id`. */
+  merged_into?: { id: string; offset: number } | null
   platform?: string | null
   createdAt: string
   updatedAt?: string

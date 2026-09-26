@@ -13,6 +13,8 @@ export interface Chapter {
   end: number
   /** Cut from the YouTube uploads (DMCA), so it can't be watched. */
   restricted: boolean
+  /** "gap": the stream was down between two Twitch VODs that were merged into this one (always restricted). */
+  kind?: 'gap' | null
 }
 
 export interface Upload {
@@ -56,6 +58,8 @@ export interface Vod {
   games: GameUpload[]
   thumbnail: string | null
   streamId: string | null
+  /** Set when this VOD was merged into another: watch `id` at `offset + t` instead. */
+  mergedInto?: { id: string; offset: number } | null
 }
 
 /** A game that appears in the archive's chapters, for game pickers. */
