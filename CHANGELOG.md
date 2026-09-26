@@ -1,5 +1,12 @@
 # @vexoulz/vods-core
 
+## 0.8.0
+
+### Minor Changes
+
+- 1dfad80: `WatchPlayer` reports playback speed: a `rate` event, fed by YouTube's `onPlaybackRateChange` through `mountYouTube`
+  (or `handleRate` for other players).
+
 ## 0.7.0
 
 ### Minor Changes
