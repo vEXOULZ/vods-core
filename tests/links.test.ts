@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { boxArt, normalizeVod, vodThumbnail, watchPath, type RawVod } from '../src'
+import { boxArt, normalizeVod, vodThumbnail, watchPath, youtubeThumb, type RawVod } from '../src'
 
 const raw: RawVod = {
   id: '42',
@@ -24,6 +24,21 @@ describe('vodThumbnail', () => {
     const games = [{ id: 'g', vodId: '42', start_time: '0', end_time: '1', video_id: 'v', thumbnail_url: 'game.jpg' }]
     expect(vodThumbnail(normalizeVod({ ...raw, thumbnail_url: null, youtube: [], games }))).toBe('game.jpg')
     expect(vodThumbnail(normalizeVod({ ...raw, thumbnail_url: null, youtube: [] }))).toBeNull()
+  })
+})
+
+describe('youtubeThumb', () => {
+  it("switches a YouTube thumbnail's size", () => {
+    expect(youtubeThumb('https://i.ytimg.com/vi/1npf9NXVZ-U/mqdefault.jpg', 'maxresdefault')).toBe(
+      'https://i.ytimg.com/vi/1npf9NXVZ-U/maxresdefault.jpg',
+    )
+    expect(youtubeThumb('https://i9.ytimg.com/vi_webp/a_b-c/hqdefault.webp?x=1', 'mqdefault')).toBe(
+      'https://i9.ytimg.com/vi_webp/a_b-c/mqdefault.webp',
+    )
+  })
+  it('leaves other images alone', () => {
+    expect(youtubeThumb('https://static-cdn.jtvnw.net/cf_vods/x/thumb/thumb0-320x180.jpg', 'maxresdefault')).toBeNull()
+    expect(youtubeThumb(null, 'maxresdefault')).toBeNull()
   })
 })
 

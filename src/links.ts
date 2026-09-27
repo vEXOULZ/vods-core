@@ -13,6 +13,16 @@ export function vodThumbnail(vod: Thumbed): string | null {
 }
 
 /**
+ * A YouTube thumbnail (`i.ytimg.com/vi/<id>/<name>.jpg`) at another of YouTube's sizes: `mqdefault` is 320×180 and
+ * exists for every video; `maxresdefault` is 1280×720 and exists only for HD uploads. For a video without it, YouTube
+ * answers with a 120×90 grey image rather than an error, so check the loaded size. Anything else → null.
+ */
+export function youtubeThumb(url: string | null | undefined, size: 'mqdefault' | 'maxresdefault'): string | null {
+  const m = url?.match(/^(https?:\/\/i\d*\.ytimg\.com\/vi(?:_webp)?\/[\w-]+\/)\w+(\.\w+)(\?.*)?$/)
+  return m ? `${m[1]}${size}${m[2]}` : null
+}
+
+/**
  * The watch page's path on the vods site: `/vods/:id` when there are VOD uploads, `/live/:id` for a live upload only,
  * else `/youtube/:id` (which picks one). `t` (seconds) resumes from there.
  */
