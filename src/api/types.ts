@@ -168,4 +168,8 @@ export interface RawThirdPartyEmote {
   id: string | number
   name?: string
   code?: string
+  /** 7TV: the set entry's flags (1 = zero-width). Saved sets keep it; `/v1/emotes/third-party` doesn't send it yet. */
+  flags?: number
+  /** 7TV's own emote shape (the live global set): `data.flags` 256 = zero-width. */
+  data?: { flags?: number } | null
 }
