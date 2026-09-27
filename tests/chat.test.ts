@@ -109,6 +109,78 @@ describe('messages', () => {
     expect(tokens[0]!.kind === 'emote' && tokens[0]!.image.src).toBe('https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0')
   })
 
+  describe('zero-width emotes and modifiers', () => {
+    const set = new EmoteSet()
+      .add('7tv', [
+        { id: 'pc', code: 'POGCRAZY', flags: 0 },
+        { id: 'pp', code: 'PETPET', flags: 1 },
+        { id: 'rt', name: 'RainTime', flags: 0, data: { flags: 256 } },
+      ])
+      .add('ffz', [
+        { id: 1, code: 'OMEGALUL' },
+        { id: 2, code: 'ffzW' },
+        { id: 3, code: 'ffzX' },
+      ])
+      .add('bttv', [
+        { id: 'b1', code: 'KKona' },
+        { id: 'bw', code: 'w!' },
+        { id: 'bh', code: 'h!' },
+        { id: 'bz', code: 'z!' },
+        { id: 'bm', code: 'cvMask' },
+      ])
+    // [base(+mods) / overlay(+mods)], text as is.
+    const show = (text: string) =>
+      tokenize([{ text }], set).map((t) => {
+        if (t.kind === 'text') return t.text
+        const l = (x: { emote: { code: string }; modifiers: { code: string }[] }) => [x.emote.code, ...x.modifiers.map((m) => m.code)].join('+')
+        return `[${[t, ...t.overlays].map(l).join(' / ')}]`
+      })
+
+    it('flags 7TV zero-width emotes from the set entry or the emote data, and BTTV overlays by name', () => {
+      expect(set.find('PETPET')?.zeroWidth).toBe(true)
+      expect(set.find('RainTime')?.zeroWidth).toBe(true)
+      expect(set.find('cvMask')?.zeroWidth).toBe(true)
+      expect(set.find('POGCRAZY')?.zeroWidth).toBeUndefined()
+    })
+
+    it('lays zero-width emotes over the emote before, dropping the gap', () => {
+      expect(show('POGCRAZY PETPET')).toEqual(['[POGCRAZY / PETPET]'])
+      expect(show('hi KKona PETPET RainTime cvMask !')).toEqual(['hi ', '[KKona / PETPET / RainTime / cvMask]', ' !'])
+    })
+
+    it('lays them over native Twitch emotes too', () => {
+      const tokens = tokenize([{ text: 'Kappa', emote: { emoteID: '25' } }, { text: ' PETPET' }], set)
+      expect(tokens).toHaveLength(1)
+      const [t] = tokens
+      expect(t?.kind === 'emote' && [t.emote.provider, t.overlays[0]?.emote.code]).toEqual(['twitch', 'PETPET'])
+    })
+
+    it('keeps a zero-width emote with nothing to cover as an ordinary emote', () => {
+      expect(show('PETPET')).toEqual(['[PETPET]'])
+      expect(show('ongang PETPET')).toEqual(['ongang ', '[PETPET]'])
+    })
+
+    it('applies BTTV modifiers to the emote after them', () => {
+      expect(show('w! h! OMEGALUL wow')).toEqual(['[OMEGALUL+w!+h!]', ' wow'])
+      expect(tokenize([{ text: 'w! KKona' }], set)[0]).toMatchObject({ modifiers: [{ effect: 'wide', code: 'w!', provider: 'bttv' }] })
+    })
+
+    it('makes BTTV z! lay the next emote over the one before', () => {
+      expect(show('KKona z! OMEGALUL')).toEqual(['[KKona / OMEGALUL+z!]'])
+    })
+
+    it('applies FFZ modifiers to the emote before them', () => {
+      expect(show('KKona ffzW ffzX')).toEqual(['[KKona+ffzW+ffzX]'])
+      expect(show('POGCRAZY PETPET ffzX')).toEqual(['[POGCRAZY+ffzX / PETPET]'])
+    })
+
+    it('keeps modifiers with nothing to modify as ordinary emotes, whitespace intact', () => {
+      expect(show('w!  hello')).toEqual(['[w!]', '  hello'])
+      expect(show('ffzW KKona')).toEqual(['[ffzW]', ' ', '[KKona]'])
+      expect(show('KKona w!')).toEqual(['[KKona]', ' ', '[w!]'])
+    })
+  })
+
   it('never produces markup', () => {
     const tokens = tokenize([{ text: '<img src=x onerror=alert(1)>' }], emotes)
     expect(tokens).toEqual([{ kind: 'text', text: '<img src=x onerror=alert(1)>' }])

@@ -8,7 +8,49 @@ export interface Emote {
   provider: EmoteProvider
   id: string
   code: string
+  /** Drawn over the emote before it instead of beside it (7TV zero-width, BTTV's overlay emotes). */
+  zeroWidth?: boolean
 }
+
+/** What an emote modifier does to the emote it applies to. */
+export type ModifierEffect = 'wide' | 'flipX' | 'flipY' | 'rotateLeft' | 'rotateRight' | 'cursed' | 'party' | 'shake' | 'zeroSpace'
+
+/**
+ * BTTV's modifiers go before the emote (`w! KEKW`). `z!` (zero-space) lays the emote over the one before it. The
+ * archive saves them as plain global emotes, so they're known by code.
+ */
+export const BTTV_MODIFIERS: Readonly<Record<string, ModifierEffect>> = {
+  'w!': 'wide',
+  'h!': 'flipX',
+  'v!': 'flipY',
+  'l!': 'rotateLeft',
+  'r!': 'rotateRight',
+  'c!': 'cursed',
+  'p!': 'party',
+  's!': 'shake',
+  'z!': 'zeroSpace',
+}
+
+/** FFZ's modifiers go after the emote (`KEKW ffzW`). The saved sets drop FFZ's `modifier` fields, so known by code. */
+export const FFZ_MODIFIERS: Readonly<Record<string, ModifierEffect>> = {
+  ffzW: 'wide',
+  ffzX: 'flipX',
+  ffzY: 'flipY',
+  ffzCursed: 'cursed',
+}
+
+/** BTTV's global emotes that draw over the emote before them. */
+export const BTTV_OVERLAYS: ReadonlySet<string> = new Set(['cvHazmat', 'cvMask', 'IceCold', 'SoSnowy', 'SantaHat', 'TopHat', 'ReinDeer', 'CandyCane'])
+
+/** The modifier an emote stands for, or null. */
+export function modifierOf(e: Pick<Emote, 'provider' | 'code'>): { effect: ModifierEffect; before: boolean } | null {
+  if (e.provider === 'bttv' && Object.hasOwn(BTTV_MODIFIERS, e.code)) return { effect: BTTV_MODIFIERS[e.code]!, before: true }
+  if (e.provider === 'ffz' && Object.hasOwn(FFZ_MODIFIERS, e.code)) return { effect: FFZ_MODIFIERS[e.code]!, before: false }
+  return null
+}
+
+const zeroWidth = (provider: '7tv' | 'ffz' | 'bttv', raw: RawThirdPartyEmote, code: string) =>
+  provider === '7tv' ? ((raw.flags ?? 0) & 1) !== 0 || ((raw.data?.flags ?? 0) & 256) !== 0 : provider === 'bttv' && BTTV_OVERLAYS.has(code)
 
 export interface EmoteImage {
   /** 1x URL, for `src`. */
@@ -58,7 +100,10 @@ export class EmoteSet {
       const code = raw.name ?? raw.code
       if (!code || raw.id == null) continue
       // First one wins, like the old site's Array.find.
-      if (!this.maps[provider].has(code)) this.maps[provider].set(code, { provider, id: String(raw.id), code })
+      if (this.maps[provider].has(code)) continue
+      const emote: Emote = { provider, id: String(raw.id), code }
+      if (zeroWidth(provider, raw, code)) emote.zeroWidth = true
+      this.maps[provider].set(code, emote)
     }
     return this
   }

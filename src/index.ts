@@ -21,8 +21,23 @@ export {
   type WatchPlayerOptions,
 } from './player'
 
-export { EmoteSet, loadEmotes, emoteImage, EMOTE_CDN, SEVENTV_GLOBAL, type Emote, type EmoteImage, type EmoteProvider, type LoadEmotesOptions } from './chat/emotes'
-export { tokenize, resolveBadges, toChatMessage, type Token, type Badge, type ChatMessage } from './chat/message'
+export {
+  EmoteSet,
+  loadEmotes,
+  emoteImage,
+  modifierOf,
+  EMOTE_CDN,
+  SEVENTV_GLOBAL,
+  BTTV_MODIFIERS,
+  FFZ_MODIFIERS,
+  BTTV_OVERLAYS,
+  type Emote,
+  type EmoteImage,
+  type EmoteProvider,
+  type LoadEmotesOptions,
+  type ModifierEffect,
+} from './chat/emotes'
+export { tokenize, resolveBadges, toChatMessage, type Token, type EmoteToken, type EmoteLayer, type Modifier, type Badge, type ChatMessage } from './chat/message'
 export { ChatReplay, type CommentSource, type ReplayOptions, type ReplayUpdate } from './chat/replay'
 
 export { LocalProgressStore, isResumable, type Progress, type ProgressStore, type KeyValueStorage, type LocalProgressOptions } from './progress'
