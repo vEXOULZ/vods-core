@@ -25,6 +25,7 @@ export {
   EmoteSet,
   loadEmotes,
   emoteImage,
+  emotePage,
   modifierOf,
   EMOTE_CDN,
   SEVENTV_GLOBAL,

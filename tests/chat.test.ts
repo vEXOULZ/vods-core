@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { RawComment, RawCommentPage } from '../src/api/types'
-import { EmoteSet, emoteImage, loadEmotes, SEVENTV_GLOBAL } from '../src/chat/emotes'
+import { EmoteSet, emoteImage, emotePage, loadEmotes, SEVENTV_GLOBAL } from '../src/chat/emotes'
 import { resolveBadges, tokenize, toChatMessage } from '../src/chat/message'
 import { ChatReplay, type CommentSource } from '../src/chat/replay'
 import { ArchiveClient } from '../src/api/client'
@@ -162,7 +162,7 @@ describe('messages', () => {
 
     it('applies BTTV modifiers to the emote after them', () => {
       expect(show('w! h! OMEGALUL wow')).toEqual(['[OMEGALUL+w!+h!]', ' wow'])
-      expect(tokenize([{ text: 'w! KKona' }], set)[0]).toMatchObject({ modifiers: [{ effect: 'wide', code: 'w!', provider: 'bttv' }] })
+      expect(tokenize([{ text: 'w! KKona' }], set)[0]).toMatchObject({ modifiers: [{ effect: 'wide', code: 'w!', provider: 'bttv', id: 'bw' }] })
     })
 
     it('makes BTTV z! lay the next emote over the one before', () => {
@@ -190,6 +190,13 @@ describe('messages', () => {
     expect(emoteImage({ provider: 'ffz', id: '42' }).large).toBe('https://cdn.frankerfacez.com/emote/42/4')
     expect(emoteImage({ provider: '7tv', id: 'sev' }).src).toBe('https://cdn.7tv.app/emote/sev/1x.webp')
     expect(emoteImage({ provider: 'bttv', id: 'bt' }).src).toBe('https://cdn.betterttv.net/emote/bt/1x')
+  })
+
+  it('links emotes to their provider pages', () => {
+    expect(emotePage({ provider: '7tv', id: 'sev' })).toBe('https://7tv.app/emotes/sev')
+    expect(emotePage({ provider: 'bttv', id: 'bt' })).toBe('https://betterttv.com/emotes/bt')
+    expect(emotePage({ provider: 'ffz', id: '42' })).toBe('https://www.frankerfacez.com/emoticon/42')
+    expect(emotePage({ provider: 'twitch', id: 'emotesv2_x' })).toBeNull()
   })
 
   it('only uses the providers own CDNs', () => {

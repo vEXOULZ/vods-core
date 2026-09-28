@@ -3,11 +3,15 @@
 import type { RawBadges, RawComment, RawFragment, RawUserBadge } from '../api/types'
 import { emoteImage, modifierOf, type Emote, type EmoteImage, type EmoteSet, type ModifierEffect } from './emotes'
 
-/** A BTTV / FFZ modifier applied to an emote; `code` is what was typed, for showing it as text instead. */
+/**
+ * A BTTV / FFZ modifier applied to an emote; `code` is what was typed, for showing it as text instead. `id` is the
+ * modifier's own emote id, for its image or page.
+ */
 export interface Modifier {
   effect: ModifierEffect
   code: string
   provider: 'bttv' | 'ffz'
+  id: string
 }
 
 /** One emote image and the modifiers applied to it. */
@@ -116,7 +120,7 @@ export function tokenize(fragments: readonly RawFragment[] | null | undefined, e
     }
     const { emote } = part
     const mod = modifierOf(emote)
-    const asModifier: Modifier | null = mod && { effect: mod.effect, code: emote.code, provider: emote.provider as 'bttv' | 'ffz' }
+    const asModifier: Modifier | null = mod && { effect: mod.effect, code: emote.code, provider: emote.provider as 'bttv' | 'ffz', id: emote.id }
     if (mod?.before) {
       pending.push(asModifier!)
       held.push(part)

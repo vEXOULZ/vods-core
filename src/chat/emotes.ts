@@ -87,6 +87,18 @@ export function emoteImage(e: Pick<Emote, 'provider' | 'id'>): EmoteImage {
   return { src: urls[0]![1], srcset: urls.map(([d, u]) => `${u} ${d}`).join(', '), large: urls.at(-1)![1] }
 }
 
+// Each provider's page for an emote. Twitch has none, and which channel a Twitch emote belongs to isn't saved with chat.
+const PAGES: Record<Exclude<EmoteProvider, 'twitch'>, string> = {
+  '7tv': 'https://7tv.app/emotes/',
+  bttv: 'https://betterttv.com/emotes/',
+  ffz: 'https://www.frankerfacez.com/emoticon/',
+}
+
+/** The emote's page on its provider's site, or null (Twitch emotes). */
+export function emotePage(e: Pick<Emote, 'provider' | 'id'>): string | null {
+  return e.provider === 'twitch' ? null : PAGES[e.provider] + encodeURIComponent(e.id)
+}
+
 /** Code → emote, per third-party provider. */
 export class EmoteSet {
   private readonly maps: Record<'7tv' | 'ffz' | 'bttv', Map<string, Emote>> = {
