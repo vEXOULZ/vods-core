@@ -1,5 +1,12 @@
 # @vexoulz/vods-core
 
+## 0.11.0
+
+### Minor Changes
+
+- 41da260: `emotePage()` links a 7TV, BTTV or FFZ emote to its page on the provider's site (null for Twitch emotes). Modifiers
+  now carry their emote `id`, for their image or page.
+
 ## 0.10.0
 
 ### Minor Changes
