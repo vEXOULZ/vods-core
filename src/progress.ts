@@ -1,5 +1,5 @@
-// Where the viewer left off, per VOD. LocalProgressStore keeps it in the browser; an account-backed store
-// implements the same interface later (and imports the local entries on first sign-in).
+// Where the viewer left off, per VOD. LocalProgressStore keeps it in the browser; AccountProgressStore
+// (accountProgress.ts) keeps it with the viewer's account and imports the local entries on sign-in.
 
 export interface Progress {
   vodId: string

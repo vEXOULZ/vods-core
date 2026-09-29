@@ -42,3 +42,4 @@ export { tokenize, resolveBadges, toChatMessage, type Token, type EmoteToken, ty
 export { ChatReplay, type CommentSource, type ReplayOptions, type ReplayUpdate } from './chat/replay'
 
 export { LocalProgressStore, isResumable, type Progress, type ProgressStore, type KeyValueStorage, type LocalProgressOptions } from './progress'
+export { AccountProgressStore, MERGE_BATCH, type AccountLink, type AccountProgressOptions } from './accountProgress'
