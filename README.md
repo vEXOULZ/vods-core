@@ -59,8 +59,22 @@ const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0
 | `timeline` | `Timeline`: VOD time ↔ YouTube part + offset, restricted (cut) chapters, the start delay, chapter at a time, part spans, `?t=` / `?part=` resolution. |
 | `player` | `WatchPlayer`: drives the YouTube IFrame player across parts: seeks, auto-advance, part errors (`missing` / `blocked` / `processing`), VOD-time ticks, playback speed. `mountYouTube` wires the real player. |
 | `chat` | `ChatReplay` (paged, prefetching, seek-aware), `loadEmotes` (the channel and global sets the archive saved for the VOD, with today's 7TV globals only for rows saved before globals were kept; for VODs without saved sets, the channel's current sets, which the archive caches), `tokenize` / `resolveBadges` / `toChatMessage` (render-ready tokens, never HTML; zero-width emotes come as overlays of the emote they cover, BTTV / FFZ modifiers as effects on the emote they apply to). |
-| `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface an account-backed store can implement later. |
+| `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface. `AccountProgressStore` keeps it with the viewer's vexoulz account instead (see below). |
 | `vue` | `createVods`, `useVods`, `useWatch`, `useChat`, `useProgress`. Import from `@vexoulz/vods-core/vue`. |
+
+## Progress with an account
+
+`AccountProgressStore` keeps where the viewer left off in their vexoulz account (vexoulz-auth's `/v1/progress`),
+so it follows them to another browser. It takes the account from `@vexoulz/ui/account` (anything with `signedIn()`
+and `request()`); while signed out, or when the service can't be reached, it uses the browser's
+`LocalProgressStore`. Call `merge()` on sign-in to move the local entries into the account (newest wins per VOD).
+
+```ts
+const account = createAccount({ authBase: import.meta.env.VITE_AUTH_BASE })
+const progress = new AccountProgressStore({ signedIn: () => !!account.user.value, request: account.request })
+app.use(account).use(createVods(config, { progress }))
+watch(account.user, (u, before) => u && !before && progress.merge())
+```
 
 ## The time model
 
