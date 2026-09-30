@@ -1,7 +1,7 @@
 import type { GamePlayed, Vod, VodPage } from '../types'
 import { normalizeGamePlayed, normalizeVod } from './normalize'
 import { toQueryString, vodListQuery, type QueryObject, type VodListOptions } from './query'
-import type { Page, RawBadges, RawCommentPage, RawEmoteSets, RawGamePlayed, RawStream, RawThirdPartyEmotes, RawVod } from './types'
+import type { ChatSource, Page, RawBadges, RawCommentPage, RawEmoteSets, RawGamePlayed, RawStream, RawThirdPartyEmotes, RawVod } from './types'
 
 export class ApiError extends Error {
   constructor(
@@ -96,9 +96,12 @@ export class ArchiveClient {
     return this.get<RawBadges>('/v2/badges', signal)
   }
 
-  /** The 200-comment page containing `offset` (VOD seconds). */
-  commentsAt(vodId: string, offset: number, signal?: AbortSignal): Promise<RawCommentPage> {
-    const q = toQueryString({ content_offset_seconds: Math.max(0, Math.floor(offset)) })
+  /**
+   * The 200-comment page containing `offset` (VOD seconds), from `source` (default: the archive's choice). Pages
+   * after it keep that source through their cursor.
+   */
+  commentsAt(vodId: string, offset: number, signal?: AbortSignal, source?: ChatSource): Promise<RawCommentPage> {
+    const q = toQueryString({ content_offset_seconds: Math.max(0, Math.floor(offset)), source })
     return this.get<RawCommentPage>(`/v1/vods/${encodeURIComponent(vodId)}/comments${q}`, signal).catch((e: unknown) => {
       // The archive answers 500 when nothing was said at or after the offset (past the last message): no chat, not
       // an error.

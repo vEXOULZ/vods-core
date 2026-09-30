@@ -1,10 +1,10 @@
 // Chat replay: feed it the chat clock (VOD seconds) and it hands back the comments that are now due.
 // It pages through the archive's 200-comment pages with the cursor, prefetching the next page before it's needed,
 // and starts over at the new position when the clock jumps (a seek, a part change, a delay change).
-import type { RawComment, RawCommentPage } from '../api/types'
+import type { ChatSource, ChatSources, RawComment, RawCommentPage } from '../api/types'
 
 export interface CommentSource {
-  commentsAt(vodId: string, offset: number, signal?: AbortSignal): Promise<RawCommentPage>
+  commentsAt(vodId: string, offset: number, signal?: AbortSignal, source?: ChatSource): Promise<RawCommentPage>
   commentsAfter(vodId: string, cursor: string, signal?: AbortSignal): Promise<RawCommentPage>
 }
 
@@ -17,6 +17,8 @@ export interface ReplayOptions {
   backlog?: number
   /** Start fetching the next page when this many comments are left in the current one. */
   prefetchAt?: number
+  /** Which chat to replay; left out, the archive picks. */
+  source?: ChatSource
 }
 
 export interface ReplayUpdate {
@@ -34,7 +36,9 @@ export class ChatReplay {
   private last: number | null = null
   private chain: Promise<unknown> = Promise.resolve()
   private ctrl = new AbortController()
-  private readonly opts: Required<ReplayOptions>
+  private readonly opts: Required<Omit<ReplayOptions, 'source'>> & Pick<ReplayOptions, 'source'>
+  /** The messages each chat has for the VOD, from the last page fetched by offset; null until then or if unknown. */
+  sources: ChatSources | null = null
 
   constructor(
     private readonly source: CommentSource,
@@ -98,8 +102,9 @@ export class ChatReplay {
   private async seek(t: number): Promise<ReplayUpdate> {
     this.reset()
     const signal = this.signal
-    const page = await this.source.commentsAt(this.vodId, t, signal)
+    const page = await this.source.commentsAt(this.vodId, t, signal, this.opts.source)
     if (signal.aborted) return { reset: true, comments: [] }
+    if (page.sources) this.sources = page.sources
     this.last = t
     this.adopt(page, true)
     let i = 0

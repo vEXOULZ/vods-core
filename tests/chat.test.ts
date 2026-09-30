@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { RawComment, RawCommentPage } from '../src/api/types'
 import { EmoteSet, emoteImage, emotePage, loadEmotes, SEVENTV_GLOBAL } from '../src/chat/emotes'
-import { resolveBadges, tokenize, toChatMessage } from '../src/chat/message'
+import { loginOf, resolveBadges, tokenize, toChatMessage } from '../src/chat/message'
 import { ChatReplay, type CommentSource } from '../src/chat/replay'
 import { ArchiveClient } from '../src/api/client'
 import { fixtureComments } from './helpers'
@@ -65,6 +65,18 @@ describe('ChatReplay', () => {
     expect(src.commentsAt).toHaveBeenCalledTimes(3)
     // Small jitter backwards is not a seek.
     expect((await r.update(79.5)).reset).toBe(false)
+  })
+
+  it('asks for the chosen source and keeps the counts from the page', async () => {
+    const src: CommentSource = {
+      commentsAt: vi.fn(async () => ({ comments: [comment(0, 0)], sources: { replay: 1, bot: 0 } })),
+      commentsAfter: vi.fn(),
+    }
+    const r = new ChatReplay(src, 'v1', { source: 'replay' })
+    expect(r.sources).toBeNull()
+    await r.update(0)
+    expect(src.commentsAt).toHaveBeenCalledWith('v1', 0, expect.anything(), 'replay')
+    expect(r.sources).toEqual({ replay: 1, bot: 0 })
   })
 
   it('queues overlapping updates instead of fetching twice', async () => {
@@ -219,6 +231,26 @@ describe('messages', () => {
       ['subscriber', 'c1', 'subscriber'],
       ['moderator', 'm1', 'Moderator'],
     ])
+  })
+
+  it('reads the bot chat: usernames, notices, redeems, cheers, /me and removals', () => {
+    const base = { ...comment(0, 0), source: 'bot' as const, user_login: 'someone', display_name: 'Someone' }
+    const msg = toChatMessage({ ...base, message_type: 'action', bot: { bits: 100, reward: { id: 'r', title: 'Hydrate', cost: 500, input: '' } } })
+    expect(msg).toMatchObject({ login: 'someone', source: 'bot', kind: 'message', action: true, bits: 100,
+      reward: { title: 'Hydrate', cost: 500, input: null }, removed: null })
+    const notice = toChatMessage({ ...base, kind: 'notice', bot: { type: 'raid' } })
+    expect([notice.kind, notice.noticeType]).toEqual(['notice', 'raid'])
+    const timedOut = toChatMessage({ ...base, cleared_at: '2026-01-01T00:00:00Z', bot: { removal: { type: 'timeout', duration_s: 600, reason: '' } } })
+    expect(timedOut.removed).toEqual({ type: 'timeout', reason: null, seconds: 600 })
+    expect(toChatMessage({ ...base, deleted_at: '2026-01-01T00:00:00Z' }).removed?.type).toBe('delete')
+  })
+
+  it('knows a replay username only when the display name is plain ASCII', () => {
+    expect(loginOf({ display_name: 'SomeOne_42' })).toBe('someone_42')
+    expect(loginOf({ display_name: '日本語' })).toBeNull()
+    expect(loginOf({ display_name: '日本語', user_login: 'nihongo' })).toBe('nihongo')
+    const msg = toChatMessage(comment(0, 0))
+    expect([msg.source, msg.kind, msg.login, msg.removed]).toEqual(['replay', 'message', 'u0', null])
   })
 
   it('converts a real comment', () => {

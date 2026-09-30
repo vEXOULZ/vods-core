@@ -135,6 +135,28 @@ export interface RawUserBadge {
   version: string
 }
 
+/**
+ * Where a VOD's chat came from: Twitch's replay of the VOD (`replay`), or doomtp-bot's log, recorded live (`bot`).
+ * `auto` (the archive's default) serves the bot's when it has about as many messages as the replay.
+ */
+export type ChatSource = 'replay' | 'bot'
+
+/** The chat messages each source has for a VOD (on a page fetched by offset). */
+export type ChatSources = Record<ChatSource, number>
+
+/** What doomtp-bot's log knew about a message or notice; only the fields the sites use are typed. */
+export interface RawBotEntry {
+  /** A notice's type: `sub`, `resub`, `sub_gift`, `raid`, `redemption`… */
+  type?: string
+  bits?: number | null
+  /** The channel-point reward a message was sent with. */
+  reward?: { id?: string; title?: string; cost?: number; input?: string; status?: string } | null
+  /** What removed the message (the removal's own time is in `at`, epoch ms). */
+  removal?: { type?: string; reason?: string | null; duration_s?: number | null; at?: number } | null
+  reply_parent_id?: string | null
+  [key: string]: unknown
+}
+
 export interface RawComment {
   id: string
   _id?: string
@@ -144,11 +166,26 @@ export interface RawComment {
   message: RawFragment[] | null
   user_badges: RawUserBadge[] | null
   user_color: string | null
+  /** Which chat the row came from (archives before bot chat leave it out: the replay). */
+  source?: ChatSource
+  // The rest only come with the bot's chat.
+  /** `notice`: a sub, gift, raid or redemption, its text in `message`. */
+  kind?: 'message' | 'notice'
+  user_id?: string | null
+  user_login?: string | null
+  /** Twitch's message type, e.g. `action` for /me. */
+  message_type?: string | null
+  /** When a moderator deleted the message, or cleared it (a timeout, ban or chat clear); ISO. */
+  deleted_at?: string | null
+  cleared_at?: string | null
+  bot?: RawBotEntry | null
 }
 
 export interface RawCommentPage {
   comments: RawComment[]
   cursor?: string
+  /** Pages fetched by offset from archives that know bot chat: the messages each source has for the VOD. */
+  sources?: ChatSources
 }
 
 /** Emote sets saved per VOD (`/emotes?vod_id=`); items keep whatever shape the provider had. */
