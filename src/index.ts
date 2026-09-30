@@ -38,7 +38,7 @@ export {
   type LoadEmotesOptions,
   type ModifierEffect,
 } from './chat/emotes'
-export { tokenize, resolveBadges, toChatMessage, type Token, type EmoteToken, type EmoteLayer, type Modifier, type Badge, type ChatMessage } from './chat/message'
+export { tokenize, resolveBadges, toChatMessage, loginOf, type Removal, type Token, type EmoteToken, type EmoteLayer, type Modifier, type Badge, type ChatMessage } from './chat/message'
 export { ChatReplay, type CommentSource, type ReplayOptions, type ReplayUpdate } from './chat/replay'
 
 export { LocalProgressStore, isResumable, type Progress, type ProgressStore, type KeyValueStorage, type LocalProgressOptions } from './progress'

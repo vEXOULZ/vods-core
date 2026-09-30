@@ -1,6 +1,6 @@
 import { onScopeDispose, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
 import type { ArchiveClient } from '../api/client'
-import type { RawBadges, RawComment } from '../api/types'
+import type { ChatSource, ChatSources, RawBadges, RawComment } from '../api/types'
 import { loadEmotes, type EmoteSet } from '../chat/emotes'
 import { toChatMessage, type ChatMessage } from '../chat/message'
 import { ChatReplay, type ReplayOptions } from '../chat/replay'
@@ -15,6 +15,8 @@ export interface UseChatOptions extends ReplayOptions {
   offset?: Ref<number>
   /** Messages kept on screen. */
   max?: number
+  /** Which chat to replay (`auto` or left out: the archive picks). Changing it reloads chat at the current time. */
+  chatSource?: MaybeRefOrGetter<ChatSource | 'auto' | undefined>
 }
 
 /**
@@ -42,16 +44,32 @@ export function useChat(opts: UseChatOptions) {
   const max = opts.max ?? 200
   const emotes = shallowRef<EmoteSet | null>(null)
   const badges = shallowRef<RawBadges | null>(null)
+  /** The messages each chat has for this VOD, once the first page is in (null before, or from older archives). */
+  const sources = shallowRef<ChatSources | null>(null)
+  /** The chat being shown: the one asked for, or the archive's pick once a page says which (null until then). */
+  const served = shallowRef<ChatSource | null>(null)
   let replay: ChatReplay | null = null
   let ctrl: AbortController | undefined
 
-  function start(vodId: string) {
+  const wanted = (): ChatSource | undefined => {
+    const s = toValue(opts.chatSource)
+    return s === 'auto' ? undefined : s
+  }
+
+  /** A fresh replay of `vodId` from the chosen chat; emotes and badges stay. */
+  function restart(vodId: string) {
     replay?.dispose()
-    ctrl?.abort()
-    const mine = (ctrl = new AbortController())
-    replay = new ChatReplay(client, vodId, opts)
+    replay = new ChatReplay(client, vodId, { ...opts, source: wanted() })
+    served.value = wanted() ?? null
     shown = []
     messages.value = []
+  }
+
+  function start(vodId: string) {
+    ctrl?.abort()
+    const mine = (ctrl = new AbortController())
+    sources.value = null
+    restart(vodId)
     emotes.value = null
     badges.value = null
     loadEmotes({ client, vodId, fetch, signal: mine.signal })
@@ -79,14 +97,21 @@ export function useChat(opts: UseChatOptions) {
 
   const clock = () => toValue(opts.time) - (opts.offset?.value ?? 0)
   let busy = false
+  let again = false // a forced tick came while busy: run it after
 
-  async function tick() {
-    if (!replay || !opts.playing.value || busy) return
+  async function tick(force = false) {
+    if (!replay || (!opts.playing.value && !force)) return
+    if (busy) {
+      again ||= force
+      return
+    }
     busy = true
     const r = replay
     try {
       const { reset, comments } = await r.update(clock())
       if (r !== replay) return
+      if (r.sources) sources.value = r.sources
+      if (!served.value) served.value = comments[0]?.source ?? (reset && r.sources && !r.sources.bot ? 'replay' : null)
       if (reset || comments.length) {
         const next = reset ? comments : shown.concat(comments)
         shown = next.length > max ? next.slice(next.length - max) : next
@@ -97,15 +122,24 @@ export function useChat(opts: UseChatOptions) {
       if ((e as Error).name !== 'AbortError') error.value = e as Error
     } finally {
       busy = false
+      if (again) {
+        again = false
+        void tick(true)
+      }
     }
   }
 
   watch(() => toValue(opts.vodId), start, { immediate: true })
-  watch([opts.time, opts.playing, () => opts.offset?.value], tick)
+  // A new chat shows at once, even while paused.
+  watch(wanted, () => {
+    restart(toValue(opts.vodId))
+    void tick(true)
+  })
+  watch([opts.time, opts.playing, () => opts.offset?.value], () => tick())
   onScopeDispose(() => {
     replay?.dispose()
     ctrl?.abort()
   })
 
-  return { messages, error, emotes, badges }
+  return { messages, error, emotes, badges, sources, served }
 }

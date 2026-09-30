@@ -45,7 +45,7 @@ const watch = new WatchPlayer(timeline.value!)            // once the timeline e
 watch.on('time', (t) => (time.value = t))
 watch.on('playing', (p) => (playing.value = p))
 await mountYouTube(el, watch, { start: timeline.value!.resolveStart({ t: parseTimestamp(route.query.t as string) }) })
-const { messages } = useChat({ vodId, time, playing, offset: chatOffset })
+const { messages, sources, served } = useChat({ vodId, time, playing, offset: chatOffset, chatSource })  // chatSource: 'auto' | 'replay' | 'bot'
 const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0, time, playing })
 ```
 
@@ -58,7 +58,7 @@ const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0
 | `time` | `parseTimestamp` (`1h2m3s`, `1:02:03`, seconds), `toHMS`, `toClock`, `toSeconds`. |
 | `timeline` | `Timeline`: VOD time ↔ YouTube part + offset, restricted (cut) chapters, the start delay, chapter at a time, part spans, `?t=` / `?part=` resolution. |
 | `player` | `WatchPlayer`: drives the YouTube IFrame player across parts: seeks, auto-advance, part errors (`missing` / `blocked` / `processing`), VOD-time ticks, playback speed. `mountYouTube` wires the real player. |
-| `chat` | `ChatReplay` (paged, prefetching, seek-aware), `loadEmotes` (the channel and global sets the archive saved for the VOD, with today's 7TV globals only for rows saved before globals were kept; for VODs without saved sets, the channel's current sets, which the archive caches), `tokenize` / `resolveBadges` / `toChatMessage` (render-ready tokens, never HTML; zero-width emotes come as overlays of the emote they cover, BTTV / FFZ modifiers as effects on the emote they apply to). |
+| `chat` | `ChatReplay` (paged, prefetching, seek-aware), `loadEmotes` (the channel and global sets the archive saved for the VOD, with today's 7TV globals only for rows saved before globals were kept; for VODs without saved sets, the channel's current sets, which the archive caches), `tokenize` / `resolveBadges` / `toChatMessage` (render-ready tokens, never HTML; zero-width emotes come as overlays of the emote they cover, BTTV / FFZ modifiers as effects on the emote they apply to). Chat has two sources: Twitch's replay of the VOD (`replay`) and doomtp-bot's live log (`bot`, with notices, redeems, cheers and removed messages, all on `ChatMessage`); `ChatReplay`'s `source` option picks one, and `sources` has how many messages each has. `loginOf` gives a username (the bot's, or a plain-ASCII display name in lower case). |
 | `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface. `AccountProgressStore` keeps it with the viewer's vexoulz account instead (see below). |
 | `vue` | `createVods`, `useVods`, `useWatch`, `useChat`, `useProgress`. Import from `@vexoulz/vods-core/vue`. |
 

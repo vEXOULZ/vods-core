@@ -1,6 +1,6 @@
 // Chat messages → render-ready tokens. No HTML is produced here: sites render the tokens with their own components,
 // so message text can never be injected as markup.
-import type { RawBadges, RawComment, RawFragment, RawUserBadge } from '../api/types'
+import type { ChatSource, RawBadges, RawComment, RawFragment, RawUserBadge } from '../api/types'
 import { emoteImage, modifierOf, type Emote, type EmoteImage, type EmoteSet, type ModifierEffect } from './emotes'
 
 /**
@@ -40,15 +40,58 @@ export interface Badge {
   large: string
 }
 
+/** A moderator's removal of a message (only in the bot's chat, and only when the archive reads it with a key). */
+export interface Removal {
+  /** `delete` (just this message), `timeout`, `ban`, `user_clear` or `chat_clear`. */
+  type: string
+  reason: string | null
+  /** A timeout's length. */
+  seconds: number | null
+}
+
 export interface ChatMessage {
   id: string
   /** VOD seconds. */
   at: number
+  /** The display name. */
   user: string
+  /**
+   * The username (login). The bot's chat has it; for the replay it is the display name in lower case when that is
+   * plain ASCII (Twitch only lets the two differ in case then), otherwise unknown (null).
+   */
+  login: string | null
   /** The user's chosen colour, or null (sites pick a default, e.g. vexoulz-ui's twitchColor). */
   color: string | null
   badges: Badge[]
   tokens: Token[]
+  source: ChatSource
+  /** `notice`: a sub, gift, raid or redemption, with its text in `tokens` and its type in `noticeType`. */
+  kind: 'message' | 'notice'
+  noticeType: string | null
+  /** A /me message. */
+  action: boolean
+  bits: number | null
+  /** The channel-point reward the message was sent with. */
+  reward: { title: string; cost: number | null; input: string | null } | null
+  removed: Removal | null
+}
+
+const PLAIN_NAME = /^[A-Za-z0-9_]+$/
+
+/** The username for a comment: the bot's, or derived from a plain-ASCII display name. */
+export function loginOf(c: Pick<RawComment, 'display_name' | 'user_login'>): string | null {
+  if (c.user_login) return c.user_login
+  return c.display_name && PLAIN_NAME.test(c.display_name) ? c.display_name.toLowerCase() : null
+}
+
+function removalOf(c: RawComment): Removal | null {
+  if (!c.deleted_at && !c.cleared_at) return null
+  const r = c.bot?.removal
+  return {
+    type: r?.type ?? (c.deleted_at ? 'delete' : 'user_clear'),
+    reason: r?.reason || null,
+    seconds: r?.duration_s ?? null,
+  }
 }
 
 /** Fragments as words, the gaps between them (original whitespace kept) and emotes. */
@@ -194,8 +237,18 @@ export function toChatMessage(c: RawComment, emotes?: EmoteSet | null, badges?: 
     id: c.id,
     at: c.content_offset_seconds,
     user: c.display_name,
+    login: loginOf(c),
     color: c.user_color || null,
     badges: resolveBadges(c.user_badges, badges),
     tokens: tokenize(c.message, emotes),
+    source: c.source ?? 'replay',
+    kind: c.kind === 'notice' ? 'notice' : 'message',
+    noticeType: c.kind === 'notice' ? (c.bot?.type ?? null) : null,
+    action: c.message_type === 'action',
+    bits: c.bot?.bits || null,
+    reward: c.bot?.reward?.title
+      ? { title: c.bot.reward.title, cost: c.bot.reward.cost ?? null, input: c.bot.reward.input || null }
+      : null,
+    removed: removalOf(c),
   }
 }

@@ -88,6 +88,34 @@ describe('vue composables', () => {
     expect(chat.messages.value.map((m) => m.id)).toEqual(['c0', 'c1', 'c2'])
   })
 
+  it('useChat replays the chosen chat, reloading it when the choice changes, even while paused', async () => {
+    const urls: string[] = []
+    const row = (source: string) => ({ id: source, vod_id: 'v', display_name: 'u', content_offset_seconds: 0, message: [{ text: 'hi' }], user_badges: null, user_color: null, source })
+    const { run } = setup(async (url) => {
+      if (url.includes('/comments')) {
+        urls.push(url)
+        const source = url.includes('source=replay') ? 'replay' : 'bot'
+        return json({ comments: [row(source)], sources: { replay: 3, bot: 3 } })
+      }
+      if (url.includes('/emotes?')) return json({ total: 0, limit: 1, skip: 0, data: [] })
+      return json({}, 404)
+    })
+    const time = ref(0)
+    const playing = ref(true)
+    const chatSource = ref<'auto' | 'replay' | 'bot'>('auto')
+    const chat = run(() => useChat({ vodId: 'v', time, playing, chatSource }))
+    time.value = 1
+    await flush()
+    expect(urls.at(-1)).not.toContain('source=')
+    expect([chat.served.value, chat.sources.value]).toEqual(['bot', { replay: 3, bot: 3 }])
+    playing.value = false
+    chatSource.value = 'replay'
+    await flush()
+    expect(urls.at(-1)).toContain('source=replay')
+    expect(chat.messages.value.map((m) => m.id)).toEqual(['replay'])
+    expect(chat.served.value).toBe('replay')
+  })
+
   it('useChat renders messages again once emotes arrive after them', async () => {
     const page = { comments: [{ id: 'c0', vod_id: 'v', display_name: 'u', content_offset_seconds: 0, message: [{ text: 'SHEESH' }], user_badges: null, user_color: null }] }
     let releaseEmotes!: () => void
