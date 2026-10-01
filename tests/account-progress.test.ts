@@ -76,11 +76,11 @@ describe('AccountProgressStore', () => {
     expect(await store.list(1)).toHaveLength(1)
   })
 
-  it('drops finished and restarted VODs', async () => {
+  it('keeps finished VODs and drops restarted ones', async () => {
     const { service, store } = setup()
     await store.set({ vodId: 'a', t: 100, duration: 1000 })
     await store.set({ vodId: 'a', t: 980, duration: 1000 })
-    expect(service.entries.has('a')).toBe(false)
+    expect(service.entries.get('a')).toMatchObject({ t: 980, duration: 1000 })
     await store.set({ vodId: 'b', t: 100, duration: 1000 })
     await store.set({ vodId: 'b', t: 5, duration: 1000 })
     expect(service.entries.has('b')).toBe(false)

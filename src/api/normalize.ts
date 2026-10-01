@@ -81,7 +81,19 @@ export function normalizeSynthetic(raw: RawSynthetic): Synthetic {
     stream = s.stream != null && Number.isFinite(Number(s.stream)) ? Number(s.stream) : i && sorted[i - 1]!.vodId === s.vodId ? stream : stream + 1
     return { vodId: s.vodId, start: s.start, end: s.end, at: s.at, label: s.label ?? null, stream }
   })
-  return { supersedes: !!raw.supersedes, segments }
+  return {
+    supersedes: !!raw.supersedes,
+    segments,
+    madeAt: date(raw.madeAt),
+    changedAt: date(raw.changedAt),
+    firstLiveAt: date(raw.firstLiveAt),
+    lastLiveAt: date(raw.lastLiveAt),
+  }
+}
+
+function date(iso: string | null | undefined): Date | null {
+  const d = iso ? new Date(iso) : null
+  return d && !Number.isNaN(d.getTime()) ? d : null
 }
 
 export function normalizeGamePlayed(g: RawGamePlayed): GamePlayed {

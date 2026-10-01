@@ -13,7 +13,7 @@ const source = (id: string, duration: number, parts: number[], chapters: Partial
 }
 const synthetic = (segments: Segment[], chapters: Partial<Chapter>[] = []): Vod => {
   const end = Math.max(...segments.map((s) => s.at + s.end - s.start))
-  return { ...makeVod({ duration: end, parts: [], chapters }), id: 'syn', synthetic: { supersedes: true, segments } }
+  return { ...makeVod({ duration: end, parts: [], chapters }), id: 'syn', synthetic: { supersedes: true, segments, madeAt: null, changedAt: null, firstLiveAt: null, lastLiveAt: null } }
 }
 
 // A (2 h, two 1 h parts) and B (1 h) are one broadcast with 300 s missing between them.
@@ -139,13 +139,23 @@ describe('normalize and redirects', () => {
     const raw = {
       id: 'a+b', title: 't', duration: '03:05:00', chapters: [], youtube: [], drive: [], createdAt: '2026-01-01T00:00:00Z',
       tags: ['compilation'],
-      synthetic: { supersedes: false, segments: [{ vodId: 'b', start: 0, end: 10, at: 50 }, { vodId: 'a', start: 5, end: 55, at: 0, label: 'x' }] },
+      synthetic: {
+        supersedes: false,
+        segments: [{ vodId: 'b', start: 0, end: 10, at: 50 }, { vodId: 'a', start: 5, end: 55, at: 0, label: 'x' }],
+        madeAt: '2026-02-01T10:00:00.000Z',
+        changedAt: '2026-03-01T10:00:00.000Z',
+        firstLiveAt: '2026-01-01T00:00:05.000Z',
+        lastLiveAt: 'not a date',
+      },
     } as RawVod
     const vod = normalizeVod(raw)
     expect(vod.tags).toEqual(['compilation'])
     expect(vod.synthetic?.segments.map((s) => s.vodId)).toEqual(['a', 'b'])
     expect(sourceIds(vod)).toEqual(['a', 'b'])
     expect(vod.synthetic?.segments.map((s) => s.stream)).toEqual([0, 1])
+    expect(vod.synthetic?.changedAt?.toISOString()).toBe('2026-03-01T10:00:00.000Z')
+    expect(vod.synthetic?.firstLiveAt?.getTime()).toBe(Date.UTC(2026, 0, 1, 0, 0, 5))
+    expect(vod.synthetic?.lastLiveAt).toBeNull()
     const plain = normalizeVod({ ...raw, tags: undefined, synthetic: null, appears_in: [{ id: 'p', title: null }] })
     expect([plain.tags, plain.synthetic, plain.supersededBy, plain.appearsIn]).toEqual([[], null, null, [{ id: 'p', title: '', tags: [] }]])
   })

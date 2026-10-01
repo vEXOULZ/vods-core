@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { WatchPlayer, YT_STATE, type PlayerLike } from '../src/player'
-import { isResumable, LocalProgressStore, type KeyValueStorage } from '../src/progress'
+import { isResumable, LocalProgressStore, resumeAt, type KeyValueStorage } from '../src/progress'
 import { Timeline } from '../src/timeline'
 import { fixtureVod } from './helpers'
 
@@ -116,11 +116,11 @@ describe('LocalProgressStore', () => {
     expect(await store.get('a')).toBeNull()
   })
 
-  it('forgets finished VODs and restarts', async () => {
+  it('keeps finished VODs and forgets restarts', async () => {
     const store = new LocalProgressStore({ storage: memoryStorage() })
     await store.set({ vodId: 'a', t: 500, duration: 1000 })
     await store.set({ vodId: 'a', t: 990, duration: 1000 })
-    expect(await store.get('a')).toBeNull()
+    expect(await store.get('a')).toMatchObject({ t: 990, duration: 1000 })
     await store.set({ vodId: 'b', t: 500, duration: 1000 })
     await store.set({ vodId: 'b', t: 5, duration: 1000 })
     expect(await store.get('b')).toBeNull()
@@ -150,5 +150,19 @@ describe('LocalProgressStore', () => {
     expect(isResumable({ vodId: 'a', t: 10, duration: 1000, updatedAt: 0 })).toBe(false)
     expect(isResumable({ vodId: 'a', t: 500, duration: 1000, updatedAt: 0 })).toBe(true)
     expect(isResumable({ vodId: 'a', t: 980, duration: 1000, updatedAt: 0 })).toBe(false)
+  })
+
+  it('resumes a finished VOD that grew where the new part starts', () => {
+    const finished = { vodId: 'p', t: 990, duration: 1000, updatedAt: 0 }
+    expect(resumeAt(finished)).toBeNull()
+    expect(resumeAt(finished, { duration: 1000 })).toBeNull()
+    expect(resumeAt(finished, { duration: 1040 })).toBeNull() // only a few seconds more: still finished
+    expect(resumeAt(finished, { duration: 4600 })).toBe(1000)
+    expect(isResumable(finished, { duration: 4600 })).toBe(true)
+    // Mid-way: the saved position, whatever was added after it.
+    const midway = { vodId: 'p', t: 500, duration: 1000, updatedAt: 0 }
+    expect(resumeAt(midway, { duration: 4600 })).toBe(500)
+    // The VOD got shorter than where they were: nothing to resume.
+    expect(resumeAt(midway, { duration: 520 })).toBeNull()
   })
 })

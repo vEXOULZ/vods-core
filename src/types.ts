@@ -90,6 +90,12 @@ export interface Synthetic {
   /** A merge or split (its sources redirect to it), not a playthrough. */
   supersedes: boolean
   segments: Segment[]
+  /** When it was made, and when what it plays last changed (segments added or moved, a source grew). */
+  madeAt: Date | null
+  changedAt: Date | null
+  /** When the earliest and the latest footage it plays were live. */
+  firstLiveAt: Date | null
+  lastLiveAt: Date | null
 }
 
 export interface SupersededBy {

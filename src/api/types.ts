@@ -97,6 +97,11 @@ export interface RawSynthetic {
   /** A merge or split: its sources are left out of lists and their links lead here. */
   supersedes: boolean
   segments: RawSegment[]
+  /** ISO times; missing on archives from before they were added. */
+  madeAt?: string | null
+  changedAt?: string | null
+  firstLiveAt?: string | null
+  lastLiveAt?: string | null
 }
 
 export interface RawSupersededBy {

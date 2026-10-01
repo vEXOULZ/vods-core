@@ -1,9 +1,10 @@
 import { onScopeDispose, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
-import { isResumable, type Progress } from '../progress'
+import { resumeAt, type Progress } from '../progress'
 import { useVodsContext } from './context'
 
 /**
- * Loads where the viewer left off (`resume`, null when there's nothing worth resuming) and saves the position
+ * Loads where the viewer left off (`resume`, null when there's nothing worth resuming; its `t` is where to pick
+ * up, which on a VOD that grew since they finished it is where the new part starts) and saves the position
  * every `everyMs` while playing, on pause, and when the page goes away.
  */
 export function useProgress(opts: {
@@ -23,7 +24,8 @@ export function useProgress(opts: {
     async (id) => {
       resume.value = null
       const p = await progress.get(id)
-      if (id === toValue(opts.vodId)) resume.value = p && isResumable(p) ? p : null
+      const at = p && resumeAt(p, { duration: toValue(opts.duration) })
+      if (id === toValue(opts.vodId)) resume.value = p && at != null ? { ...p, t: at } : null
     },
     { immediate: true },
   )
