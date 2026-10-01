@@ -60,6 +60,12 @@ export function resumeAt(p: Progress, opts: ResumeOptions = {}): number | null {
   return at >= (opts.minT ?? 30) && at < duration - (opts.endMargin ?? 60) ? at : null
 }
 
+/** `p` with `t` moved to where to pick up (see resumeAt), or null when there's nothing worth resuming. */
+export function resumeProgress(p: Progress | null | undefined, duration?: number): Progress | null {
+  const t = p ? resumeAt(p, { duration }) : null
+  return p && t != null ? { ...p, t } : null
+}
+
 /** True for a position worth offering "resume" for (see resumeAt). */
 export function isResumable(p: Progress, opts: ResumeOptions = {}): boolean {
   return resumeAt(p, opts) !== null

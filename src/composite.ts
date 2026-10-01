@@ -10,6 +10,7 @@
 
 import {
   chapterAt,
+  cutAt,
   pickUploadType,
   restrictedSpans,
   Timeline,
@@ -69,6 +70,8 @@ export interface SegmentPosition {
 }
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x))
+/** Synthetic time where a segment ends. */
+const segEnd = (s: Segment) => s.at + s.end - s.start
 
 /** The source VOD ids of a synthetic VOD, in order, once each. */
 export function sourceIds(vod: Pick<Vod, 'synthetic'>): string[] {
@@ -77,9 +80,7 @@ export function sourceIds(vod: Pick<Vod, 'synthetic'>): string[] {
 
 /** The upload set a synthetic VOD plays: the one asked for, else "live" when any source has live uploads. */
 export function pickSyntheticUploadType(sources: Iterable<Vod>, requested?: UploadType | null): UploadType {
-  if (requested) return requested
-  for (const s of sources) if (s.uploads.some((u) => u.type === 'live')) return 'live'
-  return 'vod'
+  return pickUploadType({ uploads: [...sources].flatMap((s) => s.uploads) }, requested)
 }
 
 /** A source's uploads of `type`, else its own pick: a playthrough shouldn't stop at a VOD with only the other kind. */
@@ -113,7 +114,7 @@ export class SegmentTimeline implements PlayableTimeline {
     this.segments.forEach((seg, si) => {
       const tl = this.sources.get(seg.vodId)
       if (!tl) return
-      const span = { start: seg.at, end: seg.at + seg.end - seg.start }
+      const span = { start: seg.at, end: segEnd(seg) }
       tl.partSpans().forEach((p, i) => {
         const a = Math.max(p.start, seg.start)
         const b = Math.min(p.end, seg.end)
@@ -142,7 +143,7 @@ export class SegmentTimeline implements PlayableTimeline {
   }
 
   cutAt(t: number): Span | null {
-    return this.cuts.find((s) => t >= s.start && t < s.end) ?? null
+    return cutAt(this.cuts, t)
   }
 
   chapterAt(t: number): Chapter | null {
@@ -152,10 +153,15 @@ export class SegmentTimeline implements PlayableTimeline {
   /** The segment playing at `t`, else the last one that started before it (its time held at its end), else the first. */
   segmentAt(t: number): SegmentPosition | null {
     if (!this.segments.length) return null
-    let index = 0
-    this.segments.forEach((s, i) => {
-      if (s.at <= t) index = i
-    })
+    // Segments are sorted by `at`: the last one at or before `t`.
+    let lo = 0
+    let hi = this.segments.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1
+      if (this.segments[mid]!.at <= t) lo = mid
+      else hi = mid - 1
+    }
+    const index = lo
     const segment = this.segments[index]!
     return { index, segment, sourceTime: clamp(segment.start + t - segment.at, segment.start, segment.end) }
   }
@@ -224,16 +230,11 @@ export class SegmentTimeline implements PlayableTimeline {
     return c.to >= this.timelineOf(c).lengths[c.upload]! - MIN_CLIP ? null : c.to
   }
 
-  /** Synthetic-time span of each segment (for marking where one stream ends and the next starts). */
-  segmentSpans(): Span[] {
-    return this.segments.map((s) => ({ start: s.at, end: s.at + s.end - s.start }))
-  }
-
   /** Each stream (by `Segment.stream`, in order): its number, first segment and synthetic-time span. */
   streams(): StreamSpan[] {
     const out: StreamSpan[] = []
     this.segments.forEach((s, i) => {
-      const end = s.at + s.end - s.start
+      const end = segEnd(s)
       const last = out[out.length - 1]
       if (last && last.stream === s.stream) last.end = Math.max(last.end, end)
       else out.push({ stream: s.stream, segment: i, vodId: s.vodId, start: s.at, end })
@@ -246,18 +247,22 @@ export class SegmentTimeline implements PlayableTimeline {
    * is a video, as for a plain VOD: a jump to later in the same video stays in the same part.
    */
   clipInStream(index: number): { stream: number; part: number } | null {
-    const c = this.clips[index]
-    if (!c) return null
-    const stream = this.segments[c.segment]!.stream
-    const video = (k: number) => `${this.segments[this.clips[k]!.segment]!.vodId}:${this.clips[k]!.upload}`
-    let part = -1
-    let last = ''
-    for (let k = 0; k <= index; k++) {
-      if (this.segments[this.clips[k]!.segment]!.stream !== stream) continue
-      if (video(k) !== last) part++
-      last = video(k)
-    }
-    return { stream, part }
+    return this.clipStreams()[index] ?? null
+  }
+
+  private streamParts?: { stream: number; part: number }[]
+
+  /** `clipInStream` for every clip, worked out once. */
+  private clipStreams(): { stream: number; part: number }[] {
+    if (this.streamParts) return this.streamParts
+    const parts = new Map<number, { count: number; video: string }>()
+    return (this.streamParts = this.clips.map((c) => {
+      const seg = this.segments[c.segment]!
+      const video = `${seg.vodId}:${c.upload}`
+      const p = parts.get(seg.stream) ?? { count: -1, video: '' }
+      if (p.video !== video) parts.set(seg.stream, { count: p.count + 1, video })
+      return { stream: seg.stream, part: parts.get(seg.stream)!.count }
+    }))
   }
 
   /** Each place a stream jumps within its VOD (a stretch left out, or a replay), in order. */
@@ -270,6 +275,11 @@ export class SegmentTimeline implements PlayableTimeline {
     })
     return out
   }
+}
+
+/** Where a VOD that was merged away or superseded plays `t` now; null when it plays as itself. */
+export function redirectTarget(vod: Pick<Vod, 'mergedInto' | 'supersededBy'>, t: number): { id: string; t: number } | null {
+  return vod.mergedInto ? { id: vod.mergedInto.id, t: vod.mergedInto.offset + t } : supersededTarget(vod, t)
 }
 
 /**

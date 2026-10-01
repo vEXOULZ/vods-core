@@ -1,5 +1,5 @@
 import { onScopeDispose, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
-import { resumeAt, type Progress } from '../progress'
+import { resumeProgress, type Progress } from '../progress'
 import { useVodsContext } from './context'
 
 /**
@@ -24,8 +24,7 @@ export function useProgress(opts: {
     async (id) => {
       resume.value = null
       const p = await progress.get(id)
-      const at = p && resumeAt(p, { duration: toValue(opts.duration) })
-      if (id === toValue(opts.vodId)) resume.value = p && at != null ? { ...p, t: at } : null
+      if (id === toValue(opts.vodId)) resume.value = resumeProgress(p, toValue(opts.duration))
     },
     { immediate: true },
   )

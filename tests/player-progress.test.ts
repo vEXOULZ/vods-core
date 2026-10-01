@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { WatchPlayer, YT_STATE, type PlayerLike } from '../src/player'
-import { isResumable, LocalProgressStore, resumeAt, type KeyValueStorage } from '../src/progress'
+import { isResumable, LocalProgressStore, resumeAt, resumeProgress, type KeyValueStorage } from '../src/progress'
 import { Timeline } from '../src/timeline'
 import { fixtureVod } from './helpers'
 
@@ -158,6 +158,9 @@ describe('LocalProgressStore', () => {
     expect(resumeAt(finished, { duration: 1000 })).toBeNull()
     expect(resumeAt(finished, { duration: 1040 })).toBeNull() // only a few seconds more: still finished
     expect(resumeAt(finished, { duration: 4600 })).toBe(1000)
+    expect(resumeProgress(finished, 4600)).toEqual({ ...finished, t: 1000 })
+    expect(resumeProgress(finished)).toBeNull()
+    expect(resumeProgress(null, 4600)).toBeNull()
     expect(isResumable(finished, { duration: 4600 })).toBe(true)
     // Mid-way: the saved position, whatever was added after it.
     const midway = { vodId: 'p', t: 500, duration: 1000, updatedAt: 0 }

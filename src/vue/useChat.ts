@@ -1,4 +1,4 @@
-import { onScopeDispose, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
+import { computed, onScopeDispose, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
 import type { ArchiveClient } from '../api/client'
 import type { ChatSource, ChatSources, RawBadges, RawComment } from '../api/types'
 import { loadEmotes, type EmoteSet } from '../chat/emotes'
@@ -148,11 +148,13 @@ export function useChat(opts: UseChatOptions) {
     }
   }
 
+  /** Whose chat is showing: the VOD's own, or on a synthetic VOD the source of the segment playing. */
+  const vodId = computed(() => target().vodId)
   // On a synthetic VOD this changes as playback crosses into a segment of another VOD.
-  watch(() => target().vodId, start, { immediate: true })
+  watch(vodId, start, { immediate: true })
   // A new chat shows at once, even while paused.
   watch(wanted, () => {
-    restart(target().vodId)
+    restart(vodId.value)
     void tick(true)
   })
   watch([opts.time, opts.playing, () => opts.offset?.value], () => tick())
@@ -161,5 +163,5 @@ export function useChat(opts: UseChatOptions) {
     ctrl?.abort()
   })
 
-  return { messages, error, emotes, badges, sources, served }
+  return { messages, error, emotes, badges, sources, served, vodId }
 }

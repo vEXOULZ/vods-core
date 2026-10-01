@@ -32,7 +32,7 @@ export interface TimelineOptions {
 }
 
 /** Which upload set to watch: the one asked for, else "live" when the VOD has live uploads, else "vod" (the old site's rule). */
-export function pickUploadType(vod: Vod, requested?: UploadType | null): UploadType {
+export function pickUploadType(vod: Pick<Vod, 'uploads'>, requested?: UploadType | null): UploadType {
   if (requested) return requested
   return vod.uploads.some((u) => u.type === 'live') ? 'live' : 'vod'
 }
@@ -72,6 +72,11 @@ export function chapterAt(chapters: readonly Chapter[], t: number): Chapter | nu
     if (t < c.end) return c
   }
   return found
+}
+
+/** The cut containing `t` (start inclusive, end exclusive), if any. */
+export function cutAt(cuts: readonly Span[], t: number): Span | null {
+  return cuts.find((s) => t >= s.start && t < s.end) ?? null
 }
 
 /** Restricted chapters as sorted, merged spans. */
@@ -130,7 +135,7 @@ export class Timeline implements PlayableTimeline {
 
   /** The cut containing `t` (start inclusive, end exclusive), if any. */
   cutAt(t: number): Span | null {
-    return this.cuts.find((s) => t >= s.start && t < s.end) ?? null
+    return cutAt(this.cuts, t)
   }
 
   /** The chapter playing at `t`: the one containing it, else the last one that started before it. */

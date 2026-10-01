@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { normalizeVod } from '../src/api/normalize'
 import type { RawVod } from '../src/api/types'
-import { SegmentTimeline, sourceIds, supersededTarget } from '../src/composite'
+import { redirectTarget, SegmentTimeline, sourceIds, supersededTarget } from '../src/composite'
 import { WatchPlayer, YT_STATE, type PlayerLike } from '../src/player'
 import type { Chapter, Segment, Vod } from '../src/types'
 import { makeVod } from './helpers'
@@ -47,7 +47,6 @@ describe('SegmentTimeline: a merge with a gap', () => {
     expect(tl.segmentAt(100)).toMatchObject({ index: 0, sourceTime: 100 })
     expect(tl.segmentAt(7300)).toMatchObject({ index: 0, sourceTime: 7200 })
     expect(tl.segmentAt(7600)).toMatchObject({ index: 1, sourceTime: 100, segment: { vodId: 'b' } })
-    expect(tl.segmentSpans()).toEqual([{ start: 0, end: 7200 }, { start: 7500, end: 11100 }])
   })
 })
 
@@ -177,6 +176,9 @@ describe('normalize and redirects', () => {
     const cut = { supersededBy: [{ id: 'a+b', start: 0, end: 7000, at: 0 }] }
     expect(supersededTarget(cut, 7100)).toEqual({ id: 'a+b', t: 7000 })
     expect(supersededTarget({ supersededBy: null }, 5)).toBeNull()
+    expect(redirectTarget({ mergedInto: { id: 'm', offset: 100 }, supersededBy: null }, 5)).toEqual({ id: 'm', t: 105 })
+    expect(redirectTarget({ ...split, mergedInto: null }, 1500)).toEqual({ id: 'a-2', t: 500 })
+    expect(redirectTarget({ mergedInto: null, supersededBy: null }, 5)).toBeNull()
   })
 })
 

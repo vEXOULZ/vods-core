@@ -13,12 +13,14 @@ Synthetic VODs: merges, splits and playthroughs made of windows of other VODs.
   its stream (for "S1-P2" labels), and `jumps()` lists where a stream skips ahead (or back) within its VOD.
 - `useWatch` loads a synthetic VOD's sources too (`sources`, `segments`); its `timeline` is a `PlayableTimeline`.
 - `useChat({ segments })` replays each segment's source chat, limited to the segment's window, and loads that
-  source's emotes.
-- `supersededTarget(vod, t)`: where a moment of a merged or split VOD plays now.
+  source's emotes. It returns `vodId`: whose chat is showing.
+- `supersededTarget(vod, t)`: where a moment of a merged or split VOD plays now; `redirectTarget(vod, t)` also
+  covers `mergedInto`. `pickUploadType` takes anything with `uploads`.
 - `vodListQuery({ tag })`: lists leave tagged VODs out unless asked (`compilation`, or `*` for all).
 - `Synthetic` gains `madeAt`, `changedAt` (when what it plays last changed), `firstLiveAt` and `lastLiveAt`.
 - Progress: finished entries are kept instead of removed (only a restart near 0 removes one), so a synthetic VOD
   that grows after someone finished it can resume where the new part starts. `resumeAt(p, { duration })` gives
-  that position (the saved one, or the old end of a finished entry when the VOD is now longer); `isResumable`
+  that position (the saved one, or the old end of a finished entry when the VOD is now longer), and
+  `resumeProgress(p, duration)` the entry with `t` moved there; `isResumable`
   takes the same `duration`, and `useProgress`'s `resume.t` is that position. `isFinished(p)` is exported, and the
   stores' `endMargin` option is deprecated (unused).
