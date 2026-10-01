@@ -49,6 +49,6 @@
     "vue": "^3.5.26"
   },
   "dependencies": {
-    "@vexoulz/platform-web": "github:vEXOULZ/vex-platform-web#v0.1.0"
+    "@vexoulz/platform-web": "github:vEXOULZ/vex-platform-web#v0.1.1"
   }
 }
