@@ -6,7 +6,7 @@ export default defineConfig({
       entry: { index: 'src/index.ts', vue: 'src/vue/index.ts' },
       formats: ['es'],
     },
-    rollupOptions: { external: ['vue'] },
+    rollupOptions: { external: ['vue', /^@vexoulz\/platform-web/] },
     sourcemap: true,
   },
   test: {
