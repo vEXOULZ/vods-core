@@ -71,13 +71,17 @@ export function normalizeVod(raw: RawVod): Vod {
 }
 
 export function normalizeSynthetic(raw: RawSynthetic): Synthetic {
-  return {
-    supersedes: !!raw.supersedes,
-    segments: (raw.segments ?? [])
-      .map((s) => ({ vodId: s.vodId, start: Number(s.start) || 0, end: Number(s.end) || 0, at: Number(s.at) || 0, label: s.label ?? null }))
-      .filter((s) => s.end > s.start)
-      .sort((a, b) => a.at - b.at),
-  }
+  const sorted = (raw.segments ?? [])
+    .map((s) => ({ ...s, start: Number(s.start) || 0, end: Number(s.end) || 0, at: Number(s.at) || 0 }))
+    .filter((s) => s.end > s.start)
+    .sort((a, b) => a.at - b.at)
+  // Without the archive's numbering, a new stream starts where the source VOD changes.
+  let stream = -1
+  const segments = sorted.map((s, i) => {
+    stream = s.stream != null && Number.isFinite(Number(s.stream)) ? Number(s.stream) : i && sorted[i - 1]!.vodId === s.vodId ? stream : stream + 1
+    return { vodId: s.vodId, start: s.start, end: s.end, at: s.at, label: s.label ?? null, stream }
+  })
+  return { supersedes: !!raw.supersedes, segments }
 }
 
 export function normalizeGamePlayed(g: RawGamePlayed): GamePlayed {

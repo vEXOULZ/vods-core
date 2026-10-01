@@ -38,6 +38,18 @@ export interface Clip {
   end: number
 }
 
+export interface StreamSpan {
+  /** `Segment.stream`. */
+  stream: number
+  /** Index of its first segment. */
+  segment: number
+  /** That segment's source VOD. */
+  vodId: string
+  /** Synthetic seconds, from its first segment's start to its last one's end. */
+  start: number
+  end: number
+}
+
 export interface SegmentPosition {
   /** Index into `segments`. */
   index: number
@@ -205,6 +217,28 @@ export class SegmentTimeline implements PlayableTimeline {
   /** Synthetic-time span of each segment (for marking where one stream ends and the next starts). */
   segmentSpans(): Span[] {
     return this.segments.map((s) => ({ start: s.at, end: s.at + s.end - s.start }))
+  }
+
+  /** Each stream (by `Segment.stream`, in order): its number, first segment and synthetic-time span. */
+  streams(): StreamSpan[] {
+    const out: StreamSpan[] = []
+    this.segments.forEach((s, i) => {
+      const end = s.at + s.end - s.start
+      const last = out[out.length - 1]
+      if (last && last.stream === s.stream) last.end = Math.max(last.end, end)
+      else out.push({ stream: s.stream, segment: i, vodId: s.vodId, start: s.at, end })
+    })
+    return out
+  }
+
+  /** The stream of clip `index` and which of that stream's clips it is (both 0-based), for "S1-P2" labels. */
+  clipInStream(index: number): { stream: number; part: number } | null {
+    const c = this.clips[index]
+    if (!c) return null
+    const stream = this.segments[c.segment]!.stream
+    let part = 0
+    for (let k = 0; k < index; k++) if (this.segments[this.clips[k]!.segment]!.stream === stream) part++
+    return { stream, part }
   }
 }
 

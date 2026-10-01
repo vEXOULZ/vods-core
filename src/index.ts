@@ -9,7 +9,7 @@ export { toQueryString, vodListQuery, type QueryObject, type QueryValue, type Vo
 export type * from './api/types'
 
 export { Timeline, pickUploadType, restrictedSpans, chapterAt, type PlayableTimeline, type Position, type Span, type TimelineOptions } from './timeline'
-export { SegmentTimeline, pickSyntheticUploadType, sourceIds, supersededTarget, type Clip, type SegmentPosition } from './composite'
+export { SegmentTimeline, pickSyntheticUploadType, sourceIds, supersededTarget, type Clip, type SegmentPosition, type StreamSpan } from './composite'
 export {
   WatchPlayer,
   mountYouTube,

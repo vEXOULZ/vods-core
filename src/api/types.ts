@@ -89,6 +89,8 @@ export interface RawSegment {
   end: number
   at: number
   label?: string | null
+  /** Which stream of a playthrough this is (0-based). Left out, a new stream starts where the source VOD changes. */
+  stream?: number | null
 }
 
 export interface RawSynthetic {

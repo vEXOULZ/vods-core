@@ -6,7 +6,7 @@ import { WatchPlayer, YT_STATE, type PlayerLike } from '../src/player'
 import type { Chapter, Segment, Vod } from '../src/types'
 import { makeVod } from './helpers'
 
-const seg = (vodId: string, start: number, end: number, at: number): Segment => ({ vodId, start, end, at, label: null })
+const seg = (vodId: string, start: number, end: number, at: number, stream = 0): Segment => ({ vodId, start, end, at, label: null, stream })
 const source = (id: string, duration: number, parts: number[], chapters: Partial<Chapter>[] = []): Vod => {
   const v = makeVod({ duration, parts, chapters })
   return { ...v, id, uploads: v.uploads.map((u) => ({ ...u, id: `${id}-yt${u.part}` })) }
@@ -106,6 +106,29 @@ describe('SegmentTimeline: splits and playthroughs cut inside videos', () => {
   })
 })
 
+describe('SegmentTimeline: streams', () => {
+  // A playthrough: two windows of A (a chapter cut out between them), then B.
+  const tl = new SegmentTimeline(synthetic([seg('a', 3000, 4000, 0, 0), seg('a', 5000, 5500, 1000, 0), seg('b', 0, 600, 1500, 1)]), [A, B])
+
+  it('groups segments into streams', () => {
+    expect(tl.streams()).toEqual([
+      { stream: 0, segment: 0, vodId: 'a', start: 0, end: 1500 },
+      { stream: 1, segment: 2, vodId: 'b', start: 1500, end: 2100 },
+    ])
+  })
+
+  it('numbers clips within their stream', () => {
+    // A's first window crosses its part boundary at 3600: two clips, then one for the second window.
+    expect(tl.clips.map((_, i) => tl.clipInStream(i))).toEqual([
+      { stream: 0, part: 0 },
+      { stream: 0, part: 1 },
+      { stream: 0, part: 2 },
+      { stream: 1, part: 0 },
+    ])
+    expect(tl.clipInStream(9)).toBeNull()
+  })
+})
+
 describe('normalize and redirects', () => {
   it('reads the synthetic fields', () => {
     const raw = {
@@ -117,8 +140,16 @@ describe('normalize and redirects', () => {
     expect(vod.tags).toEqual(['compilation'])
     expect(vod.synthetic?.segments.map((s) => s.vodId)).toEqual(['a', 'b'])
     expect(sourceIds(vod)).toEqual(['a', 'b'])
+    expect(vod.synthetic?.segments.map((s) => s.stream)).toEqual([0, 1])
     const plain = normalizeVod({ ...raw, tags: undefined, synthetic: null, appears_in: [{ id: 'p', title: null }] })
     expect([plain.tags, plain.synthetic, plain.supersededBy, plain.appearsIn]).toEqual([[], null, null, [{ id: 'p', title: '', tags: [] }]])
+  })
+
+  it('starts a new stream where the source changes, unless the archive numbers them', () => {
+    const segs = (list: object[]) => normalizeVod({ id: 'p', title: 't', duration: '00:00:30', chapters: [], youtube: [], drive: [], createdAt: '2026-01-01T00:00:00Z', synthetic: { supersedes: false, segments: list } } as unknown as RawVod).synthetic!.segments.map((s) => s.stream)
+    expect(segs([{ vodId: 'a', start: 0, end: 5, at: 0 }, { vodId: 'a', start: 9, end: 12, at: 5 }, { vodId: 'b', start: 0, end: 5, at: 8 }, { vodId: 'a', start: 20, end: 25, at: 13 }])).toEqual([0, 0, 1, 2])
+    // A merged broadcast inside a playthrough: two VODs, one stream.
+    expect(segs([{ vodId: 'a', start: 0, end: 5, at: 0, stream: 0 }, { vodId: 'a2', start: 0, end: 5, at: 6, stream: 0 }, { vodId: 'b', start: 0, end: 5, at: 11, stream: 1 }])).toEqual([0, 0, 1])
   })
 
   it('sends a superseded VOD to the same moment', () => {

@@ -99,7 +99,7 @@ describe('vue composables', () => {
       if (url.includes('/emotes?')) return json({ total: 0, limit: 1, skip: 0, data: [] })
       return json({}, 404)
     })
-    const segments = [{ vodId: 'a', start: 10, end: 30, at: 0, label: null }, { vodId: 'b', start: 0, end: 20, at: 20, label: null }]
+    const segments = [{ vodId: 'a', start: 10, end: 30, at: 0, label: null, stream: 0 }, { vodId: 'b', start: 0, end: 20, at: 20, label: null, stream: 1 }]
     const segmentAt = (t: number) => {
       const index = t >= 20 ? 1 : 0
       const segment = segments[index]!

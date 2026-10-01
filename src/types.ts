@@ -79,6 +79,11 @@ export interface Segment {
   end: number
   at: number
   label: string | null
+  /**
+   * Which stream it belongs to (0-based, in order). Two windows of one stream (a chapter cut out between them, or a
+   * broadcast that went down and came back) share it; a playthrough numbers its streams S1, S2… by it.
+   */
+  stream: number
 }
 
 export interface Synthetic {

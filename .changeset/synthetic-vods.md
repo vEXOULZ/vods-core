@@ -8,6 +8,9 @@ Synthetic VODs: merges, splits and playthroughs made of windows of other VODs.
 - `SegmentTimeline` plays a synthetic VOD from its sources' uploads, each source keeping its own delay and cuts. It
   and `Timeline` share the `PlayableTimeline` interface, which `WatchPlayer` now takes; a part can start and stop
   inside its video (`partStart`, `partEnd`), and back-to-back clips of one video seek instead of reloading.
+- Each `Segment` has a `stream` (0-based): the archive can send it, else a new stream starts where the source VOD
+  changes. `SegmentTimeline.streams()` gives each stream's span, and `clipInStream(i)` numbers a clip within its
+  stream (for "S1-P2" labels).
 - `useWatch` loads a synthetic VOD's sources too (`sources`, `segments`); its `timeline` is a `PlayableTimeline`.
 - `useChat({ segments })` replays each segment's source chat, limited to the segment's window, and loads that
   source's emotes.
