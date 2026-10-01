@@ -37,6 +37,43 @@ export function pickUploadType(vod: Vod, requested?: UploadType | null): UploadT
   return vod.uploads.some((u) => u.type === 'live') ? 'live' : 'vod'
 }
 
+/**
+ * What the player and the watch page need from a timeline: a VOD's own (`Timeline`) or a synthetic VOD's
+ * (`SegmentTimeline`, which plays windows of other VODs). `uploads` are what plays, in order; a Position's offset is
+ * seconds into that upload's video, which plays from `partStart` to `partEnd`.
+ */
+export interface PlayableTimeline {
+  readonly type: UploadType
+  readonly uploads: readonly Upload[]
+  readonly chapters: readonly Chapter[]
+  readonly cuts: readonly Span[]
+  readonly duration: number
+  readonly isEmpty: boolean
+  cutAt(t: number): Span | null
+  chapterAt(t: number): Chapter | null
+  watchable(t: number): number
+  locate(t: number): Position
+  toVod(pos: Position): number
+  indexOfPart(part: number): number
+  resolveStart(opts?: { t?: number | null; part?: number | null }): Position
+  partSpans(): Span[]
+  /** Seconds into upload `index`'s video where it starts playing. */
+  partStart(index: number): number
+  /** Seconds into its video where it stops, or null to play it to its end. */
+  partEnd(index: number): number | null
+}
+
+/** The chapter playing at `t`: the one containing it, else the last one that started before it. */
+export function chapterAt(chapters: readonly Chapter[], t: number): Chapter | null {
+  let found: Chapter | null = null
+  for (const c of chapters) {
+    if (c.start > t) break
+    found = c
+    if (t < c.end) return c
+  }
+  return found
+}
+
 /** Restricted chapters as sorted, merged spans. */
 export function restrictedSpans(chapters: readonly Chapter[]): Span[] {
   const spans = chapters
@@ -52,7 +89,7 @@ export function restrictedSpans(chapters: readonly Chapter[]): Span[] {
   return merged
 }
 
-export class Timeline {
+export class Timeline implements PlayableTimeline {
   readonly type: UploadType
   readonly uploads: readonly Upload[]
   /** Length used for each upload (its duration, or the default while unknown). */
@@ -98,13 +135,7 @@ export class Timeline {
 
   /** The chapter playing at `t`: the one containing it, else the last one that started before it. */
   chapterAt(t: number): Chapter | null {
-    let found: Chapter | null = null
-    for (const c of this.chapters) {
-      if (c.start > t) break
-      found = c
-      if (t < c.end) return c
-    }
-    return found
+    return chapterAt(this.chapters, t)
   }
 
   /**
@@ -175,6 +206,15 @@ export class Timeline {
       if (index !== -1) return { index, offset: 0 }
     }
     return { index: 0, offset: 0 }
+  }
+
+  /** Uploads play whole. */
+  partStart(): number {
+    return 0
+  }
+
+  partEnd(): number | null {
+    return null
   }
 
   /** VOD-time span covered by each upload (for the part picker and the timeline bar). */

@@ -3,12 +3,13 @@ export { toSeconds, toHMS, toClock, parseTimestamp } from './time'
 export type * from './types'
 
 export { ArchiveClient, ApiError, type ArchiveClientOptions, type Fetch } from './api/client'
-export { normalizeVod, normalizeChapter, normalizeUploads, gamesOf, normalizeGamePlayed, NO_CATEGORY } from './api/normalize'
+export { normalizeVod, normalizeChapter, normalizeUploads, normalizeSynthetic, gamesOf, normalizeGamePlayed, NO_CATEGORY } from './api/normalize'
 export { vodThumbnail, watchPath, boxArt, youtubeThumb } from './links'
 export { toQueryString, vodListQuery, type QueryObject, type QueryValue, type VodFilter, type VodListOptions } from './api/query'
 export type * from './api/types'
 
-export { Timeline, pickUploadType, restrictedSpans, type Position, type Span, type TimelineOptions } from './timeline'
+export { Timeline, pickUploadType, restrictedSpans, chapterAt, type PlayableTimeline, type Position, type Span, type TimelineOptions } from './timeline'
+export { SegmentTimeline, pickSyntheticUploadType, sourceIds, supersededTarget, type Clip, type SegmentPosition } from './composite'
 export {
   WatchPlayer,
   mountYouTube,

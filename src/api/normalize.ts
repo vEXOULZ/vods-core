@@ -1,6 +1,6 @@
 import { toSeconds } from '../time'
-import type { Chapter, GamePlayed, GameUpload, Upload, Vod } from '../types'
-import type { RawChapter, RawGamePlayed, RawGameUpload, RawUpload, RawVod } from './types'
+import type { Chapter, GamePlayed, GameUpload, Synthetic, Upload, Vod } from '../types'
+import type { RawChapter, RawGamePlayed, RawGameUpload, RawSynthetic, RawUpload, RawVod } from './types'
 
 /** Name used for chapters where the stream had no Twitch category. */
 export const NO_CATEGORY = 'No category'
@@ -38,6 +38,7 @@ export function normalizeGameUpload(g: RawGameUpload): GameUpload {
     vodId: g.vodId,
     start: Number(g.start_time) || 0,
     end: Number(g.end_time) || 0,
+    sourceVodId: g.sourceVodId ?? null,
     videoId: g.video_id,
     gameId: g.game_id ?? null,
     gameName: g.game_name ?? null,
@@ -60,6 +61,22 @@ export function normalizeVod(raw: RawVod): Vod {
     thumbnail: raw.thumbnail_url ?? null,
     streamId: raw.stream_id ?? null,
     mergedInto: raw.merged_into?.id ? { id: raw.merged_into.id, offset: Number(raw.merged_into.offset) || 0 } : null,
+    tags: raw.tags ?? [],
+    synthetic: raw.synthetic ? normalizeSynthetic(raw.synthetic) : null,
+    supersededBy: raw.superseded_by?.length
+      ? raw.superseded_by.map((s) => ({ id: s.id, start: Number(s.start) || 0, end: s.end == null ? null : Number(s.end), at: Number(s.at) || 0 }))
+      : null,
+    appearsIn: raw.appears_in?.length ? raw.appears_in.map((a) => ({ id: a.id, title: a.title ?? '', tags: a.tags ?? [] })) : null,
+  }
+}
+
+export function normalizeSynthetic(raw: RawSynthetic): Synthetic {
+  return {
+    supersedes: !!raw.supersedes,
+    segments: (raw.segments ?? [])
+      .map((s) => ({ vodId: s.vodId, start: Number(s.start) || 0, end: Number(s.end) || 0, at: Number(s.at) || 0, label: s.label ?? null }))
+      .filter((s) => s.end > s.start)
+      .sort((a, b) => a.at - b.at),
   }
 }
 

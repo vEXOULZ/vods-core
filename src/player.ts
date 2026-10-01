@@ -1,8 +1,12 @@
 // Plays a VOD across its YouTube uploads: loads the right part for a VOD time, reports VOD time while playing,
-// moves on to the next part when one ends, and tracks which parts can't be played.
+// moves on to the next part when one ends, and tracks which parts can't be played. A synthetic VOD's parts are clips
+// that can start and stop inside a video; one that stops early moves on from the time tick.
 //
 // The YouTube player sits behind `PlayerLike` so this runs (and is tested) without the real IFrame API.
-import type { Position, Timeline } from './timeline'
+import type { PlayableTimeline, Position } from './timeline'
+
+/** A clip that stops inside its video moves on this close to its end (the tick is coarser than that anyway). */
+const CLIP_END_SLACK = 0.05
 
 /** The subset of YT.Player used here. */
 export interface PlayerLike {
@@ -74,7 +78,7 @@ export class WatchPlayer {
   private readonly skipBroken: boolean
 
   constructor(
-    readonly timeline: Timeline,
+    readonly timeline: PlayableTimeline,
     opts: WatchPlayerOptions = {},
   ) {
     this.tickMs = opts.tickMs ?? 250
@@ -124,7 +128,11 @@ export class WatchPlayer {
 
   /** Start of a part (the part picker). */
   playPart(index: number): void {
-    this.go({ index, offset: 0 }, true)
+    this.go(this.startOf(index), true)
+  }
+
+  private startOf(index: number): Position {
+    return { index, offset: this.timeline.partStart(index) }
   }
 
   play(): void {
@@ -139,10 +147,15 @@ export class WatchPlayer {
     const player = this.player
     if (!player || pos.index < 0 || pos.index >= this.timeline.uploads.length) return
     const offset = Math.max(0, pos.offset)
+    const id = this.timeline.uploads[pos.index]!.id
     if (pos.index === this.index) {
       player.seekTo(offset, true)
+    } else if (this.index >= 0 && this.timeline.uploads[this.index]?.id === id) {
+      // The next clip of the same video (a synthetic VOD): no reload.
+      this.index = pos.index
+      player.seekTo(offset, true)
+      this.emit('part', pos.index)
     } else {
-      const id = this.timeline.uploads[pos.index]!.id
       this.index = pos.index
       if (autoplay) player.loadVideoById(id, offset)
       else player.cueVideoById(id, offset)
@@ -165,11 +178,16 @@ export class WatchPlayer {
       this.stopTicking()
       this.emit('playing', false)
     }
-    if (state === YT_STATE.ENDED) {
-      const next = this.index + 1 < this.timeline.uploads.length ? this.index + 1 : -1
-      if (next === -1) this.emit('ended')
-      else this.go({ index: next, offset: 0 }, true)
-    }
+    if (state === YT_STATE.ENDED) this.advance()
+  }
+
+  /** The current part is done: on to the next, or the end. */
+  private advance(): void {
+    const next = this.index + 1 < this.timeline.uploads.length ? this.index + 1 : -1
+    if (next !== -1) return this.go(this.startOf(next), true)
+    if (this.player?.getPlayerState() === YT_STATE.PLAYING) this.player.pauseVideo()
+    this.stopTicking()
+    this.emit('ended')
   }
 
   /** Wire this to the YT.Player `onPlaybackRateChange` event. */
@@ -186,14 +204,20 @@ export class WatchPlayer {
     this.emit('partError', index, status)
     if (this.skipBroken) {
       const next = this.nextPlayable(index)
-      if (next !== -1) this.go({ index: next, offset: 0 }, true)
+      if (next !== -1) this.go(this.startOf(next), true)
     }
   }
 
   private startTicking(): void {
     this.stopTicking()
+    this.tick()
+    this.timer = setInterval(() => this.tick(), this.tickMs)
+  }
+
+  private tick(): void {
+    const end = this.timeline.partEnd(this.index)
+    if (end !== null && this.player && (this.player.getCurrentTime() || 0) >= end - CLIP_END_SLACK) return this.advance()
     this.emit('time', this.currentTime())
-    this.timer = setInterval(() => this.emit('time', this.currentTime()), this.tickMs)
   }
 
   private stopTicking(): void {

@@ -41,6 +41,8 @@ export interface RawDrive {
 export interface RawGameUpload {
   id: string
   vodId: string
+  /** On a synthetic VOD's games: the VOD the row belongs to (its times are already on the synthetic timeline). */
+  sourceVodId?: string | null
   start_time: string
   end_time: string
   video_provider?: string | null
@@ -66,9 +68,47 @@ export interface RawVod {
   stream_id?: string | null
   /** Set on a VOD merged into another one: its footage now starts `offset` seconds into VOD `id`. */
   merged_into?: { id: string; offset: number } | null
+  /** Untagged VODs are the regular ones; `compilation` (a playthrough) and others are listed apart. */
+  tags?: string[] | null
+  /** Only on a synthetic VOD: it has no uploads of its own, it plays windows (`segments`) of other VODs. */
+  synthetic?: RawSynthetic | null
+  /** On a VOD a merge or split replaced: where each window of it plays now. */
+  superseded_by?: RawSupersededBy[] | null
+  /** On a VOD that synthetic VODs (playthroughs) use without replacing it. */
+  appears_in?: RawAppearsIn[] | null
   platform?: string | null
   createdAt: string
   updatedAt?: string
+}
+
+/** A window of a real VOD on a synthetic VOD's timeline: source seconds [start, end) play from `at`. */
+export interface RawSegment {
+  vodId: string
+  start: number
+  /** Resolved by the archive (the source's end, or the next segment's start). */
+  end: number
+  at: number
+  label?: string | null
+}
+
+export interface RawSynthetic {
+  /** A merge or split: its sources are left out of lists and their links lead here. */
+  supersedes: boolean
+  segments: RawSegment[]
+}
+
+export interface RawSupersededBy {
+  id: string
+  start: number
+  /** null: to the end of the source. */
+  end: number | null
+  at: number
+}
+
+export interface RawAppearsIn {
+  id: string
+  title: string | null
+  tags?: string[] | null
 }
 
 export interface RawStream {

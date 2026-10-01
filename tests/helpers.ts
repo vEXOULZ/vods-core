@@ -24,5 +24,6 @@ export function makeVod(opts: { duration: number; parts: (number | null)[]; chap
     games: [],
     thumbnail: null,
     streamId: null,
+    tags: [],
   }
 }
