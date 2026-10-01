@@ -37,6 +37,8 @@ export interface DriveFile {
 export interface GameUpload {
   id: string
   vodId: string
+  /** On a synthetic VOD: the real VOD the upload is of (`start`/`end` are synthetic time). */
+  sourceVodId?: string | null
   start: number
   end: number
   videoId: string
@@ -60,6 +62,53 @@ export interface Vod {
   streamId: string | null
   /** Set when this VOD was merged into another: watch `id` at `offset + t` instead. */
   mergedInto?: { id: string; offset: number } | null
+  /** Empty for regular VODs; `compilation` for playthroughs. */
+  tags: string[]
+  /** Set on a synthetic VOD (a merge, a split, a playthrough): it plays windows of other VODs. */
+  synthetic?: Synthetic | null
+  /** Set on a VOD a merge or split replaced: watch those instead (see `supersededTarget`). */
+  supersededBy?: SupersededBy[] | null
+  /** Synthetic VODs (playthroughs) that use part of this one. */
+  appearsIn?: AppearsIn[] | null
+}
+
+/** Source seconds [start, end) of VOD `vodId`, playing from `at` on the synthetic VOD. */
+export interface Segment {
+  vodId: string
+  start: number
+  end: number
+  at: number
+  label: string | null
+  /**
+   * Which stream it belongs to (0-based, in order). Two windows of one stream (a chapter cut out between them, or a
+   * broadcast that went down and came back) share it; a playthrough numbers its streams S1, S2… by it.
+   */
+  stream: number
+}
+
+export interface Synthetic {
+  /** A merge or split (its sources redirect to it), not a playthrough. */
+  supersedes: boolean
+  segments: Segment[]
+  /** When it was made, and when what it plays last changed (segments added or moved, a source grew). */
+  madeAt: Date | null
+  changedAt: Date | null
+  /** When the earliest and the latest footage it plays were live. */
+  firstLiveAt: Date | null
+  lastLiveAt: Date | null
+}
+
+export interface SupersededBy {
+  id: string
+  start: number
+  end: number | null
+  at: number
+}
+
+export interface AppearsIn {
+  id: string
+  title: string
+  tags: string[]
 }
 
 /** A game that appears in the archive's chapters, for game pickers. */

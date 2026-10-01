@@ -34,13 +34,41 @@ export interface LocalProgressOptions {
   max?: number
   /** Positions this close to the start aren't worth resuming (seconds). */
   minT?: number
-  /** Within this many seconds of the end counts as finished, and the entry is removed. */
+  /** @deprecated Unused: finished entries are kept (see resumeAt), so the store has no end rule. */
   endMargin?: number
 }
 
-/** True for a position worth offering "resume" for. */
-export function isResumable(p: Progress, opts: { minT?: number; endMargin?: number } = {}): boolean {
-  return p.t >= (opts.minT ?? 30) && p.t < p.duration - (opts.endMargin ?? 60)
+export interface ResumeOptions {
+  /** The VOD's length now, when known: a synthetic VOD (a playthrough) can grow after someone finished it. */
+  duration?: number
+  minT?: number
+  endMargin?: number
+}
+
+/** True when `p` was watched to (near) the end of the VOD as it was then. */
+export function isFinished(p: Progress, opts: { endMargin?: number } = {}): boolean {
+  return p.t >= p.duration - (opts.endMargin ?? 60)
+}
+
+/**
+ * Where to pick up from, or null when there's nothing worth resuming: the saved position, or, on an entry
+ * finished before the VOD grew (`opts.duration` longer than it was), where the new part starts.
+ */
+export function resumeAt(p: Progress, opts: ResumeOptions = {}): number | null {
+  const at = isFinished(p, opts) ? p.duration : p.t
+  const duration = opts.duration || p.duration
+  return at >= (opts.minT ?? 30) && at < duration - (opts.endMargin ?? 60) ? at : null
+}
+
+/** `p` with `t` moved to where to pick up (see resumeAt), or null when there's nothing worth resuming. */
+export function resumeProgress(p: Progress | null | undefined, duration?: number): Progress | null {
+  const t = p ? resumeAt(p, { duration }) : null
+  return p && t != null ? { ...p, t } : null
+}
+
+/** True for a position worth offering "resume" for (see resumeAt). */
+export function isResumable(p: Progress, opts: ResumeOptions = {}): boolean {
+  return resumeAt(p, opts) !== null
 }
 
 function defaultStorage(): KeyValueStorage | null {
@@ -57,14 +85,12 @@ export class LocalProgressStore implements ProgressStore {
   private readonly key: string
   private readonly max: number
   private readonly minT: number
-  private readonly endMargin: number
 
   constructor(opts: LocalProgressOptions = {}) {
     this.storage = opts.storage ?? defaultStorage()
     this.key = opts.key ?? 'vods.progress.v1'
     this.max = opts.max ?? 200
     this.minT = opts.minT ?? 30
-    this.endMargin = opts.endMargin ?? 60
   }
 
   private read(): Record<string, Progress> {
@@ -93,8 +119,8 @@ export class LocalProgressStore implements ProgressStore {
   async set(p: Omit<Progress, 'updatedAt'> & { updatedAt?: number }): Promise<void> {
     const all = this.read()
     const entry: Progress = { vodId: p.vodId, t: Math.floor(p.t), duration: Math.floor(p.duration), updatedAt: p.updatedAt ?? Date.now() }
-    if (entry.t >= entry.duration - this.endMargin) delete all[p.vodId]
-    else if (entry.t < this.minT) {
+    // A finished entry is kept: should the VOD grow (a playthrough's new stream), it resumes where that starts.
+    if (entry.t < this.minT) {
       // Back at the start (a restart): nothing worth resuming.
       if (!all[p.vodId]) return
       delete all[p.vodId]

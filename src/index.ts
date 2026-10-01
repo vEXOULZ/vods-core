@@ -3,12 +3,13 @@ export { toSeconds, toHMS, toClock, parseTimestamp } from './time'
 export type * from './types'
 
 export { ArchiveClient, ApiError, type ArchiveClientOptions, type Fetch } from './api/client'
-export { normalizeVod, normalizeChapter, normalizeUploads, gamesOf, normalizeGamePlayed, NO_CATEGORY } from './api/normalize'
+export { normalizeVod, normalizeChapter, normalizeUploads, normalizeSynthetic, gamesOf, normalizeGamePlayed, NO_CATEGORY } from './api/normalize'
 export { vodThumbnail, watchPath, boxArt, youtubeThumb } from './links'
 export { toQueryString, vodListQuery, type QueryObject, type QueryValue, type VodFilter, type VodListOptions } from './api/query'
 export type * from './api/types'
 
-export { Timeline, pickUploadType, restrictedSpans, type Position, type Span, type TimelineOptions } from './timeline'
+export { Timeline, pickUploadType, restrictedSpans, chapterAt, type PlayableTimeline, type Position, type Span, type TimelineOptions } from './timeline'
+export { SegmentTimeline, pickSyntheticUploadType, redirectTarget, sourceIds, supersededTarget, type Clip, type Jump, type SegmentPosition, type StreamSpan } from './composite'
 export {
   WatchPlayer,
   mountYouTube,
@@ -41,5 +42,5 @@ export {
 export { tokenize, resolveBadges, toChatMessage, loginOf, type Removal, type Token, type EmoteToken, type EmoteLayer, type Modifier, type Badge, type ChatMessage } from './chat/message'
 export { ChatReplay, type CommentSource, type ReplayOptions, type ReplayUpdate } from './chat/replay'
 
-export { LocalProgressStore, isResumable, type Progress, type ProgressStore, type KeyValueStorage, type LocalProgressOptions } from './progress'
+export { LocalProgressStore, isFinished, isResumable, resumeAt, resumeProgress, type Progress, type ResumeOptions, type ProgressStore, type KeyValueStorage, type LocalProgressOptions } from './progress'
 export { AccountProgressStore, MERGE_BATCH, type AccountLink, type AccountProgressOptions } from './accountProgress'

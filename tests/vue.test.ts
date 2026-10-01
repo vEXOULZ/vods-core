@@ -68,6 +68,54 @@ describe('vue composables', () => {
     expect(w.timeline.value).toBeNull()
   })
 
+  it("useWatch loads a synthetic VOD's sources and plays their windows", async () => {
+    const urls: string[] = []
+    const vod = (id: string, extra = {}) => ({ ...rawFixture('vod-plain'), id, ...extra })
+    const { run } = setup(async (url) => {
+      urls.push(url)
+      if (url.endsWith('/vods/a%2B1')) {
+        return json(vod('a+1', { youtube: [], synthetic: { supersedes: true, segments: [{ vodId: 'a', start: 100, end: 200, at: 0 }, { vodId: 'gone', start: 0, end: 50, at: 100 }] } }))
+      }
+      if (url.endsWith('/vods/a')) return json(vod('a'))
+      return json({ message: 'Not found' }, 404)
+    })
+    const w = run(() => useWatch('a+1'))
+    await flush()
+    expect(urls.filter((u) => u.includes('/vods/a')).length).toBe(2)
+    expect(w.sources.value.map((s) => s.id)).toEqual(['a'])
+    expect(w.segments.value?.partSpans()).toEqual([{ start: 0, end: 100 }])
+    expect(w.timeline.value?.locate(10)).toEqual({ index: 0, offset: 110 })
+  })
+
+  it('useChat follows a synthetic VOD from one source to the next, inside each window', async () => {
+    const urls: string[] = []
+    const row = (vod: string, at: number) => ({ id: `${vod}@${at}`, vod_id: vod, display_name: 'u', content_offset_seconds: at, message: [{ text: 'hi' }], user_badges: null, user_color: null })
+    const { run } = setup(async (url) => {
+      if (url.includes('/comments')) {
+        urls.push(url)
+        const vod = url.includes('/vods/a/') ? 'a' : 'b'
+        return json({ comments: [row(vod, 5), row(vod, 15), row(vod, 25), row(vod, 35)] })
+      }
+      if (url.includes('/emotes?')) return json({ total: 0, limit: 1, skip: 0, data: [] })
+      return json({}, 404)
+    })
+    const segments = [{ vodId: 'a', start: 10, end: 30, at: 0, label: null, stream: 0 }, { vodId: 'b', start: 0, end: 20, at: 20, label: null, stream: 1 }]
+    const segmentAt = (t: number) => {
+      const index = t >= 20 ? 1 : 0
+      const segment = segments[index]!
+      return { index, segment, sourceTime: Math.min(segment.end, Math.max(segment.start, segment.start + t - segment.at)) }
+    }
+    const time = ref(0)
+    const chat = run(() => useChat({ vodId: 'a+b', time, playing: ref(true), backlog: 10, segments: { segmentAt } }))
+    time.value = 16 // a at 26: its 5 s is before the window
+    await flush()
+    expect(chat.messages.value.map((m) => m.id)).toEqual(['a@15', 'a@25'])
+    time.value = 36 // b at 16
+    await flush()
+    expect(urls.at(-1)).toContain('/vods/b/')
+    expect(chat.messages.value.map((m) => m.id)).toEqual(['b@5', 'b@15'])
+  })
+
   it('useChat shows comments as the clock moves, applying the viewer offset', async () => {
     const page = { comments: [0, 5, 10, 15].map((at, i) => ({ id: `c${i}`, vod_id: 'v', display_name: 'u', content_offset_seconds: at, message: [{ text: 'hi' }], user_badges: null, user_color: null })) }
     const { run } = setup(async (url) => {

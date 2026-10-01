@@ -45,6 +45,8 @@ export interface VodFilter {
 }
 
 export interface VodListOptions extends VodFilter {
+  /** Which VODs by tag: left out, the regular (untagged) ones; `compilation` for playthroughs; `*` for all. */
+  tag?: string
   /** 1-based. */
   page?: number
   perPage?: number
@@ -71,6 +73,7 @@ export function vodListQuery(opts: VodListOptions = {}): QueryObject {
     if (opts.to) range.$lte = opts.to.toISOString()
     q.createdAt = range
   }
+  if (opts.tag) q.$tag = opts.tag
   q.$limit = perPage
   q.$skip = (page - 1) * perPage
   q.$sort = { createdAt: -1 }

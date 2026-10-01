@@ -16,7 +16,7 @@ export interface AccountProgressOptions {
   local?: LocalProgressStore
   /** As LocalProgressStore: positions this close to the start aren't kept (seconds). */
   minT?: number
-  /** As LocalProgressStore: within this many seconds of the end counts as finished and is removed. */
+  /** @deprecated Unused: finished entries are kept, as in LocalProgressStore. */
   endMargin?: number
 }
 
@@ -26,15 +26,13 @@ export const MERGE_BATCH = 500
 export class AccountProgressStore implements ProgressStore {
   readonly local: LocalProgressStore
   private readonly minT: number
-  private readonly endMargin: number
 
   constructor(
     private readonly account: AccountLink,
     opts: AccountProgressOptions = {},
   ) {
     this.minT = opts.minT ?? 30
-    this.endMargin = opts.endMargin ?? 60
-    this.local = opts.local ?? new LocalProgressStore({ minT: this.minT, endMargin: this.endMargin })
+    this.local = opts.local ?? new LocalProgressStore({ minT: this.minT })
   }
 
   private path(vodId: string) {
@@ -56,8 +54,8 @@ export class AccountProgressStore implements ProgressStore {
   async set(p: Omit<Progress, 'updatedAt'> & { updatedAt?: number }): Promise<void> {
     if (!this.account.signedIn()) return this.local.set(p)
     const entry: Progress = { vodId: p.vodId, t: Math.floor(p.t), duration: Math.floor(p.duration), updatedAt: p.updatedAt ?? Date.now() }
-    // Finished, or back at the start: nothing worth resuming (the same rule as the local store).
-    if (entry.t >= entry.duration - this.endMargin || entry.t < this.minT) return this.remove(p.vodId)
+    // Back at the start: nothing worth resuming (the same rule as the local store). Finished entries are kept.
+    if (entry.t < this.minT) return this.remove(p.vodId)
     try {
       const res = await this.account.request(this.path(p.vodId), {
         method: 'PUT',

@@ -1,9 +1,10 @@
-import { onScopeDispose, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
+import { computed, onScopeDispose, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
 import type { ArchiveClient } from '../api/client'
 import type { ChatSource, ChatSources, RawBadges, RawComment } from '../api/types'
 import { loadEmotes, type EmoteSet } from '../chat/emotes'
 import { toChatMessage, type ChatMessage } from '../chat/message'
 import { ChatReplay, type ReplayOptions } from '../chat/replay'
+import type { SegmentTimeline } from '../composite'
 import { useVodsContext } from './context'
 
 export interface UseChatOptions extends ReplayOptions {
@@ -17,11 +18,17 @@ export interface UseChatOptions extends ReplayOptions {
   max?: number
   /** Which chat to replay (`auto` or left out: the archive picks). Changing it reloads chat at the current time. */
   chatSource?: MaybeRefOrGetter<ChatSource | 'auto' | undefined>
+  /**
+   * A synthetic VOD's timeline: chat (and emotes) then come from the source VOD of the segment playing, at its own
+   * time, and only from inside the segment's window.
+   */
+  segments?: MaybeRefOrGetter<Pick<SegmentTimeline, 'segmentAt'> | null | undefined>
 }
 
 /**
  * Chat replay synced to the player. The chat clock is VOD time minus the viewer's offset; comments are resolved to
- * tokens (emotes, badges) as they arrive. Emotes and badges load once per VOD and never block chat.
+ * tokens (emotes, badges) as they arrive. Emotes and badges load once per VOD and never block chat. On a synthetic VOD
+ * each segment is its source VOD's chat: moving into another segment starts that one's like a new VOD.
  */
 // The channel's and Twitch's global badges don't change per VOD: fetched once per client (a failure is retried next
 // time).
@@ -96,6 +103,14 @@ export function useChat(opts: UseChatOptions) {
   })
 
   const clock = () => toValue(opts.time) - (opts.offset?.value ?? 0)
+  /** Whose chat is due, at which of its times, and the window it's limited to (a synthetic VOD's segment). */
+  const target = (): { vodId: string; t: number; window: { start: number; end: number } | null } => {
+    const at = toValue(opts.segments)?.segmentAt(clock())
+    if (!at) return { vodId: toValue(opts.vodId), t: clock(), window: null }
+    return { vodId: at.segment.vodId, t: at.sourceTime, window: at.segment }
+  }
+  const inside = (c: RawComment, w: { start: number; end: number } | null) =>
+    !w || (c.content_offset_seconds >= w.start && c.content_offset_seconds < w.end)
   let busy = false
   let again = false // a forced tick came while busy: run it after
 
@@ -107,9 +122,13 @@ export function useChat(opts: UseChatOptions) {
     }
     busy = true
     const r = replay
+    const at = target()
     try {
-      const { reset, comments } = await r.update(clock())
+      if (at.vodId !== r.vodId) return // a segment change: start() swaps the replay
+      const update = await r.update(at.t)
       if (r !== replay) return
+      const reset = update.reset
+      const comments = at.window ? update.comments.filter((c) => inside(c, at.window)) : update.comments
       if (r.sources) sources.value = r.sources
       if (!served.value) served.value = comments[0]?.source ?? (reset && r.sources && !r.sources.bot ? 'replay' : null)
       if (reset || comments.length) {
@@ -129,10 +148,13 @@ export function useChat(opts: UseChatOptions) {
     }
   }
 
-  watch(() => toValue(opts.vodId), start, { immediate: true })
+  /** Whose chat is showing: the VOD's own, or on a synthetic VOD the source of the segment playing. */
+  const vodId = computed(() => target().vodId)
+  // On a synthetic VOD this changes as playback crosses into a segment of another VOD.
+  watch(vodId, start, { immediate: true })
   // A new chat shows at once, even while paused.
   watch(wanted, () => {
-    restart(toValue(opts.vodId))
+    restart(vodId.value)
     void tick(true)
   })
   watch([opts.time, opts.playing, () => opts.offset?.value], () => tick())
@@ -141,5 +163,5 @@ export function useChat(opts: UseChatOptions) {
     ctrl?.abort()
   })
 
-  return { messages, error, emotes, badges, sources, served }
+  return { messages, error, emotes, badges, sources, served, vodId }
 }
