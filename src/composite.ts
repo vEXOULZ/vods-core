@@ -50,6 +50,16 @@ export interface StreamSpan {
   end: number
 }
 
+/** Where a stream skips a stretch of its VOD (or goes back): two windows of one VOD placed back to back. */
+export interface Jump {
+  /** Synthetic time of the second window's start. */
+  at: number
+  vodId: string
+  /** Source seconds: where the first window ends and the second starts. */
+  from: number
+  to: number
+}
+
 export interface SegmentPosition {
   /** Index into `segments`. */
   index: number
@@ -231,14 +241,34 @@ export class SegmentTimeline implements PlayableTimeline {
     return out
   }
 
-  /** The stream of clip `index` and which of that stream's clips it is (both 0-based), for "S1-P2" labels. */
+  /**
+   * The stream of clip `index` and which of that stream's videos it plays (both 0-based), for "S1-P2" labels. A part
+   * is a video, as for a plain VOD: a jump to later in the same video stays in the same part.
+   */
   clipInStream(index: number): { stream: number; part: number } | null {
     const c = this.clips[index]
     if (!c) return null
     const stream = this.segments[c.segment]!.stream
-    let part = 0
-    for (let k = 0; k < index; k++) if (this.segments[this.clips[k]!.segment]!.stream === stream) part++
+    const video = (k: number) => `${this.segments[this.clips[k]!.segment]!.vodId}:${this.clips[k]!.upload}`
+    let part = -1
+    let last = ''
+    for (let k = 0; k <= index; k++) {
+      if (this.segments[this.clips[k]!.segment]!.stream !== stream) continue
+      if (video(k) !== last) part++
+      last = video(k)
+    }
     return { stream, part }
+  }
+
+  /** Each place a stream jumps within its VOD (a stretch left out, or a replay), in order. */
+  jumps(): Jump[] {
+    const out: Jump[] = []
+    this.segments.forEach((s, i) => {
+      const prev = this.segments[i - 1]
+      if (prev && prev.stream === s.stream && prev.vodId === s.vodId && Math.abs(s.start - prev.end) >= 1)
+        out.push({ at: s.at, vodId: s.vodId, from: prev.end, to: s.start })
+    })
+    return out
   }
 }
 

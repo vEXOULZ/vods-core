@@ -117,15 +117,20 @@ describe('SegmentTimeline: streams', () => {
     ])
   })
 
-  it('numbers clips within their stream', () => {
-    // A's first window crosses its part boundary at 3600: two clips, then one for the second window.
+  it('numbers parts by video within their stream', () => {
+    // A's first window crosses its part boundary at 3600: two clips. The second window is later in that same video,
+    // so it stays in the same part.
     expect(tl.clips.map((_, i) => tl.clipInStream(i))).toEqual([
       { stream: 0, part: 0 },
       { stream: 0, part: 1 },
-      { stream: 0, part: 2 },
+      { stream: 0, part: 1 },
       { stream: 1, part: 0 },
     ])
     expect(tl.clipInStream(9)).toBeNull()
+  })
+
+  it('finds where a stream jumps within its VOD', () => {
+    expect(tl.jumps()).toEqual([{ at: 1000, vodId: 'a', from: 4000, to: 5000 }])
   })
 })
 
