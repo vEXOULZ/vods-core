@@ -1,6 +1,6 @@
 import { toSeconds } from '../time'
-import type { Chapter, GamePlayed, GameUpload, Synthetic, Upload, Vod } from '../types'
-import type { RawChapter, RawGamePlayed, RawGameUpload, RawSynthetic, RawUpload, RawVod } from './types'
+import type { Chapter, GamePlayed, GameUpload, Preview, Synthetic, Upload, Vod } from '../types'
+import type { RawChapter, RawGamePlayed, RawGameUpload, RawPreview, RawSynthetic, RawUpload, RawVod } from './types'
 
 /** Name used for chapters where the stream had no Twitch category. */
 export const NO_CATEGORY = 'No category'
@@ -20,6 +20,13 @@ export function normalizeChapter(c: RawChapter): Chapter {
   }
 }
 
+function normalizePreview(p: RawPreview | null | undefined): Preview | null {
+  if (!p || p.v !== 1) return null
+  const { interval, w, h, cols, rows, count } = p
+  const ok = [interval, w, h, cols, rows, count].every((n) => typeof n === 'number' && Number.isFinite(n) && n > 0)
+  return ok ? { interval, w, h, cols, rows, count } : null
+}
+
 export function normalizeUploads(raw: RawUpload[]): Upload[] {
   const uploads = raw.map((u, i) => ({
     id: u.id,
@@ -27,6 +34,7 @@ export function normalizeUploads(raw: RawUpload[]): Upload[] {
     part: u.part ?? i + 1,
     duration: typeof u.duration === 'number' && u.duration > 0 ? u.duration : null,
     thumbnail: u.thumbnail_url ?? null,
+    preview: normalizePreview(u.preview),
   }))
   // Stable sort per type: the API keeps upload order, but don't rely on it for the time math.
   return uploads.sort((a, b) => (a.type === b.type ? a.part - b.part : 0))

@@ -31,6 +31,19 @@ export interface RawUpload {
   duration?: number | null
   part?: number | null
   thumbnail_url?: string | null
+  /** Seek-bar preview sheets, once the archive has made them (`GET /v1/previews/<id>/<sheet>.jpg`). */
+  preview?: RawPreview | null
+}
+
+export interface RawPreview {
+  /** Layout version; only 1 is known. */
+  v: number
+  interval: number
+  w: number
+  h: number
+  cols: number
+  rows: number
+  count: number
 }
 
 export interface RawDrive {

@@ -5,6 +5,7 @@ export type * from './types'
 export { ArchiveClient, ApiError, type ArchiveClientOptions, type Fetch } from './api/client'
 export { normalizeVod, normalizeChapter, normalizeUploads, normalizeSynthetic, gamesOf, normalizeGamePlayed, NO_CATEGORY } from './api/normalize'
 export { vodThumbnail, watchPath, boxArt, youtubeThumb } from './links'
+export { previewFrame, type PreviewFrame } from './preview'
 export { toQueryString, vodListQuery, type QueryObject, type QueryValue, type VodFilter, type VodListOptions } from './api/query'
 export type * from './api/types'
 
