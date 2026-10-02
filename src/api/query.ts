@@ -42,6 +42,15 @@ export interface VodFilter {
   from?: Date
   /** Created at or before. */
   to?: Date
+  /** Tagged with every one of these, within `tag`'s kind of VOD; with `tag` left out, of every kind (the archive
+   * lists only untagged VODs when neither is given). */
+  tags?: string[]
+  /** First footage live at or after: a synthetic VOD's `firstLiveAt`, a regular one's `createdAt`. */
+  firstLiveFrom?: Date
+  /** First footage live before. */
+  firstLiveBefore?: Date
+  /** Last footage live at or after: a synthetic VOD's `lastLiveAt`, a regular one's `createdAt`. */
+  lastLiveFrom?: Date
 }
 
 export interface VodListOptions extends VodFilter {
@@ -74,6 +83,15 @@ export function vodListQuery(opts: VodListOptions = {}): QueryObject {
     q.createdAt = range
   }
   if (opts.tag) q.$tag = opts.tag
+  const tags = opts.tags?.map((t) => t.trim()).filter(Boolean)
+  if (tags?.length) q.tags = { $all: tags }
+  if (opts.firstLiveFrom || opts.firstLiveBefore) {
+    const range: QueryObject = {}
+    if (opts.firstLiveFrom) range.$gte = opts.firstLiveFrom.toISOString()
+    if (opts.firstLiveBefore) range.$lt = opts.firstLiveBefore.toISOString()
+    q.firstLiveAt = range
+  }
+  if (opts.lastLiveFrom) q.lastLiveAt = { $gte: opts.lastLiveFrom.toISOString() }
   q.$limit = perPage
   q.$skip = (page - 1) * perPage
   q.$sort = { createdAt: -1 }
