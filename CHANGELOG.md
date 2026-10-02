@@ -1,5 +1,12 @@
 # @vexoulz/vods-core
 
+## 0.16.0
+
+### Minor Changes
+
+- b5f9fd9: Seek-bar previews: `Upload.preview` (the layout of the archive's preview sheets for an upload, or null) and
+  `previewFrame(upload, offset, apiBase)`, the sheet URL and tile position nearest a moment of an upload.
+
 ## 0.15.1
 
 ### Patch Changes
