@@ -173,7 +173,7 @@ describe('Timeline: synthetic edge cases', () => {
   it('prefers live uploads when there are any, like the old site', () => {
     const vod = makeVod({ duration: 100, parts: [100] })
     expect(pickUploadType(vod)).toBe('vod')
-    vod.uploads.push({ id: 'l1', type: 'live', part: 1, duration: 100, thumbnail: null })
+    vod.uploads.push({ id: 'l1', type: 'live', part: 1, duration: 100, thumbnail: null, preview: null })
     expect(pickUploadType(vod)).toBe('live')
     expect(pickUploadType(vod, 'vod')).toBe('vod')
   })

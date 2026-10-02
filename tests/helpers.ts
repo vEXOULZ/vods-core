@@ -12,7 +12,7 @@ export const fixtureComments = (): RawCommentPage => rawFixture<RawCommentPage>(
 
 /** A made-up VOD for edge cases the real ones don't cover. */
 export function makeVod(opts: { duration: number; parts: (number | null)[]; chapters?: Partial<Chapter>[]; type?: 'vod' | 'live' }): Vod {
-  const uploads: Upload[] = opts.parts.map((d, i) => ({ id: `yt${i + 1}`, type: opts.type ?? 'vod', part: i + 1, duration: d, thumbnail: null }))
+  const uploads: Upload[] = opts.parts.map((d, i) => ({ id: `yt${i + 1}`, type: opts.type ?? 'vod', part: i + 1, duration: d, thumbnail: null, preview: null }))
   return {
     id: 'v1',
     title: 'test',

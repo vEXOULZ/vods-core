@@ -26,6 +26,22 @@ export interface Upload {
   /** Seconds, or null while YouTube is still processing it. */
   duration: number | null
   thumbnail: string | null
+  /** Seek-bar preview sheets the archive made of this upload; null until it has (see `previewFrame`). */
+  preview: Preview | null
+}
+
+/**
+ * Layout of an upload's seek-bar preview sheets: frame `i` is the picture at `i * interval` seconds of the upload, on
+ * sheet `floor(i / (cols * rows))`, `cols` × `rows` tiles of `w` × `h` each.
+ */
+export interface Preview {
+  interval: number
+  w: number
+  h: number
+  cols: number
+  rows: number
+  /** Frames in all. */
+  count: number
 }
 
 export interface DriveFile {

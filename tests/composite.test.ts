@@ -97,7 +97,7 @@ describe('SegmentTimeline: splits and playthroughs cut inside videos', () => {
   })
 
   it('plays the live uploads when any source has them', () => {
-    const L = { ...source('l', 3600, [3600]), uploads: [{ id: 'l-live', type: 'live' as const, part: 1, duration: 3600, thumbnail: null }] }
+    const L = { ...source('l', 3600, [3600]), uploads: [{ id: 'l-live', type: 'live' as const, part: 1, duration: 3600, thumbnail: null, preview: null }] }
     const tl = new SegmentTimeline(synthetic([seg('l', 0, 3600, 0), seg('b', 0, 3600, 3600)]), [L, B])
     expect(tl.type).toBe('live')
     // B has no live uploads: its VOD ones play.
