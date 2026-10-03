@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   push:
@@ -6,29 +6,13 @@ on:
   pull_request:
 
 jobs:
-  branch-name:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Conventional Branch
-        # Through the environment, never interpolated into the script: a branch name is user input.
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: .githooks/check-branch-name.sh "$BRANCH"
+  conventions:
+    uses: vEXOULZ/conventions/.github/workflows/conventions-check.yml@v1.0.0
+    secrets: inherit
 
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      # --ignore-scripts: `prepare` (the build) runs as its own step below
-      - run: npm ci --ignore-scripts
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
-      - name: Package contents
-        run: npm pack --dry-run
+  ci:
+    # Installs with --ignore-scripts, so `prepare` (the build) runs only as its own step; `pack` checks
+    # what a git install of a tag would get.
+    uses: vEXOULZ/conventions/.github/workflows/node-ci.yml@v1.0.0
+    with:
+      pack: true

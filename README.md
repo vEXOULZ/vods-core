@@ -10,7 +10,7 @@ npm test            # vitest, against real VOD fixtures
 npm run typecheck   # tsc
 npm run build       # → dist/ (index.js, vue.js, types/)
 npm run fixtures    # refresh tests/fixtures from the public archive API
-git config core.hooksPath .githooks   # once per clone: branch-name rules, see CONTRIBUTING.md
+git config core.hooksPath .conventions/githooks   # once per clone: branch-name rules, see CONTRIBUTING.md
 ```
 
 `main` is merge-only and branches follow [Conventional Branch](https://conventional-branch.github.io/)
