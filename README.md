@@ -1,6 +1,6 @@
 # vods-core
 
-The headless engine behind vods.vexoulz.net. It holds the logic the old React site had spread across its components,
+The headless engine behind vods.vexoul.net. It holds the logic the old React site had spread across its components,
 with types and tests, and **no UI**. Components and styles live in [vexoulz-ui](https://github.com/vEXOULZ/vexoulz-ui);
 the site puts the two together.
 

@@ -2,7 +2,7 @@
 // The VODs are picked for the time math: plain multi-part, one cut, several cuts, and a tiny 3-second cut.
 import { mkdir, writeFile } from 'node:fs/promises'
 
-const API = (process.argv[2] ?? process.env.VODS_API_BASE ?? 'https://vods.vexoulz.net/backend').replace(/\/+$/, '')
+const API = (process.argv[2] ?? process.env.VODS_API_BASE ?? 'https://vods.vexoul.net/backend').replace(/\/+$/, '')
 const VODS = {
   'vod-plain': '2703890458', // 3 parts, no cuts
   'vod-one-cut': '2510563806', // 8 parts, one 5 h cut
