@@ -1,5 +1,5 @@
 // How a VOD is shown and linked outside its watch page: the thumbnail, box art and the watch path. Kept here so the vods
-// site and every other site that links to a VOD (the stream card on vexoulz.net) pick the same ones.
+// site and every other site that links to a VOD (the stream card on vexoul.net) pick the same ones.
 import type { Vod } from './types'
 
 type Thumbed = Pick<Vod, 'thumbnail'> & {
