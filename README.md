@@ -1,14 +1,21 @@
 # vods-core
 
-The headless engine behind vods.vexoul.net. It holds the logic the old React site had spread across its components,
-with types and tests, and **no UI**. Components and styles live in [vexoulz-ui](https://github.com/vEXOULZ/vexoulz-ui);
-the site puts the two together.
+The engine and the app behind the vods sites: [vods.vexoul.net](https://github.com/vEXOULZ/vexoulz-vods) and
+[keekivods.vexoul.net](https://github.com/vEXOULZ/keeki-vods). Three parts:
+
+- **the root entry and `vue`**: headless. The logic the old React site had spread across its components, with types
+  and tests, and no UI.
+- **`app`**: the site itself, its pages, the Manage dashboard (the archive's admin pages) and the router, built from
+  the headless parts and [vexoulz-ui](https://github.com/vEXOULZ/vexoulz-ui). A site calls `createVodsApp()` with its
+  channel and branding, and that's all it holds.
+- **`dev`**: `adminMock()`, a vite plugin that serves an in-memory admin API, for working on the Manage pages
+  without a worker.
 
 ```bash
 npm install
 npm test            # vitest, against real VOD fixtures
-npm run typecheck   # tsc
-npm run build       # → dist/ (index.js, vue.js, types/)
+npm run typecheck   # vue-tsc
+npm run build       # → dist/ (index.js, vue.js, app.js, app.css, dev.js, types/)
 npm run fixtures    # refresh tests/fixtures from the public archive API
 git config core.hooksPath .conventions/githooks   # once per clone: branch-name rules, see CONTRIBUTING.md
 ```
@@ -16,11 +23,53 @@ git config core.hooksPath .conventions/githooks   # once per clone: branch-name 
 `main` is merge-only and branches follow [Conventional Branch](https://conventional-branch.github.io/)
 (`feature/…`, `bugfix/…`, `hotfix/…`, `release/…`, `chore/…`). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Using it
+## A site
+
+A vods site is `index.html`, its assets, and a `main.ts`:
 
 ```bash
-npm install github:vEXOULZ/vods-core#v0.1.0
+npm install github:vEXOULZ/vods-core#vX.Y.Z github:vEXOULZ/vexoulz-ui#vX.Y.Z github:vEXOULZ/vex-platform-web#vX.Y.Z vue vue-router
 ```
+
+```ts
+// main.ts
+import '@vexoulz/ui/fonts.css'
+import '@vexoulz/ui/style.css'
+import '@vexoulz/platform-web/style.css'
+import '@vexoulz/vods-core/app.css'
+
+import { defineVodsConfig } from '@vexoulz/vods-core'
+import { createVodsApp } from '@vexoulz/vods-core/app'
+
+const { app } = createVodsApp({
+  config: defineVodsConfig({ channel: 'vEXOULZ', twitchId: '38656648', apiBase: '/backend', startDate: '2024-09-16' }),
+  site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' },
+  adminBase: '/backend-admin',          // the worker's admin API (the default)
+  authBase: 'https://auth.vexoul.net',  // vexoulz-auth; empty (the default) turns sign-in off
+  commit: __COMMIT__,                   // shown in the footer
+})
+app.mount('#app')
+```
+
+| option | what |
+|---|---|
+| `config` | The channel and its archive API (`defineVodsConfig`, below). |
+| `site.id` | The site's entry in vexoulz-ui's `SITES`: its accent, sky, switcher entry and repo links. A new site is added there first. |
+| `site.name` | Its host, in page titles and on the Manage sign-in page. |
+| `site.twitchUrl` | The channel's Twitch page: the nav's "Live" and the watch page's link. |
+| `site.perPage` | VOD cards per page (24). |
+| `site.tags` | How VOD tags show until the archive has its own (edited on /manage/tags); `DEFAULT_TAGS` otherwise. |
+
+The `/backend` and `/backend-admin` paths are the archive's API and the worker's admin API on the site's own origin;
+the server in front of the site forwards them. In dev, the site's `vite.config.ts` proxies `/backend` to the public
+API and serves `/backend-admin` with the mock:
+
+```ts
+import { adminMock } from '@vexoulz/vods-core/dev'
+plugins: [vue(), adminMock('/backend-admin', 'https://vods.vexoul.net/backend')]
+```
+
+## Using the engine on its own
 
 ```ts
 // main.ts
@@ -62,6 +111,8 @@ const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0
 | `chat` | `ChatReplay` (paged, prefetching, seek-aware), `loadEmotes` (the channel and global sets the archive saved for the VOD, with today's 7TV globals only for rows saved before globals were kept; for VODs without saved sets, the channel's current sets, which the archive caches), `tokenize` / `resolveBadges` / `toChatMessage` (render-ready tokens, never HTML; zero-width emotes come as overlays of the emote they cover, BTTV / FFZ modifiers as effects on the emote they apply to). Chat has two sources: Twitch's replay of the VOD (`replay`) and doomtp-bot's live log (`bot`, with notices, redeems, cheers and removed messages, all on `ChatMessage`); `ChatReplay`'s `source` option picks one, and `sources` has how many messages each has. `loginOf` gives a username (the bot's, or a plain-ASCII display name in lower case). |
 | `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface. `AccountProgressStore` keeps it with the viewer's vexoulz account instead (see below). |
 | `vue` | `createVods`, `useVods`, `useWatch`, `useChat`, `useProgress`. Import from `@vexoulz/vods-core/vue`. |
+| `app` | `createVodsApp` and the site (`src/app/`): pages, components, the Manage dashboard, the router. Import from `@vexoulz/vods-core/app`, with its styles from `@vexoulz/vods-core/app.css`. |
+| `dev` | `adminMock`, the dev server's admin API. Import from `@vexoulz/vods-core/dev` in a vite config. |
 
 ## Progress with an account
 
@@ -99,7 +150,7 @@ own colour or `null`.
 
 ## Infrastructure
 
-This repo is host-agnostic: it's a library, nothing more. Details about where or how the sites or the archive are
+This repo is host-agnostic: it's a library, and the sites built on it are static files. Details about where or how the sites or the archive are
 hosted (machines, addresses, proxy or tunnel config, server paths, deploy scripts) belong in the private
 `homelab-docs` repo and must never be committed here. `.gitignore` blocks `.env*` (except `.env.example`),
 `*.local.*` and `/deploy.local/` so local host files can't slip in. Test fixtures come from the public API, with
