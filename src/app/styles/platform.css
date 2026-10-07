@@ -1,0 +1,27 @@
+/*
+ * @vexoulz/platform-web's components (jobs, audit, chat lines) on Deep Field. `:root:root` outranks the library's own
+ * :root defaults whichever stylesheet loads last (its CSS comes with lazily loaded pages).
+ */
+:root:root {
+  --vxp-bg: var(--vx-bg);
+  --vxp-surface: var(--vx-surface);
+  --vxp-ink: var(--vx-ink);
+  --vxp-muted: var(--vx-muted);
+  --vxp-line: var(--vx-line);
+  --vxp-hover: var(--vx-hover);
+  --vxp-accent: var(--vx-accent);
+  --vxp-on-accent: var(--vx-bg);
+  --vxp-ok: var(--vx-ok);
+  --vxp-warn: var(--vx-warn);
+  --vxp-bad: var(--vx-bad);
+  --vxp-ring: var(--vx-ring);
+  --vxp-radius: var(--vx-radius);
+  --vxp-radius-sm: var(--vx-radius-sm);
+  --vxp-ctl: var(--vx-ctl);
+  --vxp-ctl-sm: var(--vx-ctl-sm);
+  --vxp-font: var(--vx-font-sans);
+  --vxp-mono: var(--vx-font-mono);
+  --vxp-chat-bg: #0b0b0d;
+  --vxp-chat-ink: var(--vx-ink);
+  --vxp-chat-muted: var(--vx-muted);
+}
