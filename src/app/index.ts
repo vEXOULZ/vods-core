@@ -14,10 +14,9 @@ import './styles/platform.css'
 
 import App from './App.vue'
 import { answerOf, recall, remember, shouldCheck } from './admin/quiet'
-import { configureAdmin, ensure, quietLoginUrl, session, setExpiredHandler, twitchLoginUrl } from './admin/session'
-import { configurePlatform } from './admin/platform'
-import { loadTagConfig, tagConfig } from './lib/vodTags'
-import { configureSite, site, type VodsSite } from './site'
+import { ensure, quietLoginUrl, session, setExpiredHandler, twitchLoginUrl } from './admin/session'
+import { setupVodsSite } from './kit'
+import type { VodsSite } from './site'
 
 export { DEFAULT_TAGS, site, type TagStyle, type VodsSite } from './site'
 
@@ -44,10 +43,7 @@ export interface VodsApp {
 
 /** The site's app, ready to mount: `createVodsApp({...}).app.mount('#app')`. Call it once. */
 export function createVodsApp(options: VodsAppOptions): VodsApp {
-  configureSite(options.config, options.site)
-  tagConfig.value = site.tags
-  configureAdmin(options.adminBase ?? '/backend-admin')
-  configurePlatform()
+  setupVodsSite(options)
   const account = createAccount({ authBase: options.authBase ?? '' })
 
   const WatchPage = () => import('./pages/WatchPage.vue')
@@ -153,9 +149,6 @@ export function createVodsApp(options: VodsAppOptions): VodsApp {
   watch(account.user, (user, before) => {
     if (user && !before) void progress.merge()
   })
-
-  // How tags show (/manage/tags); the built-in ones until it answers.
-  void loadTagConfig()
 
   const app = createApp(App)
     .use(router)

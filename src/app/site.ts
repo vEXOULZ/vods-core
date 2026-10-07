@@ -1,6 +1,5 @@
 // The site the app is running as: which vexoul.net site it is, its name, its Twitch link, and how its VOD tags show.
 // createVodsApp() fills these in before the app mounts; everything else reads them at the time it needs them.
-import type { SiteId } from '@vexoulz/ui'
 import { defineVodsConfig, type VodsConfig } from '../config'
 
 /** How a VOD tag shows (see `site.tags`). */
@@ -46,8 +45,11 @@ export const DEFAULT_TAGS: Record<string, TagStyle> = {
 
 /** What tells one vods site from another. Everything else (the pages, the player, Manage) is the same. */
 export interface VodsSite {
-  /** The site's entry in vexoulz-ui's network (`SITES`): its accent, sky, switcher entry and repo links. */
-  id: SiteId
+  /**
+   * The site's id. For a site on vexoulz-ui (`createVodsApp()`), its entry in the network's `SITES`: its accent, sky,
+   * switcher entry and repo links. A site with its own UI (the `kit` entry) uses any id.
+   */
+  id: string
   /** The site's name in page titles and on the sign-in page: its host, e.g. `vods.vexoul.net`. */
   name: string
   /** The channel's Twitch page (the nav's "Live" and the watch page's link). */

@@ -28,6 +28,10 @@
       "import": "./dist/app.js"
     },
     "./app.css": "./dist/app.css",
+    "./kit": {
+      "types": "./dist/types/app/kit.d.ts",
+      "import": "./dist/kit.js"
+    },
     "./dev": {
       "types": "./dist/types/dev/adminMock.d.ts",
       "import": "./dist/dev.js"
