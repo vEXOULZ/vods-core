@@ -47,11 +47,14 @@ describe('isTagColor', () => {
       'oklch(from var(--vx-accent) calc(l - 0.15) c h)', 'color-mix(in oklch, var(--vx-ok) 60%, white)',
       'rgb(from var(--vx-bad) r g b / 0.5)', 'oklch(from #f00 clamp(0.2, l * 0.8, 0.9) c calc(h + 30))',
       'color-mix(in srgb, oklch(from var(--vx-info) l c h) 50%, transparent)',
+      // Any site's theme tokens, not only @vexoulz/ui's.
+      'var(--k-accent)', 'oklch(from var(--k-ok) calc(l - 0.1) c h)', 'color-mix(in oklch, var(--k-bad) 60%, var(--accent-2))',
     ]) expect(isTagColor(c), c).toBe(true)
   })
   it('refuses anything that could do more than color', () => {
     for (const c of [
-      'oklch(var(--vx-accent) calc(l - 0.15) c h', 'url(//evil/x.png)', 'oklch(from url(x) l c h)', 'var(--other)',
+      'oklch(var(--vx-accent) calc(l - 0.15) c h', 'url(//evil/x.png)', 'oklch(from url(x) l c h)', 'var(--)',
+      'var(--1x)', 'var(-- x)', 'var(--k-a,red)', 'rgb(var(--x) --y)',
       'var(--vx-a, url(x))', 'image-set(x)', 'red;background:url(x)', 'rgb(0 0 0) url(x)', 'calc(1 + 1)',
       'rgb(1 2 3))', 'oklch(\\75 rl c h)', 'rgb(0 0 0) rgb(0 0 0)', `rgb(${'1 '.repeat(90)})`,
       'rgb(calc(calc(calc(calc(1)))))', 'expression(alert(1))', '#ab',

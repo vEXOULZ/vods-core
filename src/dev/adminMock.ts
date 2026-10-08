@@ -581,7 +581,7 @@ function isTagColor(c: string): boolean {
   if (c.length > TAG_COLOR_MAX || !/^[#0-9a-z.,%\s/()*+-]+$/i.test(c)) return false
   if (/^#[0-9a-f]{3,8}$/i.test(c) || /^[a-z]{3,20}$/i.test(c)) return true
   // Theme tokens are the only var() and the only `--`.
-  const rest = c.replace(/var\(--vx-[a-z0-9-]+\)/gi, 'v')
+  const rest = c.replace(/var\(--[a-z][a-z0-9-]*\)/gi, 'v')
   if (/--|var\(/i.test(rest)) return false
   if (rest === 'v') return true
   // One color function around the whole thing; any function inside is a color or math one.
