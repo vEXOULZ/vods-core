@@ -1,5 +1,11 @@
 # @vexoulz/vods-core
 
+## 0.19.1
+
+### Patch Changes
+
+- 010363b: Manage: Start a job on a VOD the archive doesn't have yet says so and links to VODs → Add from Twitch (`/manage/vods?add=<id>`), instead of the worker's bare "no VOD".
+
 ## 0.19.0
 
 ### Minor Changes
