@@ -1,7 +1,6 @@
 // The viewer's chat settings, remembered in this browser. Storage can be missing or throw (private mode, blocked
 // site data); the page then just starts from the defaults.
 import { reactive, watch } from 'vue'
-import { clamp } from '@vexoulz/ui'
 import type { ChatSource, ChatSources } from '../../index'
 
 export interface ChatSettings {
@@ -28,6 +27,8 @@ const KEY = 'vods.chat.v3'
  * as a share of the page, so those aren't carried over.
  */
 const OLD_KEYS = ['vods.chat.v2', 'vods.chat.v1'] as const
+const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
+
 export const DELAY_LIMIT = 600
 export const WIDTH_MIN = 240
 export const WIDTH_MAX = 720

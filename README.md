@@ -1,13 +1,16 @@
 # vods-core
 
 The engine and the app behind the vods sites: [vods.vexoul.net](https://github.com/vEXOULZ/vexoulz-vods) and
-[keekivods.vexoul.net](https://github.com/vEXOULZ/keeki-vods). Three parts:
+[keekivods.vexoul.net](https://github.com/vEXOULZ/keeki-vods). Four parts:
 
 - **the root entry and `vue`**: headless. The logic the old React site had spread across its components, with types
   and tests, and no UI.
 - **`app`**: the site itself, its pages, the Manage dashboard (the archive's admin pages) and the router, built from
   the headless parts and [vexoulz-ui](https://github.com/vEXOULZ/vexoulz-ui). A site calls `createVodsApp()` with its
   channel and branding, and that's all it holds.
+- **`kit`**: the app without its look, for a site that draws its own pages (keekivods.vexoul.net): the pages' and
+  Manage's logic (list filters, tags, most played, chat settings, the admin API and its editors' drafts) and
+  `setupVodsSite()`. Nothing in it imports vexoulz-ui.
 - **`dev`**: `adminMock()`, a vite plugin that serves an in-memory admin API, for working on the Manage pages
   without a worker.
 
@@ -112,6 +115,7 @@ const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0
 | `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface. `AccountProgressStore` keeps it with the viewer's vexoulz account instead (see below). |
 | `vue` | `createVods`, `useVods`, `useWatch`, `useChat`, `useProgress`. Import from `@vexoulz/vods-core/vue`. |
 | `app` | `createVodsApp` and the site (`src/app/`): pages, components, the Manage dashboard, the router. Import from `@vexoulz/vods-core/app`, with its styles from `@vexoulz/vods-core/app.css`. |
+| `kit` | `setupVodsSite` and the app's logic without components or styles (`src/app/kit.ts`): `lib/`, `composables/`, the admin API (`AdminClient`, `admin`, `session`, `platform`) and the Manage editors' drafts. Import from `@vexoulz/vods-core/kit`, alongside `vue`. Needs `@vexoulz/platform-web`, never `@vexoulz/ui`. |
 | `dev` | `adminMock`, the dev server's admin API. Import from `@vexoulz/vods-core/dev` in a vite config. |
 
 ## Progress with an account
