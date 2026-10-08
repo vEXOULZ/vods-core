@@ -13,12 +13,14 @@ import { createVods } from '../vue'
 import './styles/platform.css'
 
 import App from './App.vue'
+import { configureArt, type VodsArt } from './art'
 import { answerOf, recall, remember, shouldCheck } from './admin/quiet'
 import { ensure, quietLoginUrl, session, setExpiredHandler, twitchLoginUrl } from './admin/session'
 import { setupVodsSite } from './kit'
 import { site, type VodsSite } from './site'
 
 export { DEFAULT_TAGS, site, type TagStyle, type VodsSite } from './site'
+export { art, type VodsArt } from './art'
 
 export interface VodsAppOptions {
   /** The channel and its archive API (`defineVodsConfig`). */
@@ -34,6 +36,11 @@ export interface VodsAppOptions {
   authBase?: string
   /** The commit the site was built from, shown in the footer. */
   commit?: string
+  /**
+   * The site's own art for the app's stand-ins (a VOD with no thumbnail, the Twitch mark). Unset, plain placeholders:
+   * e.g. `{ noThumbnail: VxNoThumbnail, twitchGlyph: VxTwitchGlyph }` from vexoulz-ui.
+   */
+  art?: VodsArt
 }
 
 export interface VodsApp {
@@ -44,6 +51,7 @@ export interface VodsApp {
 /** The site's app, ready to mount: `createVodsApp({...}).app.mount('#app')`. Call it once. */
 export function createVodsApp(options: VodsAppOptions): VodsApp {
   setupVodsSite(options)
+  configureArt(options.art)
   const account = createAccount({ authBase: options.authBase ?? '' })
 
   const WatchPage = () => import('./pages/WatchPage.vue')

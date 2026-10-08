@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createVodsApp, DEFAULT_TAGS, site } from '../../src/app'
+import { defineComponent, h } from 'vue'
+import { art, createVodsApp, DEFAULT_TAGS, site } from '../../src/app'
 import { admin, adminBase } from '../../src/app/admin/session'
 import { platform } from '../../src/app/admin/platform'
 import { tagConfig } from '../../src/app/lib/vodTags'
@@ -52,5 +53,16 @@ describe('createVodsApp', () => {
     createVodsApp({ config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' } })
     expect(site.tags).toBe(DEFAULT_TAGS)
     expect(admin.base).toBe('/backend-admin')
+  })
+
+  it("takes the site's art for the stand-ins, and goes back to the placeholders without it", () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    const NoThumb = defineComponent(() => () => h('div'))
+    const opts = { config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' } }
+    createVodsApp({ ...opts, art: { noThumbnail: NoThumb } })
+    expect(art.noThumbnail).toBe(NoThumb)
+    expect(art.twitchGlyph).toBeUndefined()
+    createVodsApp(opts)
+    expect(art.noThumbnail).toBeUndefined()
   })
 })

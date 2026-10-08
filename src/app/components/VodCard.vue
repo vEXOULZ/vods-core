@@ -3,10 +3,11 @@
 // link to that point), chapter strip, and where you stopped (from watch progress) with a bar showing how much
 // you've seen. Thumbnail and title link to the VOD; the posters sit outside those links. A tagged VOD (a playthrough)
 // shows its tags by the date as chips, or hanging off the thumbnail (ThumbTags), as `site.tags` says.
-import { gamePalette, learnGameColors, VxChapterBar, VxChip, VxLink, VxMenuItem, VxPlaceholder, VxPopover, VxPosters } from '@vexoulz/ui'
+import { gamePalette, learnGameColors, VxChapterBar, VxChip, VxLink, VxMenuItem, VxPopover, VxPosters } from '@vexoulz/ui'
 import { boxArt, isFinished, toClock, watchPath, type Progress, type Vod } from '../../index'
 import { computed, watchEffect } from 'vue'
 import { useThumbnail } from '../composables/useThumbnail'
+import NoThumbnail from './NoThumbnail.vue'
 import { cutNote } from '../lib/cuts'
 import { gamesWithArt } from '../lib/art'
 import { splitTags, tagStyle } from '../lib/vodTags'
@@ -37,7 +38,7 @@ const { src: thumb, srcset: thumbSet, onLoad: thumbLoaded, onError: thumbFailed 
       <VxLink :to="to" class="thumb-link" :aria-label="title" tabindex="-1">
         <div class="vx-ring img">
           <img v-if="thumb" :src="thumb" :srcset="thumbSet" alt="" loading="lazy" decoding="async" @load="thumbLoaded" @error="thumbFailed" />
-          <VxPlaceholder v-else label="no thumbnail" ratio="16 / 9" />
+          <NoThumbnail v-else />
         </div>
         <span class="dur vx-mono">{{ toClock(vod.duration) }}</span>
         <template v-if="progress">

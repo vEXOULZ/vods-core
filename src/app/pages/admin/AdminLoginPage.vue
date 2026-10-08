@@ -5,6 +5,7 @@ import { VxButton, VxCallout, VxField, VxInput } from '@vexoulz/ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AdminApiError } from '../../admin/api'
+import TwitchMark from '../../components/TwitchMark.vue'
 import VodsShell from '../../components/VodsShell.vue'
 import { ensure, login, session, SIGNIN_ERRORS, twitchLoginUrl } from '../../admin/session'
 import { site } from '../../site'
@@ -72,7 +73,7 @@ async function submit() {
         (<code>ARCHIVE_ADMIN_PASSWORD_NETWORKS</code>, the local network by default).
       </VxCallout>
       <template v-if="session.twitchLogin">
-        <VxButton :href="twitchLoginUrl(next)" variant="primary" class="twitch">Sign in with Twitch</VxButton>
+        <VxButton :href="twitchLoginUrl(next)" variant="primary" class="twitch"><TwitchMark />Sign in with Twitch</VxButton>
         <p class="vx-muted note">For the archive's admins.</p>
         <div v-if="session.passwordLogin" class="or vx-muted" role="separator">or with the admin password</div>
       </template>
@@ -91,7 +92,7 @@ async function submit() {
 <style scoped>
 .login { display: flex; flex-direction: column; gap: 14px; width: min(360px, 100%); margin: 8vh auto 0; padding: 24px; box-sizing: border-box; }
 .login h1 { font-size: 28px; margin: 0 0 4px; }
-.twitch { width: 100%; justify-content: center; }
+.twitch { width: 100%; justify-content: center; gap: 8px; }
 .note { margin: -6px 0 0; font-size: 12px; }
 .or { display: flex; align-items: center; gap: 10px; font-size: 12px; }
 .or::before, .or::after { content: ''; flex: 1; border-top: 1px solid var(--vx-line); }
