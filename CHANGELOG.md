@@ -1,5 +1,15 @@
 # @vexoulz/vods-core
 
+## 0.19.0
+
+### Minor Changes
+
+- 2863a29: New `kit` entry: the app's logic without components, styles or vexoulz-ui, and `setupVodsSite()`, for a site that draws its own pages. `VodsSite.id` is now any string. The kit also exports the quiet admin check (`quietLoginUrl`, `recall`, `remember`, `forget`, `answerOf`, `shouldCheck`).
+
+### Patch Changes
+
+- 3f12ba6: The tab's title goes back to the site's name when you leave a VOD, a game page or a Manage page for one without a title of its own.
+
 ## 0.18.0
 
 ### Minor Changes
