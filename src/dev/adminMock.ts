@@ -777,7 +777,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           return send(res, 200, {
             worker: { ok: true, runningJobs: jobs.filter((j) => j.state === 'running').length, startedAt: iso(3 * 86400_000) },
             api: { ok: true },
-            youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' } },
+            youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null },
             live: { live: false, streamId: null, startedAt: null },
             jobs: { counts: counts() },
           })
