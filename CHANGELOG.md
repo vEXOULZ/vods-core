@@ -1,5 +1,11 @@
 # @vexoulz/vods-core
 
+## 0.20.0
+
+### Minor Changes
+
+- 26f15f0: The admin health's `youtube` carries the `channel` uploads go to. The overview's YouTube tile links it, says "No channel" when the connected account has none, and offers "Switch account" while connected.
+
 ## 0.19.2
 
 ### Patch Changes
