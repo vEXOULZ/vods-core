@@ -112,7 +112,7 @@ export function tagChanges(saved: RawTag[], drafts: TagDraft[]) {
   const seen = new Set<string>()
   const colorOf = (key: number, field: 'color' | 'textColor' | 'patternColor', value: string) => {
     const c = value.trim()
-    if (c && !isTagColor(c)) flag(key, field, 'A hex, var(--vx-…), a color name, or a color function: oklch(from var(--vx-ok) calc(l - 0.1) c h)')
+    if (c && !isTagColor(c)) flag(key, field, 'A hex, a theme token like var(--vx-ok), a color name, or a color function: oklch(from var(--vx-ok) calc(l - 0.1) c h)')
     return c || null
   }
   const body: TagInput[] = drafts.map((d) => {
