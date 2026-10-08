@@ -43,6 +43,7 @@ import '@vexoulz/vods-core/app.css'
 
 import { defineVodsConfig } from '@vexoulz/vods-core'
 import { createVodsApp } from '@vexoulz/vods-core/app'
+import { VxNoThumbnail, VxTwitchGlyph } from '@vexoulz/ui'
 
 const { app } = createVodsApp({
   config: defineVodsConfig({ channel: 'vEXOULZ', twitchId: '38656648', apiBase: '/backend', startDate: '2024-09-16' }),
@@ -50,6 +51,7 @@ const { app } = createVodsApp({
   adminBase: '/backend-admin',          // the worker's admin API (the default)
   authBase: 'https://auth.vexoul.net',  // vexoulz-auth; empty (the default) turns sign-in off
   commit: __COMMIT__,                   // shown in the footer
+  art: { noThumbnail: VxNoThumbnail, twitchGlyph: VxTwitchGlyph }, // the site's own art; placeholders without
 })
 app.mount('#app')
 ```
@@ -62,6 +64,8 @@ app.mount('#app')
 | `site.twitchUrl` | The channel's Twitch page: the nav's "Live" and the watch page's link. |
 | `site.perPage` | VOD cards per page (24). |
 | `site.tags` | How VOD tags show until the archive has its own (edited on /manage/tags); `DEFAULT_TAGS` otherwise. |
+| `art.noThumbnail` | A component for a VOD with no thumbnail (fills a 16:9 box). Default: a plain placeholder. |
+| `art.twitchGlyph` | Twitch's mark on the Manage button and "Sign in with Twitch" (16 px). Default: a placeholder. |
 
 The `/backend` and `/backend-admin` paths are the archive's API and the worker's admin API on the site's own origin;
 the server in front of the site forwards them. In dev, the site's `vite.config.ts` proxies `/backend` to the public
