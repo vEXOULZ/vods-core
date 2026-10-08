@@ -1,5 +1,11 @@
 # @vexoulz/vods-core
 
+## 0.21.0
+
+### Minor Changes
+
+- 816147c: The admin health's `youtube` carries `connectedAt` and `refreshTokenExpiresAt`. The overview's YouTube tile shows how long the token has left ("token ends in 5 days", in the warning colour under two days), or when it was connected if Google gave no end.
+
 ## 0.20.0
 
 ### Minor Changes
