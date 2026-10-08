@@ -3,7 +3,7 @@
 // pause. Queued with POST /api/v2/jobs, the VOD as its `vod:<id>` subject.
 import { VxButton, VxCallout, VxCheckbox, VxDialog, VxField, VxInput, VxSelect, type Option } from '@vexoulz/ui'
 import { computed, ref, watch } from 'vue'
-import { errorText, type JobKindOut } from '@vexoulz/platform-web'
+import { ProblemError, errorText, type JobKindOut } from '@vexoulz/platform-web'
 import { platform, vodSubject } from './platform'
 
 const props = defineProps<{ kinds: JobKindOut[]; vodId?: string }>()
@@ -18,6 +18,8 @@ const paused = ref(false)
 const payload = ref('')
 const busy = ref(false)
 const error = ref<string | null>(null)
+// A VOD the archive doesn't have yet: jobs need its row, which VODs → Add from Twitch makes.
+const missingVod = ref<string | null>(null)
 
 const kindOptions = computed<Option<string>[]>(() =>
   props.kinds.map((k) => ({ value: k.name, label: k.name, sub: k.description || `${k.steps.length} steps` })),
@@ -32,6 +34,7 @@ watch(
   (v) => {
     if (!v) return
     error.value = null
+    missingVod.value = null
     vodId.value = props.vodId ?? ''
   },
   { immediate: true },
@@ -70,6 +73,7 @@ async function submit() {
   if (!kind.value || payloadError.value) return
   busy.value = true
   error.value = null
+  missingVod.value = null
   try {
     const job = await platform.enqueue({
       kind: kind.value,
@@ -82,7 +86,8 @@ async function submit() {
     })
     emit('started', job.id)
   } catch (e) {
-    error.value = errorText(e)
+    if (e instanceof ProblemError && e.code === 'vod_not_found') missingVod.value = vodId.value.trim()
+    else error.value = errorText(e)
   } finally {
     busy.value = false
   }
@@ -116,6 +121,11 @@ async function submit() {
           <textarea :id="id" v-model="payload" class="vx-input vx-mono payload" rows="3" placeholder='{"force": true}' />
         </template>
       </VxField>
+      <VxCallout v-if="missingVod" tone="warn">
+        VOD {{ missingVod }} isn't in the archive yet. Add it from Twitch first: that archives it, or with
+        “Details only”, adds it for jobs like this one.
+        <template #actions><VxButton size="sm" :to="`/manage/vods?add=${missingVod}`">Add from Twitch</VxButton></template>
+      </VxCallout>
       <VxCallout v-if="error" tone="error">{{ error }}</VxCallout>
     </form>
     <template #actions="{ close }">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // /manage/vods?q=&hidden=&synthetic=: find a VOD to edit (GET /api/v2/vods, so hidden, merged and synthetic ones too;
-// a title or an id), add ones the monitor missed, and make a synthetic one (a playthrough, say).
+// a title or an id), add ones the monitor missed (?add=<id> opens that with the id in), and make a synthetic one (a
+// playthrough, say).
 import { VxButton, VxCallout, VxChip, VxDialog, VxField, VxInput, VxSegmented, VxSkeleton, VxTable, useToast, type Option, type TableColumn } from '@vexoulz/ui'
 import { toClock } from '../../../index'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -118,7 +119,15 @@ async function add(mode: 'archive' | 'create') {
   }
 }
 
-onMounted(() => (document.title = `VODs · Manage · ${site.name}`))
+onMounted(() => {
+  document.title = `VODs · Manage · ${site.name}`
+  // From the Start a job dialog, for a VOD the archive doesn't have yet.
+  if (typeof route.query.add !== 'string') return
+  addId.value = route.query.add
+  addOpen.value = true
+  const { add: _add, ...rest } = route.query
+  void router.replace({ query: rest })
+})
 </script>
 
 <template>
