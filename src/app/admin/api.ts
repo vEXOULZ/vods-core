@@ -40,6 +40,10 @@ export interface Health {
     checkedAt?: string | null
     /** The channel uploads go to; null when the account has none (then valid is false), absent if unknown. */
     channel?: { id: string; title: string; url: string } | null
+    /** When the account was connected; null for a token imported from the legacy archive. */
+    connectedAt?: string | null
+    /** When Google said the refresh token ends (only for a time-limited grant). */
+    refreshTokenExpiresAt?: string | null
   } | null
   live: { live: boolean; streamId: string | null; startedAt: string | null } | null
   /** Counts over every job, legacy ones too; the job runs themselves come from /api/v2/jobs (platform.ts). */
