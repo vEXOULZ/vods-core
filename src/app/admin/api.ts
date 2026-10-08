@@ -33,7 +33,14 @@ export interface AdminUser {
 export interface Health {
   worker: { ok: boolean; runningJobs: number; startedAt?: string | null }
   api: { ok: boolean } | null
-  youtube: { authorized: boolean; valid: boolean; error: string | null; checkedAt?: string | null } | null
+  youtube: {
+    authorized: boolean
+    valid: boolean
+    error: string | null
+    checkedAt?: string | null
+    /** The channel uploads go to; null when the account has none (then valid is false), absent if unknown. */
+    channel?: { id: string; title: string; url: string } | null
+  } | null
   live: { live: boolean; streamId: string | null; startedAt: string | null } | null
   /** Counts over every job, legacy ones too; the job runs themselves come from /api/v2/jobs (platform.ts). */
   jobs: { counts: Partial<Record<JobState, number>> }

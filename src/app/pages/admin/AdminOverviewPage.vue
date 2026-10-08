@@ -43,9 +43,11 @@ const tiles = computed(() => {
     {
       name: 'YouTube',
       status: (!yt ? 'off' : yt.authorized && yt.valid ? 'ok' : 'warn') as Dot,
-      text: !yt ? 'Unknown' : !yt.authorized ? 'Not connected' : yt.valid ? 'Connected' : 'Token invalid',
+      text: !yt ? 'Unknown' : !yt.authorized ? 'Not connected' : yt.valid ? 'Connected' : yt.channel === null ? 'No channel' : 'Token invalid',
+      // The channel uploads go to, so a wrong account is caught before a job uploads there.
+      link: yt?.channel ? { text: yt.channel.title, href: yt.channel.url } : undefined,
       sub: yt?.error ?? (yt?.checkedAt ? `checked ${timeAgo(yt.checkedAt)}` : ''),
-      action: yt && !(yt.authorized && yt.valid) ? 'connect' : undefined,
+      action: !yt ? undefined : yt.authorized && yt.valid ? 'switch' : 'connect',
     },
     {
       name: 'Stream',
@@ -104,8 +106,10 @@ async function connectYoutube() {
         <div v-for="t in tiles" :key="t.name" class="tile vx-panel">
           <div class="vx-eyebrow">{{ t.name }}</div>
           <div class="tile-main"><VxStatusDot :status="t.status" />{{ t.text }}</div>
+          <a v-if="t.link" class="tile-link small" :href="t.link.href" target="_blank" rel="noopener">{{ t.link.text }}</a>
           <div v-if="t.sub" class="vx-muted small">{{ t.sub }}</div>
           <VxButton v-if="t.action === 'connect'" @click="connectYoutube">Connect YouTube</VxButton>
+          <VxButton v-else-if="t.action === 'switch'" size="sm" title="Connect a different Google account or channel" @click="connectYoutube">Switch account</VxButton>
         </div>
       </div>
 
@@ -130,6 +134,8 @@ async function connectYoutube() {
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 28px; }
 .tile { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; align-items: flex-start; }
 .tile-main { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.tile-link { color: var(--vx-accent); text-decoration: underline; text-underline-offset: 2px; }
+.tile-link:hover { color: var(--vx-ink); }
 .small { font-size: 12px; }
 section { margin-bottom: 28px; }
 h2 { margin: 0 0 10px; }
