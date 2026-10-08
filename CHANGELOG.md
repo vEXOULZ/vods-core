@@ -1,5 +1,11 @@
 # @vexoulz/vods-core
 
+## 0.19.2
+
+### Patch Changes
+
+- c1b7f5e: Tag colors take any site's theme tokens (`var(--k-accent)`, `oklch(from var(--k-ok) calc(l - 0.1) c h)`), not only `var(--vx-…)`, so keeki's swatches and relative colors validate. The admin mock checks the same.
+
 ## 0.19.1
 
 ### Patch Changes
