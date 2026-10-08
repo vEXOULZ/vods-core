@@ -36,6 +36,17 @@ describe('createVodsApp', () => {
     expect(router.resolve('/manage/jobs/12').matched[0]?.path).toBe('/manage/jobs/:id(\\d+)')
   })
 
+  it("puts the site's name back in the tab when a page without a title of its own opens", async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    const { router } = createVodsApp({ config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' } })
+    await router.push('/vods/1')
+    document.title = 'A VOD · vods.vexoul.net'
+    await router.push('/vods/1?t=30s')
+    expect(document.title).toBe('A VOD · vods.vexoul.net')
+    await router.push('/playthroughs')
+    expect(document.title).toBe('vods.vexoul.net')
+  })
+
   it('falls back to the built-in tags and /backend-admin', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     createVodsApp({ config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' } })

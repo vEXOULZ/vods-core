@@ -16,7 +16,7 @@ import App from './App.vue'
 import { answerOf, recall, remember, shouldCheck } from './admin/quiet'
 import { ensure, quietLoginUrl, session, setExpiredHandler, twitchLoginUrl } from './admin/session'
 import { setupVodsSite } from './kit'
-import type { VodsSite } from './site'
+import { site, type VodsSite } from './site'
 
 export { DEFAULT_TAGS, site, type TagStyle, type VodsSite } from './site'
 
@@ -112,6 +112,12 @@ export function createVodsApp(options: VodsAppOptions): VodsApp {
       return false
     }
     return { path: '/manage/login', query: { next: to.fullPath } }
+  })
+
+  // The tab's title goes back to the site's name on every new page; a page with a title of its own (a VOD, a Manage
+  // page) sets it as it renders, after this. A page that stays (a VOD's ?t= moving) keeps the title it set.
+  router.afterEach((to, from, failure) => {
+    if (!failure && to.matched.at(-1) !== from.matched.at(-1)) document.title = site.name
   })
 
   // Signed in to the account: read the quiet check's answer off the URL, and ask once if this browser doesn't know
