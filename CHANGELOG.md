@@ -1,5 +1,23 @@
 # @vexoulz/vods-core
 
+## 0.21.0
+
+### Minor Changes
+
+- 816147c: The admin health's `youtube` carries `connectedAt` and `refreshTokenExpiresAt`. The overview's YouTube tile shows how long the token has left ("token ends in 5 days", in the warning colour under two days), or when it was connected if Google gave no end.
+
+## 0.20.0
+
+### Minor Changes
+
+- 26f15f0: The admin health's `youtube` carries the `channel` uploads go to. The overview's YouTube tile links it, says "No channel" when the connected account has none, and offers "Switch account" while connected.
+
+## 0.19.2
+
+### Patch Changes
+
+- c1b7f5e: Tag colors take any site's theme tokens (`var(--k-accent)`, `oklch(from var(--k-ok) calc(l - 0.1) c h)`), not only `var(--vx-…)`, so keeki's swatches and relative colors validate. The admin mock checks the same.
+
 ## 0.19.1
 
 ### Patch Changes

@@ -581,7 +581,7 @@ function isTagColor(c: string): boolean {
   if (c.length > TAG_COLOR_MAX || !/^[#0-9a-z.,%\s/()*+-]+$/i.test(c)) return false
   if (/^#[0-9a-f]{3,8}$/i.test(c) || /^[a-z]{3,20}$/i.test(c)) return true
   // Theme tokens are the only var() and the only `--`.
-  const rest = c.replace(/var\(--vx-[a-z0-9-]+\)/gi, 'v')
+  const rest = c.replace(/var\(--[a-z][a-z0-9-]*\)/gi, 'v')
   if (/--|var\(/i.test(rest)) return false
   if (rest === 'v') return true
   // One color function around the whole thing; any function inside is a color or math one.
@@ -777,7 +777,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           return send(res, 200, {
             worker: { ok: true, runningJobs: jobs.filter((j) => j.state === 'running').length, startedAt: iso(3 * 86400_000) },
             api: { ok: true },
-            youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000) },
+            youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null },
             live: { live: false, streamId: null, startedAt: null },
             jobs: { counts: counts() },
           })
