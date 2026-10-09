@@ -4,7 +4,7 @@ import type { RawVod } from '../src/api/types'
 import { redirectTarget, SegmentTimeline, sourceIds, supersededTarget } from '../src/composite'
 import { WatchPlayer, YT_STATE, type PlayerLike } from '../src/player'
 import type { Chapter, Segment, Vod } from '../src/types'
-import { makeVod } from './helpers'
+import { fixtureVod, makeVod } from './helpers'
 
 const seg = (vodId: string, start: number, end: number, at: number, stream = 0): Segment => ({ vodId, start, end, at, label: null, stream })
 const source = (id: string, duration: number, parts: number[], chapters: Partial<Chapter>[] = []): Vod => {
@@ -235,5 +235,41 @@ describe('WatchPlayer on a SegmentTimeline', () => {
     w.attach(p, { index: 1, offset: 0 })
     w.playPart(0)
     expect(p.loadVideoById).toHaveBeenLastCalledWith('a-yt1', 1000)
+  })
+})
+
+describe('SegmentTimeline.locate', () => {
+  /** The clip scan locate() replaced: the first clip whose start, or end (a hair early when the next follows on), is past `t`. */
+  function scan(tl: SegmentTimeline, t: number) {
+    const n = tl.clips.length
+    for (let k = 0; k < n; k++) {
+      const c = tl.clips[k]!
+      if (t < c.start) return { index: k, offset: c.from }
+      const next = tl.clips[k + 1]
+      const end = next && next.start - c.end < 0.5 ? c.end - 0.5 : c.end
+      if (t < end) {
+        const s = tl.segments[c.segment]!
+        const src = tl.sources.get(s.vodId)!
+        const offset = src.vodToUpload(s.start + t - s.at) - src.starts[c.upload]!
+        return { index: k, offset: Math.min(c.to, Math.max(c.from, offset)) }
+      }
+    }
+    return { index: n - 1, offset: tl.clips[n - 1]!.to }
+  }
+
+  const cuts = { ...fixtureVod('vod-two-cuts'), id: 'cuts' }
+  const plain = { ...fixtureVod('vod-plain'), id: 'plain' }
+  const cases: [string, SegmentTimeline][] = [
+    ['a merge with a gap', new SegmentTimeline(synthetic([seg('a', 0, 7200, 0), seg('b', 0, 3600, 7500)]), [A, B])],
+    ['a playthrough over real VODs with cuts', new SegmentTimeline(synthetic([seg('cuts', 0, cuts.duration, 0), seg('plain', 500, 20000, cuts.duration + 60)]), [cuts, plain])],
+    ['clips shorter than the hand-over', new SegmentTimeline(synthetic([seg('a', 3599.8, 3600.1, 0), seg('a', 100, 100.2, 0.3), seg('b', 0, 50, 0.5)]), [A, B])],
+    ['overlapping segments', new SegmentTimeline(synthetic([seg('a', 0, 4000, 0), seg('b', 0, 3600, 3000)]), [A, B])],
+  ]
+
+  it.each(cases)('finds the clip a scan from the start would: %s', (_name, tl) => {
+    const end = Math.max(...tl.clips.map((c) => c.end)) + 10
+    const times = [-5, ...tl.clips.flatMap((c) => [c.start - 0.5, c.start, c.start + 0.01, c.end - 0.5, c.end - 0.01, c.end, c.end + 0.01])]
+    for (let t = 0; t < end; t += end / 997) times.push(t)
+    for (const t of [...times, end]) expect(tl.locate(t), `t=${t}`).toEqual(scan(tl, t))
   })
 })
