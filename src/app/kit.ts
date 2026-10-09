@@ -28,6 +28,9 @@ export function setupVodsSite(options: VodsSiteOptions): void {
   void loadTagConfig()
 }
 
+// The route table and the account and Manage wiring around the router (createVodsApp() uses the same).
+export * from './router'
+
 export { DEFAULT_TAGS, site, vodsConfig, configureSite, type TagStyle, type VodsSite } from './site'
 
 // Pages' logic.

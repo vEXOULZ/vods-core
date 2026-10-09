@@ -119,7 +119,7 @@ const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0
 | `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface. `AccountProgressStore` keeps it with the viewer's vexoulz account instead (see below). |
 | `vue` | `createVods`, `useVods`, `useWatch`, `useChat`, `useProgress`. Import from `@vexoulz/vods-core/vue`. |
 | `app` | `createVodsApp` and the site (`src/app/`): pages, components, the Manage dashboard, the router. Import from `@vexoulz/vods-core/app`, with its styles from `@vexoulz/vods-core/app.css`. |
-| `kit` | `setupVodsSite` and the app's logic without components or styles (`src/app/kit.ts`): `lib/`, `composables/`, the admin API (`AdminClient`, `admin`, `session`, `platform`) and the Manage editors' drafts. Import from `@vexoulz/vods-core/kit`, alongside `vue`. Needs `@vexoulz/platform-web`, never `@vexoulz/ui`. |
+| `kit` | `setupVodsSite`, `vodsRoutes` and `installVodsSession` (the route table and the router's account and Manage wiring, with the site's own pages and account), and the app's logic without components or styles (`src/app/kit.ts`): `lib/`, `composables/`, the admin API (`AdminClient`, `admin`, `session`, `platform`) and the Manage editors' drafts. Import from `@vexoulz/vods-core/kit`, alongside `vue`. Needs `@vexoulz/platform-web`, never `@vexoulz/ui`. |
 | `dev` | `adminMock`, the dev server's admin API. Import from `@vexoulz/vods-core/dev` in a vite config. |
 
 ## Progress with an account
