@@ -556,9 +556,9 @@ interface SiteTag {
 }
 const NO_TEXT = { text: null, textColor: null, textSize: null, textX: null, textY: null, textRotate: null, pattern: null, patternColor: null, patternSize: null }
 let siteTags: SiteTag[] = [
-  { name: 'new', label: 'new', drawn: true, color: 'var(--vx-accent)', width: null, height: null, ...NO_TEXT },
-  { name: 'updated', label: 'updated', drawn: true, color: 'var(--vx-info)', width: null, height: null, ...NO_TEXT },
-  { name: 'complete', label: 'complete', drawn: true, color: 'var(--vx-ok)', width: null, height: null, ...NO_TEXT },
+  { name: 'new', label: 'new', drawn: true, color: 'var(--vods-tag-new)', width: null, height: null, ...NO_TEXT },
+  { name: 'updated', label: 'updated', drawn: true, color: 'var(--vods-tag-updated)', width: null, height: null, ...NO_TEXT },
+  { name: 'complete', label: 'complete', drawn: true, color: 'var(--vods-tag-complete)', width: null, height: null, ...NO_TEXT },
   { name: 'compilation', label: 'playthrough', drawn: false, color: null, width: null, height: null, ...NO_TEXT },
 ]
 /** Cleaned SVGs by tag name, with the hash that versions their URL. */

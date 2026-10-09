@@ -10,6 +10,7 @@ import type { VodsConfig } from '../config'
 import { createVods } from '../vue'
 
 import './styles/platform.css'
+import './styles/tags.css'
 
 import App from './App.vue'
 import { configureArt, type VodsArt } from './art'

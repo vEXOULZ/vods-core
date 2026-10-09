@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AdminClient } from '../../src/app/admin/api'
 import { blankDraft, draftOf, draftsOf, previewOf, rawOf, tagChanges } from '../../src/app/admin/tags'
 import { fromRaw, isTagColor, loadTagConfig, tagConfig, type RawTag } from '../../src/app/lib/vodTags'
-import { site } from '../../src/app/site'
+import { DEFAULT_TAGS, site } from '../../src/app/site'
 
 const raw = (o: Partial<RawTag> = {}): RawTag => ({ name: 'new', label: 'new', drawn: true, color: null, shape: null, width: null, height: null, ...NO_TEXT, ...NO_PATTERN, ...o })
 const NO_TEXT = { text: null, textColor: null, textSize: null, textX: null, textY: null, textRotate: null }
@@ -187,5 +187,13 @@ describe('AdminClient site tags', () => {
     expect((init!.headers as Record<string, string>)['content-type']).toBe('image/svg+xml')
     expect((init!.headers as Record<string, string>)['x-csrf-token']).toBe('t')
     expect((f.mock.calls[1]![1]!.headers as Record<string, string>)['content-type']).toBe('image/svg+xml')
+  })
+})
+
+describe('built-in tags', () => {
+  it("are colored with the site's own --vods-tag-* tokens, which Manage can save as they are", () => {
+    const colors = Object.values(DEFAULT_TAGS).flatMap((t) => (t.color ? [t.color] : []))
+    expect(colors).toEqual(['var(--vods-tag-new)', 'var(--vods-tag-updated)', 'var(--vods-tag-complete)'])
+    for (const c of colors) expect(isTagColor(c)).toBe(true)
   })
 })
