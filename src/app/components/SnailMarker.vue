@@ -5,8 +5,9 @@
 // The body takes the site's accent; the shell takes `shell` (the game being played), or the drawing's own yellow when
 // there is none. The darker and lighter shades are mixed from those.
 import { computed } from 'vue'
+import type { SnailMode } from '../composables/useTimeline'
 
-export type SnailMode = 'walk' | 'sleep' | 'float'
+export type { SnailMode }
 
 const props = withDefaults(defineProps<{ mode: SnailMode; rate?: number; shell?: string }>(), { rate: 1 })
 

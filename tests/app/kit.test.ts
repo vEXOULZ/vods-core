@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as kit from '../../src/app/kit'
 import { admin, adminBase, setupVodsSite, site, tagConfig, vodsConfig } from '../../src/app/kit'
 import { defineVodsConfig } from '../../src/index'
 
@@ -42,5 +43,10 @@ describe('kit entry', () => {
     expect([...packages].filter((p) => p.startsWith('@vexoulz/ui'))).toEqual([])
     expect([...seen].filter((f) => !f.endsWith('.ts'))).toEqual([])
     expect(seen.size).toBeGreaterThan(20)
+  })
+
+  it("exports the pages' logic for a site with its own UI", () => {
+    for (const name of ['useWatchView', 'useTimeline', 'useSplice', 'useChaptersDraft', 'partOffset', 'streamEntered', 'clamp', 'clampX'])
+      expect(typeof (kit as Record<string, unknown>)[name], name).toBe('function')
   })
 })
