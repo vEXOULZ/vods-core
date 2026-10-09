@@ -1,0 +1,8 @@
+/*
+ * The built-in tags' colors (site.ts, DEFAULT_TAGS) on Deep Field. A site with its own UI (the kit) defines these itself.
+ */
+:root {
+  --vods-tag-new: var(--vx-accent);
+  --vods-tag-updated: var(--vx-info);
+  --vods-tag-complete: var(--vx-ok);
+}
