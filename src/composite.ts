@@ -99,6 +99,8 @@ export class SegmentTimeline implements PlayableTimeline {
   readonly chapters: readonly Chapter[]
   readonly cuts: readonly Span[]
   readonly duration: number
+  /** Per clip: up to when it, or a clip before it, takes a time (see locate). */
+  private readonly takesUntil: readonly number[]
 
   constructor(vod: Vod, sources: Iterable<Vod>, type?: UploadType | null, opts: TimelineOptions = {}) {
     const list = [...sources]
@@ -136,6 +138,14 @@ export class SegmentTimeline implements PlayableTimeline {
     })
     this.clips = clips
     this.uploads = uploads
+    // Right at the end of a clip the next one takes over (as between a plain VOD's uploads). A running max keeps the
+    // list sorted, so locate()'s binary search finds the first clip that takes a time, as a scan from the start would.
+    let until = -Infinity
+    this.takesUntil = clips.map((c, k) => {
+      const next = clips[k + 1]
+      const end = next && next.start - c.end < BOUNDARY_EPS ? c.end - BOUNDARY_EPS : c.end
+      return (until = Math.max(until, c.start, end))
+    })
   }
 
   get isEmpty(): boolean {
@@ -174,21 +184,21 @@ export class SegmentTimeline implements PlayableTimeline {
   locate(t: number): Position {
     const n = this.clips.length
     if (!n) return { index: -1, offset: 0 }
-    for (let k = 0; k < n; k++) {
-      const c = this.clips[k]!
-      if (t < c.start) return { index: k, offset: c.from }
-      // Right at the end of a clip the next one takes over (as between a plain VOD's uploads).
-      const next = this.clips[k + 1]
-      const end = next && next.start - c.end < BOUNDARY_EPS ? c.end - BOUNDARY_EPS : c.end
-      if (t < end) {
-        const seg = this.segments[c.segment]!
-        const tl = this.timelineOf(c)
-        const offset = tl.vodToUpload(seg.start + t - seg.at) - tl.starts[c.upload]!
-        return { index: k, offset: clamp(offset, c.from, c.to) }
-      }
+    // The first clip that takes `t`: before its start (a gap, snapped forward) or inside it.
+    let lo = 0
+    let hi = n
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (t < this.takesUntil[mid]!) hi = mid
+      else lo = mid + 1
     }
-    const last = this.clips[n - 1]!
-    return { index: n - 1, offset: last.to }
+    if (lo === n) return { index: n - 1, offset: this.clips[n - 1]!.to }
+    const c = this.clips[lo]!
+    if (t < c.start) return { index: lo, offset: c.from }
+    const seg = this.segments[c.segment]!
+    const tl = this.timelineOf(c)
+    const offset = tl.vodToUpload(seg.start + t - seg.at) - tl.starts[c.upload]!
+    return { index: lo, offset: clamp(offset, c.from, c.to) }
   }
 
   toVod(pos: Position): number {
