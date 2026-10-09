@@ -35,11 +35,16 @@ export interface TagStyle {
   patternSize?: number
 }
 
-/** The built-in VOD tags: `new` and `updated` follow the VOD's dates (lib/vodTags.ts), the rest are set on the VOD. */
+/**
+ * The built-in VOD tags: `new` and `updated` follow the VOD's dates (lib/vodTags.ts), the rest are set on the VOD. Their
+ * colors are the site's `--vods-tag-new`, `--vods-tag-updated` and `--vods-tag-complete` (no fallback inside the var(),
+ * which a tag color can't hold): the Deep Field app maps them to its `--vx-*` (styles/tags.css), a site with its own UI
+ * defines them.
+ */
 export const DEFAULT_TAGS: Record<string, TagStyle> = {
-    new: { label: 'new', drawn: true, color: 'var(--vx-accent)', shape: null },
-    updated: { label: 'updated', drawn: true, color: 'var(--vx-info)', shape: null },
-    complete: { label: 'complete', drawn: true, color: 'var(--vx-ok)', shape: null },
+    new: { label: 'new', drawn: true, color: 'var(--vods-tag-new)', shape: null },
+    updated: { label: 'updated', drawn: true, color: 'var(--vods-tag-updated)', shape: null },
+    complete: { label: 'complete', drawn: true, color: 'var(--vods-tag-complete)', shape: null },
     compilation: { label: 'playthrough', drawn: false },
   }
 
