@@ -1,62 +1,22 @@
 <script setup lang="ts">
 // Hand-edit a VOD's chapters: game (Twitch category search), start / end times, restricted (cut for DMCA). A strip on
 // top shows the result against the VOD's length. "Lock" keeps the automatic chapters step from overwriting the edit.
-import { gamePalette, VxButton, VxCallout, VxCheckbox, VxChip, VxSwitch, useToast, clamp } from '@vexoulz/ui'
-import { NO_CATEGORY, toClock } from '../../index'
-import { computed, ref } from 'vue'
+// The logic is useChaptersDraft's (kit); this draws it, with the game colours of the Deep Field palette.
+import { gamePalette, VxButton, VxCallout, VxCheckbox, VxChip, VxSwitch, useToast } from '@vexoulz/ui'
+import { toClock } from '../../index'
+import { computed } from 'vue'
 import type { AdminVod } from './api'
-import { chapterDrafts, chapterEdits, chapterErrors, chapterGaps, newChapter, type ChapterDraft, type GameValue } from './edits'
 import GameSearch from './GameSearch.vue'
-import { admin } from './session'
 import TimeInput from './TimeInput.vue'
-import { useDraftEditor } from './useDraftEditor'
+import { useChaptersDraft } from '../composables/useChaptersDraft'
 
 const props = defineProps<{ vod: AdminVod; duration: number }>()
 const emit = defineEmits<{ saved: [vod: AdminVod] }>()
 const toast = useToast()
 
-const locked = ref(false)
-const { rows, error, saving, dirty, errors, reset, save, remove } = useDraftEditor<ChapterDraft>({
-  source: () => [props.vod.id, props.vod.chapters, props.vod.chaptersLocked],
-  drafts: () => chapterDrafts(props.vod.chapters),
-  onReset: () => (locked.value = props.vod.chaptersLocked),
-  edits: (rows) => ({ c: chapterEdits(rows), l: locked.value }),
-  validate: (rows) => chapterErrors(rows, props.duration),
-  async save(rows) {
-    const vod = await admin.saveChapters(props.vod.id, chapterEdits(rows), locked.value)
-    toast.show(locked.value ? 'Chapters saved and locked' : 'Chapters saved', { duration: 3000 })
-    emit('saved', vod)
-  },
-})
-const gaps = computed(() => chapterGaps(rows.value, props.duration))
-const sorted = computed(() => rows.value.every((r, i) => i === 0 || rows.value[i - 1]!.start <= r.start))
-
-const label = (r: ChapterDraft) => r.name ?? NO_CATEGORY
+const { rows, error, saving, dirty, errors, reset, save, remove, locked, gaps, sorted, label, total, pct, game, setGame, add, split, sortRows } =
+  useChaptersDraft(props, { saved: (vod) => emit('saved', vod), notify: (message, options) => toast.show(message, options) })
 const palette = computed(() => gamePalette(rows.value.map(label)))
-const total = computed(() => Math.max(props.duration, ...rows.value.map((r) => (Number.isFinite(r.end) ? r.end : 0)), 1))
-const pct = (s: number) => `${(clamp(s, 0, total.value) / total.value) * 100}%`
-
-function game(r: ChapterDraft): GameValue {
-  return { name: r.name, gameId: r.gameId, imageTemplate: r.imageTemplate }
-}
-function setGame(r: ChapterDraft, g: GameValue) {
-  r.name = g.name
-  r.gameId = g.gameId
-  r.imageTemplate = g.imageTemplate
-}
-function add() {
-  rows.value.push(newChapter(rows.value, props.duration))
-}
-/** Split a chapter in the middle (e.g. to insert a game switch Twitch missed). */
-function split(r: ChapterDraft) {
-  const mid = Math.round((r.start + r.end) / 2)
-  const copy = { ...newChapter([], 0), name: r.name, gameId: r.gameId, imageTemplate: r.imageTemplate, start: mid, end: r.end, restricted: r.restricted, kind: r.kind }
-  r.end = mid
-  rows.value.splice(rows.value.indexOf(r) + 1, 0, copy)
-}
-function sortRows() {
-  rows.value = [...rows.value].sort((a, b) => a.start - b.start)
-}
 </script>
 
 <template>
