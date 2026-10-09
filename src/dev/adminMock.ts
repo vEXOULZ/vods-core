@@ -4,6 +4,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createHash, randomBytes } from 'node:crypto'
 import type { Plugin } from 'vite'
+import { isTagColor, TAG_NAME } from '../app/lib/tagRules'
 
 type State = 'queued' | 'running' | 'paused' | 'done' | 'failed' | 'cancelled'
 const STATES: State[] = ['queued', 'running', 'paused', 'done', 'failed', 'cancelled']
@@ -572,32 +573,6 @@ const siteTagsJson = (admin: boolean) => ({
   }),
   ...(admin ? { updatedAt: tagsChanged?.at ?? null, updatedBy: tagsChanged?.by ?? null } : {}),
 })
-const TAG_NAME = /^[a-z0-9][a-z0-9-]{0,31}$/
-const COLOR_FUNCS = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color', 'color-mix']
-const MATH_FUNCS = ['calc', 'min', 'max', 'clamp']
-const TAG_COLOR_MAX = 160
-/** The site's isTagColor (src/app/lib/vodTags.ts), as the archive checks it. */
-function isTagColor(c: string): boolean {
-  if (c.length > TAG_COLOR_MAX || !/^[#0-9a-z.,%\s/()*+-]+$/i.test(c)) return false
-  if (/^#[0-9a-f]{3,8}$/i.test(c) || /^[a-z]{3,20}$/i.test(c)) return true
-  // Theme tokens are the only var() and the only `--`.
-  const rest = c.replace(/var\(--[a-z][a-z0-9-]*\)/gi, 'v')
-  if (/--|var\(/i.test(rest)) return false
-  if (rest === 'v') return true
-  // One color function around the whole thing; any function inside is a color or math one.
-  const outer = /^([a-z-]+)\(/i.exec(rest)
-  if (!outer || !COLOR_FUNCS.includes(outer[1]!.toLowerCase()) || !rest.endsWith(')')) return false
-  let depth = 0
-  for (const m of rest.matchAll(/([a-z-]*)\(|\)/gi)) {
-    if (m[0] === ')') {
-      if (--depth < 0) return false
-      if (depth === 0 && m.index !== rest.length - 1) return false
-    } else {
-      if (!m[1] || ![...COLOR_FUNCS, ...MATH_FUNCS].includes(m[1].toLowerCase()) || ++depth > 4) return false
-    }
-  }
-  return depth === 0
-}
 function checkTags(list: unknown): SiteTag[] | string {
   if (!Array.isArray(list) || list.length > 32) return 'tags must be a list of at most 32'
   const seen = new Set<string>()
