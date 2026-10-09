@@ -1,5 +1,23 @@
 # @vexoulz/vods-core
 
+## 0.23.0
+
+### Minor Changes
+
+- a61be88: The kit exports the wiring `createVodsApp()` uses around its router, so a site with its own UI stops copying it:
+  `vodsRoutes(pages)` (the route table, with the site's own pages) and `installVodsSession(router, account, { manageLogin })`
+  (the Manage guard, the expired-session handler, the tab title, the quiet admin check, and watch progress that follows
+  the account; it returns the `progress` store for `createVods`). The Manage guard now matches only `/manage` and the
+  pages under it (`isManagePath`), not `/managefoo`.
+- 1a46fb8: kit: export `useWatchView`, `useTimeline`, `useSplice` and `useChaptersDraft` (the logic of WatchView, WatchTimeline, SplicePanel and ChaptersEditor, which now use them), plus `partOffset`, `streamEntered`, `clamp`, `clampX` and the `Notify` type, so a site with its own UI binds its markup to them instead of copying the scripts. WatchTimeline's `time` prop also takes a getter, and the watch page no longer re-renders on every player tick: only its clock line does.
+- a1e5827: The built-in tags (`DEFAULT_TAGS`) are colored with `var(--vods-tag-new)`, `var(--vods-tag-updated)` and `var(--vods-tag-complete)` instead of Deep Field's `--vx-accent`, `--vx-info` and `--vx-ok`. `createVodsApp()` maps them to those, so a vexoulz-ui site looks the same. A site with its own UI (the `kit` entry) now defines `--vods-tag-*` itself and no longer needs to alias `--vx-*`.
+- ce6872b: Remove `AdminClient.vods()` (GET /admin/vods) and its `AdminVodRow` type from the `kit` and `app` entries: nothing used them since Manage's list moved to `vodList()` (/api/v2/vods), which returns `VodListRow`s.
+
+### Patch Changes
+
+- 7b350db: The dev entry's mock archive checks tag names and colors with the site's own rules (`isTagColor`, `TAG_NAME`, now in an import-free `lib/tagRules.ts` that `vodTags` re-exports) instead of a copy.
+- a851f48: `SegmentTimeline.locate` finds the clip by binary search instead of scanning every clip, with the same results.
+
 ## 0.22.1
 
 ### Patch Changes
