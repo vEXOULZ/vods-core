@@ -9,13 +9,13 @@ function fakeFetch(status: number, body: unknown, headers: Record<string, string
 
 describe('AdminClient', () => {
   it('sends CSRF only on changes, and builds query strings without empty filters', async () => {
-    const fetch = fakeFetch(200, { data: [], next: null })
+    const fetch = fakeFetch(200, { items: [], next_cursor: null })
     const c = new AdminClient({ base: '/backend-admin/', fetch })
     c.csrf = 'tok'
-    await c.vods({ q: '', hidden: undefined, before: '40' })
+    await c.vodList({ q: '', hidden: undefined, cursor: '40' })
     await c.saveChat('7')
     const [url1, init1] = fetch.mock.calls[0]!
-    expect(url1).toBe('/backend-admin/admin/vods?before=40')
+    expect(url1).toBe('/backend-admin/api/v2/vods?cursor=40')
     expect((init1!.headers as Record<string, string>)['x-csrf-token']).toBeUndefined()
     const [url2, init2] = fetch.mock.calls[1]!
     expect(url2).toBe('/backend-admin/admin/logs')
@@ -80,17 +80,17 @@ describe('AdminClient', () => {
 
 describe('AdminClient: VODs, games, settings and storage', () => {
   it('lists VODs with only the filters given, and patches, reads and replaces games', async () => {
-    const fetch = fakeFetch(200, { data: [], next: null })
+    const fetch = fakeFetch(200, { items: [], next_cursor: null })
     const c = new AdminClient({ base: '', fetch })
-    await c.vods({ q: 'doom', hidden: false, limit: 30, before: undefined })
-    await c.vods({ hidden: true })
+    await c.vodList({ q: 'doom', hidden: false, limit: 30, cursor: undefined })
+    await c.vodList({ hidden: true })
     await c.updateVod('12', { hidden: true, thumbnailUrl: null })
     await c.games('12')
     await c.saveGames('12', [{ start_time: 0, end_time: 60, game_id: '1', game_name: 'Doom' }])
     const sent = fetch.mock.calls.map(([url, init]) => [url, init!.method, init!.body ?? null])
     expect(sent).toEqual([
-      ['/admin/vods?q=doom&hidden=false&limit=30', 'GET', null],
-      ['/admin/vods?hidden=true', 'GET', null],
+      ['/api/v2/vods?q=doom&hidden=false&limit=30', 'GET', null],
+      ['/api/v2/vods?hidden=true', 'GET', null],
       ['/admin/vods/12', 'PATCH', JSON.stringify({ hidden: true, thumbnailUrl: null })],
       ['/admin/vods/12/games', 'GET', null],
       ['/admin/vods/12/games', 'PUT', JSON.stringify({ games: [{ start_time: 0, end_time: 60, game_id: '1', game_name: 'Doom' }] })],
@@ -119,7 +119,7 @@ describe('AdminClient: VODs, games, settings and storage', () => {
 
   it('takes a problem detail as the message', async () => {
     const bad = new AdminClient({ base: '', fetch: fakeFetch(400, { type: 'about:blank', status: 400, code: 'bad_cursor', detail: 'not a cursor' }) })
-    const err = await bad.vods({ before: 'x' }).catch((e: unknown) => e)
+    const err = await bad.vodList({ cursor: 'x' }).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(AdminApiError)
     expect((err as AdminApiError).message).toBe('not a cursor')
   })
