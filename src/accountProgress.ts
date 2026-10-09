@@ -111,7 +111,7 @@ export class AccountProgressStore implements ProgressStore {
       } catch {
         break
       }
-      for (const e of items) await this.local.remove(e.vodId)
+      await this.local.remove(...items.map((e) => e.vodId))
       moved += items.length
     }
     return moved

@@ -29,7 +29,9 @@ function follow() {
   const width = panel.value?.offsetWidth ?? 0
   const left = a.left + clampX(a.left, a.left + width, document.documentElement.clientWidth)
   const top = r.dir === 'down' ? a.bottom + 6 : a.top - 6 - Math.min(r.maxHeight, panel.value?.scrollHeight ?? r.maxHeight)
-  pos.value = { top, left, maxHeight: r.maxHeight }
+  // Runs every frame: only a move re-renders the menu.
+  const p = pos.value
+  if (p.top !== top || p.left !== left || p.maxHeight !== r.maxHeight) pos.value = { top, left, maxHeight: r.maxHeight }
 }
 let frame = 0
 const loop = () => {

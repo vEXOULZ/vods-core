@@ -67,7 +67,7 @@ function sortRows() {
         :key="r.key"
         class="seg"
         :class="{ 'is-restricted': r.restricted, 'is-bad': errors.has(r.key) }"
-        :style="{ left: pct(r.start), width: `calc(${pct(r.end)} - ${pct(r.start)})`, background: palette.get(label(r)) }"
+        :style="{ left: pct(r.start), width: `calc(${pct(r.end)} - ${pct(r.start)})`, backgroundColor: palette.get(label(r)) }"
         :title="`${label(r)} · ${toClock(r.start)}–${toClock(r.end)}`"
       />
     </div>
@@ -116,7 +116,7 @@ function sortRows() {
 .chapters { display: flex; flex-direction: column; gap: 10px; }
 .strip { position: relative; height: 14px; border-radius: 3px; background: var(--vx-line); overflow: hidden; }
 .seg { position: absolute; top: 0; bottom: 0; border-right: 1px solid var(--vx-bg); box-sizing: border-box; }
-.seg.is-restricted { background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(0, 0, 0, 0.55) 4px 8px) !important; }
+.seg.is-restricted { background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(0, 0, 0, 0.55) 4px 8px); }
 .seg.is-bad { outline: 2px solid var(--vx-bad); outline-offset: -2px; }
 .strip-scale { display: flex; justify-content: space-between; font-size: 11px; margin-top: -6px; }
 .empty { margin: 4px 0; }

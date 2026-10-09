@@ -76,6 +76,16 @@ const ticks = computed(() => {
   const jumpAt = jumpList.value.map((j) => j.at)
   return spans.value.slice(1).filter((s) => !near(s.start, brks.value) && !near(s.start, jumpAt))
 })
+// The bar's fixed marks, placed once per timeline rather than on every tick of the playhead.
+const chapterBars = computed(() =>
+  chapters.value.map((c) => ({ c, style: { left: pct(c.start), width: width(c.start, c.end), '--c': props.palette.get(c.name) } })),
+)
+const unplayableBars = computed(() =>
+  spans.value.flatMap((s, i) => (unplayable(props.status[i]) ? [{ left: pct(s.start), width: width(s.start, s.end) }] : [])),
+)
+const tickLefts = computed(() => ticks.value.map((s) => pct(s.start)))
+const jumpBars = computed(() => jumpList.value.map((j) => ({ at: j.at, left: pct(j.at) })))
+const labelLefts = computed(() => spans.value.map((s) => pct(s.start)))
 
 // Part labels can't all fit when parts are short or the bar is narrow. They're placed in px, the one playing first,
 // and a label that would run into one already placed is hidden (its tick stays; the part menu still lists it). A
@@ -245,7 +255,7 @@ const shownColor = computed(() => {
         tabindex="-1"
         class="plabel vx-mono"
         :class="{ cur: i === runStart(partIndex), bad: unplayable(status[i]), hid: !shownLabels.has(i) }"
-        :style="{ left: pct(s.start) }"
+        :style="{ left: labelLefts[i] }"
         :title="`${label(i)} · ${toClock(s.start)}–${toClock(s.end)}${unplayable(status[i]) ? ' · unavailable' : ''}`"
         @click="seekTo(s.start)"
       >{{ label(i) }}</button>
@@ -267,17 +277,15 @@ const shownColor = computed(() => {
       @keydown="onKey"
     >
       <span
-        v-for="(c, i) in chapters"
+        v-for="({ c, style }, i) in chapterBars"
         :key="i"
         class="seg"
         :class="{ cut: c.restricted, gap: c.kind === 'gap' }"
-        :style="{ left: pct(c.start), width: width(c.start, c.end), '--c': palette.get(c.name) }"
+        :style="style"
       ></span>
-      <template v-for="(s, i) in spans" :key="'u' + i">
-        <span v-if="unplayable(status[i])" class="unseg" :style="{ left: pct(s.start), width: width(s.start, s.end) }"></span>
-      </template>
-      <span v-for="(s, i) in ticks" :key="'t' + i" class="tick" :style="{ left: pct(s.start) }"></span>
-      <span v-for="j in jumpList" :key="'j' + j.at" class="jump" :style="{ left: pct(j.at) }"></span>
+      <span v-for="(u, i) in unplayableBars" :key="'u' + i" class="unseg" :style="u"></span>
+      <span v-for="(left, i) in tickLefts" :key="'t' + i" class="tick" :style="{ left }"></span>
+      <span v-for="j in jumpBars" :key="'j' + j.at" class="jump" :style="{ left: j.left }"></span>
       <span v-for="b in breakSpans" :key="'b' + b.t" class="brk" :style="{ left: b.left, width: `${BREAK}px` }">
         <svg viewBox="0 0 6 20" preserveAspectRatio="none"><polyline points="3,0 1,3 5,7 1,11 5,15 1,18 3,20" /></svg>
       </span>
