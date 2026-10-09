@@ -81,19 +81,6 @@ export interface AdminVod extends RawVod {
   splices?: Splice[]
 }
 
-/** A row of GET /admin/vods: every VOD, hidden and merged ones too. */
-export interface AdminVodRow {
-  id: string
-  title: string | null
-  createdAt: string
-  duration: string
-  duration_seconds: number
-  thumbnail_url: string | null
-  stream_id: string | null
-  hidden: boolean
-  merged_into: string | null
-}
-
 /** The fields PATCH /admin/vods/:id changes. A merged VOD takes only `hidden`. */
 export interface VodPatch {
   title?: string
@@ -439,10 +426,6 @@ export class AdminClient {
   }
 
   // ---- VODs ----
-  /** Newest first; `q` is an exact id or part of a title; `before` is the last page's `next`. */
-  vods(q: { q?: string; hidden?: boolean; limit?: number; before?: string } = {}, signal?: AbortSignal): Promise<{ data: AdminVodRow[]; next: string | null }> {
-    return this.request('GET', `/admin/vods${query(q)}`, undefined, signal)
-  }
   vod(id: string, signal?: AbortSignal): Promise<AdminVod> {
     return this.request('GET', `/admin/vods/${enc(id)}`, undefined, signal)
   }
