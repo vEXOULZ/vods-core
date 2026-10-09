@@ -37,6 +37,22 @@ async function quietly<T>(load: () => Promise<T>): Promise<T | null> {
   }
 }
 
+const defaultFetch: Fetch = (input, init) => globalThis.fetch(input, init)
+
+/** 7TV's current global set, fetched once per fetcher: it's the same for every VOD. */
+const sevenTvGlobals = new WeakMap<Fetch, RawThirdPartyEmote[]>()
+
+async function sevenTvGlobal(fetcher: Fetch, signal?: AbortSignal): Promise<RawThirdPartyEmote[] | undefined> {
+  const known = sevenTvGlobals.get(fetcher)
+  if (known) return known
+  const live = await quietly(async () => {
+    const res = await fetcher(SEVENTV_GLOBAL, { signal })
+    return res.ok ? ((await res.json()) as { emotes?: RawThirdPartyEmote[] }) : null
+  })
+  if (live?.emotes) sevenTvGlobals.set(fetcher, live.emotes)
+  return live?.emotes
+}
+
 /**
  * The emotes for a VOD. When the archive saved the VOD's sets, only those are used, so old chat shows what was an
  * emote back then: the channel's sets first, then the global sets saved with them. Rows saved before the archive kept
@@ -52,12 +68,7 @@ export async function loadEmotes(opts: LoadEmotesOptions): Promise<EmoteSet> {
     const globals = saved.global_emotes
     set.add('7tv', globals?.['7tv']).add('ffz', globals?.ffz).add('bttv', globals?.bttv)
     if (!globals?.['7tv']?.length) {
-      const live = await quietly(async () => {
-        const fetcher = opts.fetch ?? ((input: string, init?: RequestInit) => globalThis.fetch(input, init))
-        const res = await fetcher(SEVENTV_GLOBAL, { signal: opts.signal })
-        return res.ok ? ((await res.json()) as { emotes?: RawThirdPartyEmote[] }) : null
-      })
-      set.add('7tv', live?.emotes)
+      set.add('7tv', await sevenTvGlobal(opts.fetch ?? defaultFetch, opts.signal))
     }
   } else {
     const current = await quietly(() => opts.client.thirdPartyEmotes(opts.signal))

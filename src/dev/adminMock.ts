@@ -438,7 +438,7 @@ function mergeVods(a: Json, b: Json, gapIn: unknown) {
 
 function splitVod(a: Json, at: number) {
   if (a.merged_into) throw spliceError(409, `${a.id} is already merged into ${a.merged_into.id}`)
-  const join = [...splices].reverse().find((sp) => sp.kind === 'merge' && !sp.undoneAt && sp.vodId === a.id && at >= sp.offset - (sp.gap ?? 0) - 2 && at <= sp.offset + 2)
+  const join = splices.findLast((sp) => sp.kind === 'merge' && !sp.undoneAt && sp.vodId === a.id && at >= sp.offset - (sp.gap ?? 0) - 2 && at <= sp.offset + 2)
   if (join) return { undid: undo(join, false) }
   const ends = partEnds(a)
   const hit = ends.find((p) => at >= p.from - 2 && at <= p.to + 2)
@@ -653,7 +653,9 @@ const folders: Folder[] = [
   { area: 'live' as const, name: '318100000001', bytes: 11.5 * GB, files: 902, ageH: 900 },
   { area: 'vods' as const, name: '2300000002', bytes: 512 * 1024 ** 2, files: 2, ageH: 1500 },
 ].map((f) => ({ ...f, bytes: Math.round(f.bytes) }))
-const activeJobsFor = (name: string) => jobs.filter((j) => j.vodId === name && ['queued', 'running', 'paused'].includes(j.state))
+/** Not finished yet: queued, running or paused. */
+const isActive = (j: { state: State }) => j.state === 'queued' || j.state === 'running' || j.state === 'paused'
+const activeJobsFor = (name: string) => jobs.filter((j) => j.vodId === name && isActive(j))
 function storageJson() {
   const used = folders.reduce((t, f) => t + f.bytes, 0) + 120 * GB
   const job = (j: Job) => ({ id: j.id, kind: j.kind, state: j.state, step: j.step, updatedAt: j.updatedAt })
@@ -950,7 +952,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           const subject = url.searchParams.get('subject')
           const since = Date.parse(url.searchParams.get('since') ?? '') || 0
           const rows = jobs.filter((j) => (!kind || j.kind === kind) && (!subject || `vod:${j.vodId}` === subject))
-            .filter((j) => ['queued', 'running', 'paused'].includes(j.state) || !since || Date.parse(v2Job(j).finished_at ?? '') >= since)
+            .filter((j) => isActive(j) || !since || Date.parse(v2Job(j).finished_at ?? '') >= since)
           const n = Object.fromEntries(['queued', 'running', 'paused', 'succeeded', 'failed', 'cancelled'].map((s) => [s, rows.filter((j) => j.state === v2State(s)).length]))
           return send(res, 200, { counts: n, total: rows.length })
         }
@@ -995,7 +997,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             return send(res, 200, { root_id: root.id, items: items.map(v2Job), truncated: tree.length > limit })
           }
           if (!action && method === 'PATCH') {
-            if (!['queued', 'running', 'paused'].includes(job.state)) return conflict('only unfinished jobs can be changed')
+            if (!isActive(job)) return conflict('only unfinished jobs can be changed')
             if ('pause_before' in b) job.pauseBefore = (b.pause_before as string[] | null) ?? null
             if ('pause_next' in b) job.pauseNext = !!b.pause_next
             return done()
@@ -1079,7 +1081,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
               return send(res, 200, { error: false, msg: `Merged ${src.id} into ${id} at ${sp.offset}s`, splice: spliceJson(sp), warnings: [], vod: adminVod(vod) })
             }
             if (part === 'unmerge' && method === 'POST') {
-              const sp = [...splices].reverse().find((x) => x.kind === 'merge' && !x.undoneAt && x.vodId === id && x.otherId === String(b.source))
+              const sp = splices.findLast((x) => x.kind === 'merge' && !x.undoneAt && x.vodId === id && x.otherId === String(b.source))
               if (!sp) return fail(res, 404, `${b.source} is not merged into ${id}`)
               const out = undo(sp, !!b.force)
               return send(res, 200, { error: false, msg: `Unmerged ${sp.otherId} from ${id}`, splice: out, vod: adminVod(vods.get(id)!) })
@@ -1092,7 +1094,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
               return send(res, 200, { error: false, msg: `Split ${id} at ${r.splice.offset}s into ${r.newVodId}`, splice: spliceJson(r.splice), newVodId: r.newVodId, vod: adminVod(vods.get(id)!) })
             }
             if (part === 'unsplit' && method === 'POST') {
-              const sp = [...splices].reverse().find((x) => x.kind === 'split' && !x.undoneAt && x.vodId === id && (!b.source || x.otherId === String(b.source)))
+              const sp = splices.findLast((x) => x.kind === 'split' && !x.undoneAt && x.vodId === id && (!b.source || x.otherId === String(b.source)))
               if (!sp) return fail(res, 404, `${id} has no split to undo`)
               const out = undo(sp, !!b.force)
               return send(res, 200, { error: false, msg: `Joined ${sp.otherId} back into ${id}`, splice: out, vod: adminVod(vods.get(id)!) })
@@ -1158,7 +1160,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             }
             if (part === 'chapters' && method === 'PUT') {
               if (typeof b.locked !== 'boolean') return fail(res, 400, 'locked must be true or false')
-              vod.chapters = checkChapters(b.chapters, Number(vod.duration_seconds) || secondsOf(vod.duration))
+              vod.chapters = checkChapters(b.chapters, durOf(vod))
               if (b.locked) locked.add(id)
               else locked.delete(id)
               return send(res, 200, adminVod(vod))
@@ -1232,7 +1234,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             case '/admin/emotes': return start('emotes', b.force ? 'Saving emotes (overwriting)..' : 'Saving emotes..')
             case '/admin/emotes/backfill': return start('global_emotes_backfill', 'Backfilling global emotes..')
             case '/admin/bot-chat':
-              if (jobs.some((j) => j.kind === 'bot_chat' && j.vodId === vodId && ['queued', 'running', 'paused'].includes(j.state)))
+              if (jobs.some((j) => j.kind === 'bot_chat' && j.vodId === vodId && isActive(j)))
                 return fail(res, 409, `A bot chat job for ${vodId} is already running`)
               return start('bot_chat', `Reading bot chat for ${vodId}..`)
             case '/admin/bot-chat/backfill': return start('bot_chat_backfill', 'Backfilling bot chat..')

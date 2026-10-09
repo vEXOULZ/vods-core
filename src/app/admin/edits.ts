@@ -51,28 +51,45 @@ export function chapterDrafts(chapters: readonly RawChapter[] | null | undefined
   })
 }
 
-/** A new chapter after the last one (or at 0), running to the end of the VOD. */
-export function newChapter(rows: readonly ChapterDraft[], duration: number): ChapterDraft {
+/** Where a new row goes: after the last one (or at 0), running to the end of the VOD. */
+function nextSpan(rows: readonly { end: number }[], duration: number): { start: number; end: number } {
   const start = rows.reduce((m, r) => Math.max(m, r.end), 0)
-  return { key: key(), name: null, gameId: null, imageTemplate: null, start, end: Math.max(start + 1, duration), restricted: false }
+  return { start, end: Math.max(start + 1, duration) }
 }
 
 /**
- * Problems per row (by key), matching the worker's checks: start ≥ 0, length > 0, inside the VOD, and no overlap
- * with the chapter before it once sorted. Unsorted rows are fine here; they're sorted on save.
+ * Problems per row (by key) in a list of time spans, matching the worker's checks: start ≥ 0, length > 0, inside the
+ * VOD, and no overlap with the row before it once sorted (`noun` names that row). `check` runs first, for checks of
+ * its own. Unsorted rows are fine here; they're sorted on save.
  */
-export function chapterErrors(rows: readonly ChapterDraft[], duration: number): Map<number, string> {
+function spanErrors<R extends { key: number; start: number; end: number }>(
+  rows: readonly R[],
+  duration: number,
+  noun: string,
+  check?: (r: R) => string | null,
+): Map<number, string> {
   const errors = new Map<number, string>()
-  const sorted = [...rows].sort((a, b) => a.start - b.start)
-  let prev: ChapterDraft | null = null
-  for (const r of sorted) {
-    if (!Number.isFinite(r.start) || r.start < 0) errors.set(r.key, 'Start must be a time ≥ 0:00.')
+  let prev: R | null = null
+  for (const r of [...rows].sort((a, b) => a.start - b.start)) {
+    const own = check?.(r)
+    if (own) errors.set(r.key, own)
+    else if (!Number.isFinite(r.start) || r.start < 0) errors.set(r.key, 'Start must be a time ≥ 0:00.')
     else if (!Number.isFinite(r.end) || r.end <= r.start) errors.set(r.key, 'End must be after the start.')
     else if (duration > 0 && r.end > duration + 1) errors.set(r.key, `Ends after the VOD (${toClock(duration)}).`)
-    else if (prev && r.start < prev.end - 0.001) errors.set(r.key, `Overlaps the chapter before it (ends ${toClock(prev.end)}).`)
+    else if (prev && r.start < prev.end - 0.001) errors.set(r.key, `Overlaps the ${noun} before it (ends ${toClock(prev.end)}).`)
     prev = r
   }
   return errors
+}
+
+/** A new chapter after the last one (or at 0), running to the end of the VOD. */
+export function newChapter(rows: readonly ChapterDraft[], duration: number): ChapterDraft {
+  return { key: key(), name: null, gameId: null, imageTemplate: null, ...nextSpan(rows, duration), restricted: false }
+}
+
+/** Problems per chapter (by key), as `spanErrors` checks them. */
+export function chapterErrors(rows: readonly ChapterDraft[], duration: number): Map<number, string> {
+  return spanErrors(rows, duration, 'chapter')
 }
 
 export function chapterEdits(rows: readonly ChapterDraft[]): ChapterEdit[] {
@@ -323,23 +340,12 @@ export function gamesFromChapters(chapters: readonly RawChapter[] | null | undef
 }
 
 export function newGame(rows: readonly GameDraft[], duration: number): GameDraft {
-  const start = rows.reduce((m, r) => Math.max(m, r.end), 0)
-  return { key: key(), name: null, gameId: null, imageTemplate: null, image: null, start, end: Math.max(start + 1, duration), rest: {} }
+  return { key: key(), name: null, gameId: null, imageTemplate: null, image: null, ...nextSpan(rows, duration), rest: {} }
 }
 
-/** Problems per row (by key), as the worker checks them: a game, end after start, inside the VOD, no overlap. */
+/** Problems per row (by key), as the worker checks them: a game, then as `spanErrors`. */
 export function gameErrors(rows: readonly GameDraft[], duration: number): Map<number, string> {
-  const errors = new Map<number, string>()
-  let prev: GameDraft | null = null
-  for (const r of [...rows].sort((a, b) => a.start - b.start)) {
-    if (!r.name?.trim()) errors.set(r.key, 'Pick a game.')
-    else if (!Number.isFinite(r.start) || r.start < 0) errors.set(r.key, 'Start must be a time ≥ 0:00.')
-    else if (!Number.isFinite(r.end) || r.end <= r.start) errors.set(r.key, 'End must be after the start.')
-    else if (duration > 0 && r.end > duration + 1) errors.set(r.key, `Ends after the VOD (${toClock(duration)}).`)
-    else if (prev && r.start < prev.end - 0.001) errors.set(r.key, `Overlaps the row before it (ends ${toClock(prev.end)}).`)
-    prev = r
-  }
-  return errors
+  return spanErrors(rows, duration, 'row', (r) => (r.name?.trim() ? null : 'Pick a game.'))
 }
 
 /** The PUT body's rows, sorted by start (the worker refuses them unsorted). */

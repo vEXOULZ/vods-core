@@ -150,14 +150,12 @@ export class WatchPlayer {
     const id = this.timeline.uploads[pos.index]!.id
     if (pos.index === this.index) {
       player.seekTo(offset, true)
-    } else if (this.index >= 0 && this.timeline.uploads[this.index]?.id === id) {
-      // The next clip of the same video (a synthetic VOD): no reload.
-      this.index = pos.index
-      player.seekTo(offset, true)
-      this.emit('part', pos.index)
     } else {
+      // The next clip of the same video (a synthetic VOD) needs no reload.
+      const sameVideo = this.index >= 0 && this.timeline.uploads[this.index]?.id === id
       this.index = pos.index
-      if (autoplay) player.loadVideoById(id, offset)
+      if (sameVideo) player.seekTo(offset, true)
+      else if (autoplay) player.loadVideoById(id, offset)
       else player.cueVideoById(id, offset)
       this.emit('part', pos.index)
     }

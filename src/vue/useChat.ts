@@ -72,16 +72,23 @@ export function useChat(opts: UseChatOptions) {
     messages.value = []
   }
 
+  // A synthetic VOD's segments switch between a few VODs; their emotes are loaded once each.
+  const emoteSets = new Map<string, EmoteSet>()
+
   function start(vodId: string) {
     ctrl?.abort()
     const mine = (ctrl = new AbortController())
     sources.value = null
     restart(vodId)
-    emotes.value = null
+    emotes.value = emoteSets.get(vodId) ?? null
     badges.value = null
-    loadEmotes({ client, vodId, fetch, signal: mine.signal })
-      .then((set) => !mine.signal.aborted && (emotes.value = set))
-      .catch(() => undefined)
+    if (!emotes.value)
+      loadEmotes({ client, vodId, fetch, signal: mine.signal })
+        .then((set) => {
+          emoteSets.set(vodId, set)
+          if (!mine.signal.aborted) emotes.value = set
+        })
+        .catch(() => undefined)
     loadBadges(client)
       .then((b) => !mine.signal.aborted && (badges.value = b))
       .catch(() => undefined)

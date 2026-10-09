@@ -128,9 +128,10 @@ export class LocalProgressStore implements ProgressStore {
     this.write(all)
   }
 
-  async remove(vodId: string): Promise<void> {
+  /** Removes each of `vodIds` in one read and write. */
+  async remove(...vodIds: string[]): Promise<void> {
     const all = this.read()
-    delete all[vodId]
+    for (const id of vodIds) delete all[id]
     this.write(all)
   }
 

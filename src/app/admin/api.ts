@@ -441,10 +441,7 @@ export class AdminClient {
   // ---- VODs ----
   /** Newest first; `q` is an exact id or part of a title; `before` is the last page's `next`. */
   vods(q: { q?: string; hidden?: boolean; limit?: number; before?: string } = {}, signal?: AbortSignal): Promise<{ data: AdminVodRow[]; next: string | null }> {
-    const params = new URLSearchParams()
-    for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== '') params.set(k, String(v))
-    const qs = params.toString()
-    return this.request('GET', `/admin/vods${qs ? `?${qs}` : ''}`, undefined, signal)
+    return this.request('GET', `/admin/vods${query(q)}`, undefined, signal)
   }
   vod(id: string, signal?: AbortSignal): Promise<AdminVod> {
     return this.request('GET', `/admin/vods/${enc(id)}`, undefined, signal)
@@ -501,10 +498,7 @@ export class AdminClient {
     q: { q?: string; hidden?: boolean; synthetic?: boolean; tag?: string; cursor?: string; limit?: number } = {},
     signal?: AbortSignal,
   ): Promise<{ items: VodListRow[]; next_cursor: string | null }> {
-    const params = new URLSearchParams()
-    for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== '') params.set(k, String(v))
-    const qs = params.toString()
-    return this.request('GET', `/api/v2/vods${qs ? `?${qs}` : ''}`, undefined, signal)
+    return this.request('GET', `/api/v2/vods${query(q)}`, undefined, signal)
   }
   synthetic(id: string, signal?: AbortSignal): Promise<SyntheticVod> {
     return this.request('GET', `/api/v2/synthetic/${enc(id)}`, undefined, signal)
@@ -609,3 +603,10 @@ export class AdminClient {
 }
 
 const enc = encodeURIComponent
+/** `?a=1&b=x` from the set fields of `q` (undefined and '' left out), or '' when none are. */
+function query(q: Record<string, string | number | boolean | undefined>): string {
+  const params = new URLSearchParams()
+  for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== '') params.set(k, String(v))
+  const qs = params.toString()
+  return qs ? `?${qs}` : ''
+}
