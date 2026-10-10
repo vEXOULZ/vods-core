@@ -1,5 +1,19 @@
 # @vexoulz/vods-core
 
+## 0.24.0
+
+### Minor Changes
+
+- eb2690f: The archive and admin clients throw `@vexoulz/platform-web`'s `ProblemError` (platform-web 0.4.0), which the root entry
+  re-exports. `ApiError`, `AdminApiError` and the kit's `errorMessage` are gone: use `ProblemError`, `errorText()` and, for
+  a rate-limited login, `retryAfterText()`. A 409's split points and later edits come from `validPoints(e)` and
+  `editedSince(e)`.
+
+### Patch Changes
+
+- 86ee049: VodCard's missing thumbnail and Most played's missing box art use vexoulz-ui 0.21's `<VxPlaceholder flush>` instead of
+  restyling `.vx-ph` through `:deep()`. `NoThumbnail` takes `flush`.
+
 ## 0.23.0
 
 ### Minor Changes
