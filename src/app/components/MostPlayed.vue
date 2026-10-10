@@ -60,7 +60,7 @@ watchEffect(() => learnGameColors(top.value.map((g) => ({ name: g.name, image: a
         <li v-for="(g, i) in top" :key="g.name" :style="{ '--i': i }">
           <button type="button" class="card" :title="describe(g)" @click="emit('game', g.name)">
             <img v-if="art(g)" :src="art(g)" alt="" loading="lazy" decoding="async" />
-            <VxPlaceholder v-else :label="g.name" ratio="3 / 4" />
+            <VxPlaceholder v-else :label="g.name" ratio="3 / 4" flush />
             <span class="count vx-mono">{{ tag(g) }}</span>
             <span class="name">{{ g.name }}</span>
           </button>
@@ -97,7 +97,7 @@ watchEffect(() => learnGameColors(top.value.map((g) => ({ name: g.name, image: a
   border: 1px solid var(--vx-line); border-radius: var(--vx-radius); background: var(--vx-surface);
   box-shadow: 0 6px 18px rgb(0 0 0 / 0.45); color: #fff; font: inherit; cursor: pointer; text-align: left;
 }
-.card img, .card :deep(.vx-ph) { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .card:hover, .card:focus-visible { border-color: var(--vx-accent); outline: none; }
 .count {
   position: absolute; top: 5px; right: 5px; padding: 0 5px; font-size: 10px; border-radius: var(--vx-radius-sm);

@@ -38,7 +38,7 @@ const { src: thumb, srcset: thumbSet, onLoad: thumbLoaded, onError: thumbFailed 
       <VxLink :to="to" class="thumb-link" :aria-label="title" tabindex="-1">
         <div class="vx-ring img">
           <img v-if="thumb" :src="thumb" :srcset="thumbSet" alt="" loading="lazy" decoding="async" @load="thumbLoaded" @error="thumbFailed" />
-          <NoThumbnail v-else />
+          <NoThumbnail v-else flush />
         </div>
         <span class="dur vx-mono">{{ toClock(vod.duration) }}</span>
         <template v-if="progress">
@@ -104,7 +104,6 @@ const { src: thumb, srcset: thumbSet, onLoad: thumbLoaded, onError: thumbFailed 
 .thumb-link { display: block; position: relative; color: inherit; }
 .img { border-radius: var(--vx-radius); overflow: hidden; aspect-ratio: 16 / 9; background: var(--vx-surface); }
 .img img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.img :deep(.vx-ph) { border-radius: var(--vx-radius); background-color: var(--vx-surface); }
 .dur, .resume {
   position: absolute; top: 6px; font-size: 11px; padding: 0 6px; border-radius: var(--vx-radius-sm);
   background: rgb(0 0 0 / 0.75);
