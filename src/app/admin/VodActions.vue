@@ -3,9 +3,9 @@
 // delete removes the VOD from the archive after typing its id.
 import { VxButton, VxCheckbox, VxDialog, VxField, VxInput, VxSelect, useToast, type Option } from '@vexoulz/ui'
 import { computed, ref } from 'vue'
+import { errorText } from '@vexoulz/platform-web'
 import { isSpliced, type ActionResult, type AdminVod } from './api'
 import { admin } from './session'
-import { errorMessage } from '../lib/errors'
 
 const props = defineProps<{ vod: AdminVod }>()
 const emit = defineEmits<{ job: [jobId: number]; changed: []; deleted: [] }>()
@@ -26,7 +26,7 @@ async function run(name: string, action: () => Promise<ActionResult>, after?: ()
     if (res.jobId != null) emit('job', res.jobId)
     after?.()
   } catch (e) {
-    toast.show(errorMessage(e), { kind: 'error', duration: 6000 })
+    toast.show(errorText(e), { kind: 'error', duration: 6000 })
   } finally {
     busy.value = null
   }

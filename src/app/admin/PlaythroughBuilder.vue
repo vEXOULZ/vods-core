@@ -4,11 +4,11 @@
 import { VxButton, VxCallout, VxCheckbox, VxSkeleton } from '@vexoulz/ui'
 import { toClock } from '../../index'
 import { computed, ref, watch } from 'vue'
+import { errorText } from '@vexoulz/platform-web'
 import type { PlaythroughWindow } from './api'
 import type { GameValue } from './edits'
 import GameSearch from './GameSearch.vue'
 import { admin } from './session'
-import { errorMessage } from '../lib/errors'
 
 const emit = defineEmits<{ add: [windows: PlaythroughWindow[], game: string | null] }>()
 
@@ -32,7 +32,7 @@ watch(
       windows.value = items
       picked.value = new Set(items.map(key))
     } catch (e) {
-      if (!mine.signal.aborted) error.value = errorMessage(e)
+      if (!mine.signal.aborted) error.value = errorText(e)
     }
   },
 )

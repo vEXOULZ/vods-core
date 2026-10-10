@@ -6,10 +6,10 @@ import { VxButton, VxCallout, VxChip, VxDialog, VxField, VxInput, VxSegmented, V
 import { toClock } from '../../../index'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { errorText } from '@vexoulz/platform-web'
 import type { VodListRow } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
 import { admin } from '../../admin/session'
-import { errorMessage } from '../../lib/errors'
 import { watchDebounced } from '../../composables/watchDebounced'
 import { site } from '../../site'
 
@@ -113,7 +113,7 @@ async function add(mode: 'archive' | 'create') {
     addOpen.value = false
     router.push(`/manage/vods/${id}`)
   } catch (e) {
-    toast.show(errorMessage(e), { kind: 'error', duration: 6000 })
+    toast.show(errorText(e), { kind: 'error', duration: 6000 })
   } finally {
     adding.value = null
   }
@@ -147,7 +147,7 @@ onMounted(() => {
     </div>
 
     <VxCallout v-if="error" tone="error" title="Couldn't load the VODs">
-      {{ errorMessage(error) }}
+      {{ errorText(error) }}
       <template #actions><VxButton size="sm" @click="refresh">Try again</VxButton></template>
     </VxCallout>
     <div v-else-if="loading && !vods.length" class="sk" aria-busy="true"><VxSkeleton v-for="i in 6" :key="i" h="36px" /></div>
