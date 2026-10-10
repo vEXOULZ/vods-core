@@ -4,13 +4,13 @@
 // a shape uploads (or goes back to the placeholder) on its own, straight away, for a tag that's saved.
 import { timeAgo, VxButton, VxCallout, VxChip, VxField, VxInput, VxSelect, VxSkeleton, VxSwitch, useToast, type Option } from '@vexoulz/ui'
 import { computed, onMounted, ref } from 'vue'
-import { AdminApiError, type SiteTags } from '../../admin/api'
+import { errorText, ProblemError } from '@vexoulz/platform-web'
+import { type SiteTags } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
 import TagColorInput from '../../admin/TagColorInput.vue'
 import { admin } from '../../admin/session'
 import { blankDraft, draftsOf, previewOf, rawOf, tagChanges, type TagDraft, type TagField } from '../../admin/tags'
 import TagMark from '../../components/TagMark.vue'
-import { errorMessage } from '../../lib/errors'
 import { loadTagConfig, TAG_PATTERN_SIZE, TAG_SIZE, TAG_TEXT_MAX, TAG_TEXT_NUDGE, TAG_TEXT_ROTATE, TAG_TEXT_SIZE, type TagPattern } from '../../lib/vodTags'
 import { site, vodsConfig } from '../../site'
 
@@ -50,10 +50,10 @@ async function load() {
   try {
     take(await admin.siteTags())
   } catch (e) {
-    if (e instanceof AdminApiError && e.status === 404) {
+    if (e instanceof ProblemError && e.status === 404) {
       unavailable.value = true
       take({ tags: rawOf(site.tags), updatedAt: null, updatedBy: null })
-    } else loadError.value = errorMessage(e)
+    } else loadError.value = errorText(e)
   }
 }
 
@@ -69,7 +69,7 @@ async function save() {
     void loadTagConfig()
     toast.show('Tags saved', { duration: 3000 })
   } catch (e) {
-    saveError.value = errorMessage(e)
+    saveError.value = errorText(e)
   } finally {
     saving.value = false
   }
@@ -111,7 +111,7 @@ async function upload(d: TagDraft, ev: Event) {
     takeShape(d, await admin.uploadTagShape(d.name, file.type ? file : new Blob([file], { type: 'image/svg+xml' })))
     toast.show(`New shape for ${d.label || d.name}`, { duration: 3000 })
   } catch (e) {
-    toast.show(errorMessage(e), { kind: 'error', duration: 5000 })
+    toast.show(errorText(e), { kind: 'error', duration: 5000 })
   } finally {
     shaping.value = null
   }
@@ -122,7 +122,7 @@ async function dropShape(d: TagDraft) {
     takeShape(d, await admin.deleteTagShape(d.name))
     toast.show(`${d.label || d.name} is a placeholder again`, { duration: 3000 })
   } catch (e) {
-    toast.show(errorMessage(e), { kind: 'error', duration: 5000 })
+    toast.show(errorText(e), { kind: 'error', duration: 5000 })
   } finally {
     shaping.value = null
   }

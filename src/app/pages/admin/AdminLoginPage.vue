@@ -4,7 +4,7 @@
 import { VxButton, VxCallout, VxField, VxInput } from '@vexoulz/ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { AdminApiError } from '../../admin/api'
+import { ProblemError } from '@vexoulz/platform-web'
 import TwitchMark from '../../components/TwitchMark.vue'
 import VodsShell from '../../components/VodsShell.vue'
 import { ensure, login, session, SIGNIN_ERRORS, twitchLoginUrl } from '../../admin/session'
@@ -47,11 +47,11 @@ async function submit() {
     password.value = ''
     router.replace(next.value)
   } catch (e) {
-    if (e instanceof AdminApiError && e.status === 401) error.value = 'Wrong password.'
-    else if (e instanceof AdminApiError && e.status === 429)
-      error.value = `Too many attempts. Try again in ${e.retryAfter ? `${Math.ceil(e.retryAfter / 60)} min` : 'a few minutes'}.`
-    else if (e instanceof AdminApiError && e.status === 404) error.value = 'Password login is turned off on the archive.'
-    else if (e instanceof AdminApiError && e.status === 403)
+    if (e instanceof ProblemError && e.status === 401) error.value = 'Wrong password.'
+    else if (e instanceof ProblemError && e.status === 429)
+      error.value = `Too many attempts. ${e.retryAfterText()}`
+    else if (e instanceof ProblemError && e.status === 404) error.value = 'Password login is turned off on the archive.'
+    else if (e instanceof ProblemError && e.status === 403)
       error.value = "The admin password only works from the archive's local network. Sign in with Twitch instead."
     else error.value = `Couldn't reach the archive admin API${e instanceof Error ? ` (${e.message})` : ''}.`
   } finally {

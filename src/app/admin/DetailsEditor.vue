@@ -3,11 +3,11 @@
 // sent. A VOD merged into another keeps its details as they were.
 import { VxButton, VxCallout, VxField, VxInput, useToast } from '@vexoulz/ui'
 import { computed, ref, watch } from 'vue'
+import { errorText } from '@vexoulz/platform-web'
 import type { AdminVod } from './api'
 import { detailsDraft, detailsErrors, detailsPatch, type DetailsDraft } from './edits'
 import { admin } from './session'
 import TimeInput from './TimeInput.vue'
-import { errorMessage } from '../lib/errors'
 
 const props = defineProps<{ vod: AdminVod }>()
 const emit = defineEmits<{ saved: [vod: AdminVod] }>()
@@ -60,7 +60,7 @@ async function save() {
     toast.show('Details saved', { duration: 3000 })
     emit('saved', vod)
   } catch (e) {
-    error.value = errorMessage(e)
+    error.value = errorText(e)
   } finally {
     saving.value = false
   }

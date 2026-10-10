@@ -1,6 +1,7 @@
 import type { Chapter } from '../../src/index'
 import { describe, expect, it, vi } from 'vitest'
-import { AdminApiError, AdminClient, isSpliced, type Splice } from '../../src/app/admin/api'
+import { ProblemError } from '@vexoulz/platform-web'
+import { AdminClient, editedSince, isSpliced, validPoints, type Splice } from '../../src/app/admin/api'
 import { gamesWithArt } from '../../src/app/lib/art'
 import { cutNote } from '../../src/app/lib/cuts'
 
@@ -30,13 +31,13 @@ describe('merge and split client', () => {
     const split = await new AdminClient({ base: '', fetch: reply(409, { error: true, msg: 'inside an upload', validPoints: points }) })
       .split('A', 5000)
       .catch((e: unknown) => e)
-    expect(split).toBeInstanceOf(AdminApiError)
-    expect((split as AdminApiError).validPoints).toEqual(points)
-    expect((split as AdminApiError).edited).toEqual([])
+    expect(split).toBeInstanceOf(ProblemError)
+    expect(validPoints(split)).toEqual(points)
+    expect(editedSince(split)).toEqual([])
     const undo = await new AdminClient({ base: '', fetch: reply(409, { error: true, msg: 'Edited since', edited: ['A.title'] }) })
       .unmerge('A', 'B')
       .catch((e: unknown) => e)
-    expect((undo as AdminApiError).edited).toEqual(['A.title'])
+    expect(editedSince(undo)).toEqual(['A.title'])
   })
 })
 

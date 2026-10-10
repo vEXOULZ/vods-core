@@ -7,10 +7,9 @@ import {
 } from '@vexoulz/ui'
 import { computed, onMounted, ref } from 'vue'
 import type { StorageFolder, StorageView } from '../../admin/api'
-import { bytes } from '@vexoulz/platform-web'
+import { bytes, errorText } from '@vexoulz/platform-web'
 import ManageShell from '../../admin/ManageShell.vue'
 import { admin } from '../../admin/session'
-import { errorMessage } from '../../lib/errors'
 import { site } from '../../site'
 
 const toast = useToast()
@@ -34,7 +33,7 @@ async function load(refresh = false) {
   try {
     view.value = await admin.storage(refresh)
   } catch (e) {
-    loadError.value = errorMessage(e)
+    loadError.value = errorText(e)
   } finally {
     loading.value = false
   }
@@ -89,7 +88,7 @@ async function remove() {
     toast.show(`Deleted ${r.path}: ${bytes(r.bytes)} freed (${r.files} files)`, { duration: 5000 })
     await load(true)
   } catch (e) {
-    deleteError.value = errorMessage(e)
+    deleteError.value = errorText(e)
   } finally {
     deleting.value = false
   }

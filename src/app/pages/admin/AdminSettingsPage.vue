@@ -3,11 +3,11 @@
 // them. Each shows its env default and when a change is seen; one Save sends every change, all or none.
 import { timeAgo, VxButton, VxCallout, VxChip, VxInput, VxSkeleton, VxSwitch, useToast } from '@vexoulz/ui'
 import { computed, onMounted, ref } from 'vue'
+import { errorText } from '@vexoulz/platform-web'
 import type { RuntimeSetting } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
 import { admin } from '../../admin/session'
 import { settingChanges, settingLabel, showValue, toDraft, type SettingDraft } from '../../admin/settings'
-import { errorMessage } from '../../lib/errors'
 import { site } from '../../site'
 
 const toast = useToast()
@@ -29,7 +29,7 @@ async function load() {
   try {
     take((await admin.settings()).data)
   } catch (e) {
-    loadError.value = errorMessage(e)
+    loadError.value = errorText(e)
   }
 }
 
@@ -50,7 +50,7 @@ async function save() {
     take((await admin.saveSettings(pending.value.changes)).data)
     toast.show(count.value === 1 ? 'Setting saved' : 'Settings saved', { duration: 3000 })
   } catch (e) {
-    saveError.value = errorMessage(e)
+    saveError.value = errorText(e)
   } finally {
     saving.value = false
   }
@@ -70,7 +70,7 @@ async function reset(s: RuntimeSetting) {
     drafts.value = { ...keep, [s.key]: toDraft(fresh) }
     toast.show(`${settingLabel(s.key)} is back to its default`, { duration: 3000 })
   } catch (e) {
-    toast.show(errorMessage(e), { kind: 'error', duration: 5000 })
+    toast.show(errorText(e), { kind: 'error', duration: 5000 })
   } finally {
     resetting.value = null
   }

@@ -1,7 +1,8 @@
+import { ProblemError } from '@vexoulz/platform-web'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope, nextTick, shallowReactive } from 'vue'
 import { Timeline } from '../../src/timeline'
-import { AdminApiError, type AdminVod, type Splice, type SpliceResult } from '../../src/app/admin/api'
+import { type AdminVod, type Splice, type SpliceResult } from '../../src/app/admin/api'
 import { admin } from '../../src/app/admin/session'
 import { badGap, describeSplice, splitJoins, useSplice } from '../../src/app/composables/useSplice'
 import { fixtureVod, rawFixture } from '../helpers'
@@ -43,7 +44,7 @@ describe('useSplice', () => {
     const result = { error: false, msg: 'Unmerged', splice: splice({}), vod: {} as AdminVod } satisfies SpliceResult
     const unmerge = vi
       .spyOn(admin, 'unmerge')
-      .mockRejectedValueOnce(new AdminApiError(409, 'Edited since', null, { edited: ['chapters'] }))
+      .mockRejectedValueOnce(new ProblemError(409, { msg: 'Edited since', edited: ['chapters'] }))
       .mockResolvedValueOnce(result)
     const changed = vi.fn()
     const notify = vi.fn()

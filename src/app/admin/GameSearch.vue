@@ -4,10 +4,10 @@
 import { VxButton, VxInput, VxSpinner } from '@vexoulz/ui'
 import { boxArt, NO_CATEGORY } from '../../index'
 import { computed, nextTick, ref, useId, watch } from 'vue'
+import { errorText } from '@vexoulz/platform-web'
 import type { TwitchGame } from './api'
 import type { GameValue } from './edits'
 import { admin } from './session'
-import { errorMessage } from '../lib/errors'
 
 const props = defineProps<{ label?: string; invalid?: boolean }>()
 const model = defineModel<GameValue>({ required: true })
@@ -45,7 +45,7 @@ watch(query, (q) => {
       error.value = null
     } catch (e) {
       if (mine.signal.aborted) return
-      error.value = errorMessage(e)
+      error.value = errorText(e)
       results.value = []
     } finally {
       if (ctrl === mine) loading.value = false

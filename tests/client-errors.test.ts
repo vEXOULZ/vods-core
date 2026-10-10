@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ApiError, ArchiveClient } from '../src/api/client'
+import { ProblemError } from '@vexoulz/platform-web'
+import { ArchiveClient } from '../src/api/client'
 
 const client = (status: number, body: unknown) =>
   new ArchiveClient({ apiBase: '', fetch: vi.fn(async () => new Response(JSON.stringify(body), { status })) })
@@ -7,8 +8,8 @@ const client = (status: number, body: unknown) =>
 describe('ArchiveClient errors', () => {
   it("reads the legacy routes' msg, not their error flag", async () => {
     const err = await client(500, { error: true, msg: 'Failed to parse cursor' }).commentsAfter('1', 'x').catch((e: unknown) => e)
-    expect(err).toBeInstanceOf(ApiError)
-    expect((err as ApiError).message).toBe('Failed to parse cursor')
+    expect(err).toBeInstanceOf(ProblemError)
+    expect((err as ProblemError).message).toBe('Failed to parse cursor')
   })
 
   it('treats "nothing said after this offset" as an empty page', async () => {

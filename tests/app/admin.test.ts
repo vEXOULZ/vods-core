@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { AdminApiError, AdminClient } from '../../src/app/admin/api'
+import { ProblemError } from '@vexoulz/platform-web'
+import { AdminClient } from '../../src/app/admin/api'
 
 function fakeFetch(status: number, body: unknown, headers: Record<string, string> = {}) {
   return vi.fn(async (_url: string, _init?: RequestInit) =>
@@ -53,10 +54,10 @@ describe('AdminClient', () => {
     ])
   })
 
-  it('turns worker errors into AdminApiError with the message and Retry-After', async () => {
+  it('turns worker errors into ProblemError with the message and Retry-After', async () => {
     const c = new AdminClient({ base: '', fetch: fakeFetch(429, { error: true, msg: 'Too many attempts' }, { 'retry-after': '120' }) })
     const err = await c.login('x').catch((e: unknown) => e)
-    expect(err).toBeInstanceOf(AdminApiError)
+    expect(err).toBeInstanceOf(ProblemError)
     expect(err).toMatchObject({ status: 429, message: 'Too many attempts', retryAfter: 120 })
   })
 
@@ -120,7 +121,7 @@ describe('AdminClient: VODs, games, settings and storage', () => {
   it('takes a problem detail as the message', async () => {
     const bad = new AdminClient({ base: '', fetch: fakeFetch(400, { type: 'about:blank', status: 400, code: 'bad_cursor', detail: 'not a cursor' }) })
     const err = await bad.vodList({ cursor: 'x' }).catch((e: unknown) => e)
-    expect(err).toBeInstanceOf(AdminApiError)
-    expect((err as AdminApiError).message).toBe('not a cursor')
+    expect(err).toBeInstanceOf(ProblemError)
+    expect((err as ProblemError).message).toBe('not a cursor')
   })
 })

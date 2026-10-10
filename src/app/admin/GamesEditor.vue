@@ -4,13 +4,13 @@
 import { gamePalette, VxButton, VxCallout, VxSkeleton, useToast, clamp } from '@vexoulz/ui'
 import { toClock } from '../../index'
 import { computed, ref, watch } from 'vue'
+import { errorText } from '@vexoulz/platform-web'
 import type { AdminVod, GameRow } from './api'
 import { gameDrafts, gameEdits, gameErrors, gamesFromChapters, newGame, type GameDraft, type GameValue } from './edits'
 import GameSearch from './GameSearch.vue'
 import { admin } from './session'
 import TimeInput from './TimeInput.vue'
 import { useDraftEditor } from './useDraftEditor'
-import { errorMessage } from '../lib/errors'
 
 const props = defineProps<{ vod: AdminVod; duration: number }>()
 const emit = defineEmits<{ saved: [vod: AdminVod] }>()
@@ -23,7 +23,7 @@ async function load() {
   try {
     loaded.value = await admin.games(props.vod.id)
   } catch (e) {
-    loadError.value = errorMessage(e)
+    loadError.value = errorText(e)
   }
 }
 watch(() => props.vod.id, load, { immediate: true })
