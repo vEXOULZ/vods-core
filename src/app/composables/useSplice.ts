@@ -3,11 +3,10 @@
 // Split: from a point between two parts on becomes a new VOD. Both move chat with the video and can be undone (latest
 // first). SplicePanel.vue draws it; a site with its own UI binds the same refs.
 import { computed, ref, watch } from 'vue'
-import { duration as formatDuration } from '@vexoulz/platform-web'
+import { duration as formatDuration, errorText } from '@vexoulz/platform-web'
 import { normalizeVod, Timeline, toClock, toSeconds } from '../../index'
-import { AdminApiError, type AdminVod, type MergeCandidate, type MergeCandidates, type Splice, type SpliceResult, type SplitPoint } from '../admin/api'
+import { editedSince, validPoints, type AdminVod, type MergeCandidate, type MergeCandidates, type Splice, type SpliceResult, type SplitPoint } from '../admin/api'
 import { admin } from '../admin/session'
-import { errorMessage } from '../lib/errors'
 import type { Notify } from '../lib/notify'
 
 /** "4m 12s", "1h 02m", "40s", for a gap either way. */
@@ -65,7 +64,7 @@ export function useSplice(props: { vod: AdminVod }, options: SpliceOptions) {
       notify(`Updating the descriptions of ${touched.value.join(' and ')}`, { duration: 3500 })
       touched.value = []
     } catch (e) {
-      notify(errorMessage(e), { kind: 'error', duration: 6000 })
+      notify(errorText(e), { kind: 'error', duration: 6000 })
     } finally {
       describing.value = false
     }
@@ -86,15 +85,17 @@ export function useSplice(props: { vod: AdminVod }, options: SpliceOptions) {
       options.changed()
       void loadCandidates()
     } catch (e) {
-      if (e instanceof AdminApiError && e.status === 409 && e.edited.length && !force) {
-        forceAsk.value = { edited: e.edited, retry: () => action(true) }
+      const edited = editedSince(e)
+      if (edited.length && !force) {
+        forceAsk.value = { edited, retry: () => action(true) }
         return
       }
-      if (e instanceof AdminApiError && name === 'split' && e.validPoints.length) {
-        splitErr.value = { msg: e.message, points: e.validPoints }
+      const points = name === 'split' ? validPoints(e) : []
+      if (points.length) {
+        splitErr.value = { msg: errorText(e), points }
         return
       }
-      notify(errorMessage(e), { kind: 'error', duration: 8000 })
+      notify(errorText(e), { kind: 'error', duration: 8000 })
     } finally {
       busy.value = null
     }
@@ -114,7 +115,7 @@ export function useSplice(props: { vod: AdminVod }, options: SpliceOptions) {
     try {
       cands.value = await admin.mergeCandidates(props.vod.id)
     } catch (e) {
-      candsError.value = errorMessage(e)
+      candsError.value = errorText(e)
     }
   }
   watch(() => props.vod.id, () => ((cands.value = null), loadCandidates()), { immediate: true })

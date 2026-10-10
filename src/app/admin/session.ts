@@ -1,7 +1,8 @@
 // The admin session: one client and one reactive session for the whole app. The router guard calls `ensure()` for
 // the Manage pages, and createVodsApp() for anyone signed in to the account; any 401 from the API drops the session.
 import { reactive, readonly } from 'vue'
-import { AdminApiError, AdminClient, type AdminUser, type Session } from './api'
+import { ProblemError } from '@vexoulz/platform-web'
+import { AdminClient, type AdminUser, type Session } from './api'
 
 /** The worker's admin API, as the browser reaches it. configureAdmin() sets it before the app mounts. */
 export let adminBase = '/backend-admin'
@@ -84,7 +85,7 @@ export function ensure(): Promise<void> {
       // Unreachable admin API: treat as logged out; the login page shows the error when it tries.
       state.checked = true
       state.authenticated = false
-      if (!(e instanceof AdminApiError)) console.warn('admin session check failed', e)
+      if (!(e instanceof ProblemError)) console.warn('admin session check failed', e)
     })
     .finally(() => (pending = null))
   return pending

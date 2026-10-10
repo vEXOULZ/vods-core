@@ -1,18 +1,8 @@
+import { ProblemError } from '@vexoulz/platform-web'
 import type { GamePlayed, Vod, VodPage } from '../types'
 import { normalizeGamePlayed, normalizeVod } from './normalize'
 import { toQueryString, vodListQuery, type QueryObject, type VodListOptions } from './query'
 import type { ChatSource, Page, RawBadges, RawCommentPage, RawEmoteSets, RawGamePlayed, RawStream, RawThirdPartyEmotes, RawVod } from './types'
-
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly path: string,
-    message: string,
-  ) {
-    super(message)
-    this.name = 'ApiError'
-  }
-}
 
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>
 
@@ -33,20 +23,11 @@ export class ArchiveClient {
     this.fetcher = opts.fetch ?? ((input, init) => globalThis.fetch(input, init))
   }
 
-  /** GET a path (with query string) and parse JSON. Throws ApiError on HTTP errors. */
+  /** GET a path (with query string) and parse JSON. Throws ProblemError on HTTP errors. */
   async get<T>(path: string, signal?: AbortSignal): Promise<T> {
     const res = await this.fetcher(`${this.apiBase}${path}`, { signal, headers: { accept: 'application/json' } })
-    if (!res.ok) {
-      let message = `HTTP ${res.status}`
-      try {
-        // Feathers errors carry `message`; the legacy routes send `{error: true, msg}`.
-        const body = (await res.json()) as { message?: string; msg?: string; error?: unknown }
-        message = body.message ?? body.msg ?? (typeof body.error === 'string' ? body.error : undefined) ?? message
-      } catch {
-        // not JSON
-      }
-      throw new ApiError(res.status, path, message)
-    }
+    // Feathers errors carry `message`, the legacy routes send `{error: true, msg}`; ProblemError reads both.
+    if (!res.ok) throw await ProblemError.from(res)
     return (await res.json()) as T
   }
 
@@ -75,7 +56,7 @@ export class ArchiveClient {
     try {
       return normalizeVod(await this.get<RawVod>(`/vods/${encodeURIComponent(id)}`, signal))
     } catch (e) {
-      if (e instanceof ApiError && e.status === 404) return null
+      if (e instanceof ProblemError && e.status === 404) return null
       throw e
     }
   }
@@ -105,7 +86,7 @@ export class ArchiveClient {
     return this.get<RawCommentPage>(`/v1/vods/${encodeURIComponent(vodId)}/comments${q}`, signal).catch((e: unknown) => {
       // The archive answers 500 when nothing was said at or after the offset (past the last message): no chat, not
       // an error.
-      if (e instanceof ApiError && e.status === 500 && e.message.startsWith('Failed to retrieve comments from offset')) return { comments: [] }
+      if (e instanceof ProblemError && e.status === 500 && e.message.startsWith('Failed to retrieve comments from offset')) return { comments: [] }
       throw e
     })
   }

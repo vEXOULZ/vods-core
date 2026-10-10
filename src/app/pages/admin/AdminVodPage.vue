@@ -14,13 +14,12 @@ import { vodSeconds } from '../../admin/edits'
 import EmotesPanel from '../../admin/EmotesPanel.vue'
 import GamesEditor from '../../admin/GamesEditor.vue'
 import SplicePanel from '../../admin/SplicePanel.vue'
-import { stamp } from '@vexoulz/platform-web'
+import { errorText, stamp } from '@vexoulz/platform-web'
 import { JobsTable, usePoll } from '@vexoulz/platform-web/vue'
 import { admin } from '../../admin/session'
 import { platform, vodSubject } from '../../admin/platform'
 import VodActions from '../../admin/VodActions.vue'
 import YoutubeEditor from '../../admin/YoutubeEditor.vue'
-import { errorMessage } from '../../lib/errors'
 import { site } from '../../site'
 
 const props = defineProps<{ id: string }>()
@@ -39,7 +38,7 @@ async function load() {
   } catch (e) {
     const status = (e as { status?: number }).status
     if (status === 404) notFound.value = true
-    else loadError.value = errorMessage(e)
+    else loadError.value = errorText(e)
   }
 }
 watch(() => props.id, load, { immediate: true })
@@ -72,7 +71,7 @@ async function setHidden(hidden: boolean) {
     hideOpen.value = false
     toast.show(hidden ? 'Hidden from the site' : 'Public again', { duration: 3000 })
   } catch (e) {
-    toast.show(errorMessage(e), { kind: 'error', duration: 5000 })
+    toast.show(errorText(e), { kind: 'error', duration: 5000 })
   } finally {
     hiding.value = false
   }

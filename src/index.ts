@@ -2,7 +2,8 @@ export { defineVodsConfig, DEFAULT_PART_DURATION, type VodsConfig, type VodsConf
 export { toSeconds, toHMS, toClock, parseTimestamp } from './time'
 export type * from './types'
 
-export { ArchiveClient, ApiError, type ArchiveClientOptions, type Fetch } from './api/client'
+export { ArchiveClient, type ArchiveClientOptions, type Fetch } from './api/client'
+export { ProblemError } from '@vexoulz/platform-web'
 export { normalizeVod, normalizeChapter, normalizeUploads, normalizeSynthetic, gamesOf, normalizeGamePlayed, NO_CATEGORY } from './api/normalize'
 export { vodThumbnail, watchPath, boxArt, youtubeThumb } from './links'
 export { previewFrame, type PreviewFrame } from './preview'

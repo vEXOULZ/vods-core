@@ -1,7 +1,7 @@
 // The scaffold every VOD editor shares: draft rows made from the VOD (again whenever the VOD's copy changes), "dirty"
 // against what was loaded, per-row errors, and a save that shows its failure in the editor.
 import { computed, ref, watch, type Ref } from 'vue'
-import { errorMessage } from '../lib/errors'
+import { errorText } from '@vexoulz/platform-web'
 
 export interface DraftEditorOptions<Row> {
   /** What the drafts are made from; the editor resets when it changes. */
@@ -41,7 +41,7 @@ export function useDraftEditor<Row>(opts: DraftEditorOptions<Row>) {
     try {
       await opts.save(rows.value)
     } catch (e) {
-      error.value = errorMessage(e)
+      error.value = errorText(e)
     } finally {
       saving.value = false
     }

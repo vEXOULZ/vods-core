@@ -1,3 +1,4 @@
+import { ProblemError, parseRetryAfter } from '@vexoulz/platform-web'
 import type { RawDrive, RawEmoteSets, RawVod } from '../../index'
 import type { RawTag } from '../lib/vodTags'
 
@@ -328,33 +329,16 @@ export interface AdminEmotes extends RawEmoteSets {
   updatedAt?: string
 }
 
-export class AdminApiError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-    /** Seconds, from Retry-After (rate-limited logins). */
-    readonly retryAfter: number | null = null,
-    /** The rest of the error body (a 409's `validPoints`, `edited`, `blockedBy`, …). */
-    readonly extra: Record<string, unknown> = {},
-  ) {
-    super(message)
-    this.name = 'AdminApiError'
-  }
+/** A split refused inside an upload: the nearest points where it would work. */
+export function validPoints(e: unknown): SplitPoint[] {
+  const points = e instanceof ProblemError ? e.extra.validPoints : null
+  return Array.isArray(points) ? (points as SplitPoint[]) : []
+}
 
-  /** The session is gone (expired, or the worker restarted): log in again. */
-  get unauthorized(): boolean {
-    return this.status === 401 || this.status === 403
-  }
-
-  /** A split refused inside an upload: the nearest points where it would work. */
-  get validPoints(): SplitPoint[] {
-    return Array.isArray(this.extra.validPoints) ? (this.extra.validPoints as SplitPoint[]) : []
-  }
-
-  /** An undo refused because it would throw away edits made since ("vodId.field", …); retry with force. */
-  get edited(): string[] {
-    return Array.isArray(this.extra.edited) ? (this.extra.edited as string[]) : []
-  }
+/** An undo refused because it would throw away edits made since ("vodId.field", …); retry with force. */
+export function editedSince(e: unknown): string[] {
+  const edited = e instanceof ProblemError && e.status === 409 ? e.extra.edited : null
+  return Array.isArray(edited) ? (edited as string[]) : []
 }
 
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>
@@ -394,12 +378,9 @@ export class AdminClient {
       // not JSON (a proxy error page, say)
     }
     if (!res.ok) {
-      // v1 answers {msg} (or {message}); /api/v2 answers problem details, whose text is `detail`.
-      const problem = data as { msg?: string; message?: string; detail?: unknown } | null
-      const msg = problem?.msg ?? problem?.message ?? (typeof problem?.detail === 'string' ? problem.detail : undefined)
-      const retry = Number(res.headers.get('retry-after'))
-      const { error: _e, msg: _m, message: _msg, ...extra } = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
-      const err = new AdminApiError(res.status, msg || `HTTP ${res.status}`, Number.isFinite(retry) && retry > 0 ? retry : null, extra)
+      // v1 answers {msg} (or {message}); /api/v2 answers problem details. ProblemError reads both.
+      const body = data && typeof data === 'object' && !Array.isArray(data) ? (data as Record<string, unknown>) : {}
+      const err = new ProblemError(res.status, body, parseRetryAfter(res.headers.get('retry-after')), res.statusText)
       if (err.unauthorized && path !== '/admin/session') this.onUnauthorized?.()
       throw err
     }
