@@ -33,6 +33,8 @@ export interface RawUpload {
   thumbnail_url?: string | null
   /** Seek-bar preview sheets, once the archive has made them (`GET /v1/previews/<id>/<sheet>.jpg`). */
   preview?: RawPreview | null
+  /** On live uploads that miss VOD time (ad breaks): `[seconds into this upload, VOD seconds missing]`, sorted. */
+  gaps?: unknown
 }
 
 export interface RawPreview {

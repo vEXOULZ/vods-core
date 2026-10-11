@@ -48,6 +48,7 @@ const {
   breakSpans,
   chapterBars,
   unplayableBars,
+  missingBars,
   tickLefts,
   jumpBars,
   labelLefts,
@@ -55,6 +56,7 @@ const {
   tipShift,
   hoverChapter,
   hoverCut,
+  hoverMissing,
   hoverPreview,
   shown,
   snailMode,
@@ -107,6 +109,7 @@ const {
         :class="{ cut: c.restricted, gap: c.kind === 'gap' }"
         :style="style"
       ></span>
+      <span v-for="(m, i) in missingBars" :key="'m' + i" class="miss" :style="m"></span>
       <span v-for="(u, i) in unplayableBars" :key="'u' + i" class="unseg" :style="u"></span>
       <span v-for="(left, i) in tickLefts" :key="'t' + i" class="tick" :style="{ left }"></span>
       <span v-for="j in jumpBars" :key="'j' + j.at" class="jump" :style="{ left: j.left }"></span>
@@ -133,7 +136,7 @@ const {
             backgroundSize: `${hoverPreview.sheetW}px ${hoverPreview.sheetH}px`,
           }"
         ></span>
-        <span><template v-if="hover.brk">stream change</template><template v-else-if="hover.jump">{{ toClock(hover.jump.at) }} · {{ hover.jump.skipped >= 0 ? `skips ${toClock(hover.jump.skipped)} of the stream` : `goes back ${toClock(-hover.jump.skipped)}` }}</template><template v-else>{{ toClock(hover.t) }}<template v-if="hoverChapter?.kind === 'gap'"> · stream down</template><template v-else-if="hoverCut"> · cut from YouTube</template><template v-else-if="hoverChapter"> · {{ hoverChapter.name }}</template></template></span>
+        <span><template v-if="hover.brk">stream change</template><template v-else-if="hover.jump">{{ toClock(hover.jump.at) }} · {{ hover.jump.skipped >= 0 ? `skips ${toClock(hover.jump.skipped)} of the stream` : `goes back ${toClock(-hover.jump.skipped)}` }}</template><template v-else>{{ toClock(hover.t) }}<template v-if="hoverChapter?.kind === 'gap'"> · stream down</template><template v-else-if="hoverCut"> · cut from YouTube</template><template v-else-if="hoverMissing"> · not in this recording (ad break)</template><template v-else-if="hoverChapter"> · {{ hoverChapter.name }}</template></template></span>
       </span>
     </div>
   </div>
@@ -157,6 +160,8 @@ const {
 .seg.cut { background: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.18) 0 3px, transparent 3px 6px); }
 /* A merge's gap: the stream was down, so nothing to hatch; a dotted line through the middle marks the join. */
 .seg.gap { background: radial-gradient(circle, rgb(255 255 255 / 0.35) 1px, transparent 1.5px) 0 50% / 5px 100% repeat-x; }
+/* Time this upload set skips (a live recording's ad breaks): the chapter colour shows through, hatched over. */
+.miss { position: absolute; top: 0; bottom: 0; pointer-events: none; background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.55) 0 2px, transparent 2px 5px); }
 .unseg { position: absolute; top: 0; bottom: 0; pointer-events: none; background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--vx-bad) 55%, transparent) 0 2px, rgb(0 0 0 / 0.65) 2px 6px); }
 .tick { position: absolute; top: -9px; bottom: -2px; width: 1px; background: var(--vx-muted); pointer-events: none; }
 /* Where a stream jumps within its VOD: a thin slit through the bar, with a notch above it. */

@@ -98,6 +98,8 @@ export class SegmentTimeline implements PlayableTimeline {
   readonly uploads: readonly Upload[]
   readonly chapters: readonly Chapter[]
   readonly cuts: readonly Span[]
+  /** The sources' missing spans inside the segments, in synthetic time. */
+  readonly missing: readonly Span[]
   readonly duration: number
   /** Per clip: up to when it, or a clip before it, takes a time (see locate). */
   private readonly takesUntil: readonly number[]
@@ -138,6 +140,13 @@ export class SegmentTimeline implements PlayableTimeline {
     })
     this.clips = clips
     this.uploads = uploads
+    this.missing = this.segments
+      .flatMap((seg) =>
+        (this.sources.get(seg.vodId)?.missing ?? [])
+          .filter((s) => s.end > seg.start && s.start < seg.end)
+          .map((s) => ({ start: seg.at + Math.max(s.start, seg.start) - seg.start, end: seg.at + Math.min(s.end, seg.end) - seg.start })),
+      )
+      .sort((a, b) => a.start - b.start)
     // Right at the end of a clip the next one takes over (as between a plain VOD's uploads). A running max keeps the
     // list sorted, so locate()'s binary search finds the first clip that takes a time, as a scan from the start would.
     let until = -Infinity
@@ -154,6 +163,10 @@ export class SegmentTimeline implements PlayableTimeline {
 
   cutAt(t: number): Span | null {
     return cutAt(this.cuts, t)
+  }
+
+  missingAt(t: number): Span | null {
+    return cutAt(this.missing, t)
   }
 
   chapterAt(t: number): Chapter | null {

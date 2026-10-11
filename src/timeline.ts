@@ -1,12 +1,15 @@
 // VOD time ↔ YouTube part + offset.
 //
 // A VOD is uploaded as several YouTube videos ("parts"). Restricted chapters (DMCA) are cut out of the uploads, so
-// the uploads laid end to end ("upload time") are the VOD with those spans removed. When the uploads are shorter
-// than the VOD minus the cuts, the missing footage is at the start: that is the `delay`.
+// the uploads laid end to end ("upload time") are the VOD with those spans removed. A live recording also misses the
+// ads Twitch stitches into the stream: each upload's `gaps` say where (seconds into that upload) and how much VOD time
+// it skips. Unlike cuts, they hold for that upload set only. Whatever else the uploads are short of the VOD is
+// missing at the start: that is the `delay`.
 //
-//   vodTime = upload time + delay, then every cut that starts at or before it is added back
+//   delay   = duration - upload time - gaps - cuts
+//   vodTime = upload time + delay, then every cut or gap that starts at or before it is added back
 //
-// All times are seconds. A VOD time inside a cut can't be watched and snaps to the end of that cut.
+// All times are seconds. A VOD time inside a cut or a gap can't be watched and snaps to its end.
 
 import type { Chapter, Upload, UploadType, Vod } from './types'
 import { DEFAULT_PART_DURATION } from './config'
@@ -47,9 +50,12 @@ export interface PlayableTimeline {
   readonly uploads: readonly Upload[]
   readonly chapters: readonly Chapter[]
   readonly cuts: readonly Span[]
+  /** Time the uploads skip besides the cuts (a live recording's ad breaks), sorted. */
+  readonly missing: readonly Span[]
   readonly duration: number
   readonly isEmpty: boolean
   cutAt(t: number): Span | null
+  missingAt(t: number): Span | null
   chapterAt(t: number): Chapter | null
   watchable(t: number): number
   locate(t: number): Position
@@ -104,10 +110,16 @@ export class Timeline implements PlayableTimeline {
   /** Total upload time. */
   readonly uploadLength: number
   readonly cuts: readonly Span[]
+  /** VOD time the uploads' `gaps` skip (a live recording's ad breaks), sorted. */
+  readonly missing: readonly Span[]
   /** VOD seconds missing before the first upload. */
   readonly delay: number
   readonly duration: number
   readonly chapters: readonly Chapter[]
+  /** Each gap as upload-time start and length, sorted. */
+  private readonly gaps: readonly { at: number; length: number }[]
+  /** Cuts and missing spans together, sorted: everything upload time skips. */
+  private readonly holes: readonly Span[]
 
   constructor(vod: Vod, type: UploadType = pickUploadType(vod), opts: TimelineOptions = {}) {
     const fallback = opts.defaultPartDuration ?? DEFAULT_PART_DURATION
@@ -123,10 +135,31 @@ export class Timeline implements PlayableTimeline {
     this.starts = starts
     this.uploadLength = t
     this.cuts = restrictedSpans(vod.chapters)
+    this.gaps = this.uploads
+      .flatMap((u, i) => (u.gaps ?? []).map((g) => ({ at: starts[i]! + Math.min(Math.max(0, g.at), this.lengths[i]!), length: g.length })))
+      .filter((g) => g.length > 0)
+      .sort((a, b) => a.at - b.at)
     const cut = this.cuts.reduce((sum, s) => sum + (s.end - s.start), 0)
-    this.delay = Math.max(0, vod.duration - t - cut)
+    const gap = this.gaps.reduce((sum, g) => sum + g.length, 0)
+    this.delay = Math.max(0, vod.duration - t - gap - cut)
     this.duration = vod.duration
     this.chapters = vod.chapters
+    // A gap starts on the VOD at its upload time plus the delay, the gaps before it and every cut that starts at or
+    // before it (a cut right where a gap is comes first, as the archive places them).
+    const missing: Span[] = []
+    let shift = this.delay
+    let c = 0
+    for (const g of this.gaps) {
+      let v = g.at + shift
+      for (; c < this.cuts.length && this.cuts[c]!.start <= v + 1e-3; c++) {
+        v += this.cuts[c]!.end - this.cuts[c]!.start
+        shift += this.cuts[c]!.end - this.cuts[c]!.start
+      }
+      missing.push({ start: v, end: v + g.length })
+      shift += g.length
+    }
+    this.missing = missing
+    this.holes = [...this.cuts, ...missing].sort((a, b) => a.start - b.start)
   }
 
   get isEmpty(): boolean {
@@ -138,35 +171,40 @@ export class Timeline implements PlayableTimeline {
     return cutAt(this.cuts, t)
   }
 
+  /** The missing span (a gap in the uploads) containing `t`, if any. */
+  missingAt(t: number): Span | null {
+    return cutAt(this.missing, t)
+  }
+
   /** The chapter playing at `t`: the one containing it, else the last one that started before it. */
   chapterAt(t: number): Chapter | null {
     return chapterAt(this.chapters, t)
   }
 
   /**
-   * Upload time → VOD time. A point exactly where a cut starts maps past the cut (where playback continues);
-   * with `asEnd` it maps before it (where the footage before the cut stops), allowing for fractional durations
-   * that overshoot the cut by a few ms.
+   * Upload time → VOD time. A point exactly where a cut or gap starts maps past it (where playback continues);
+   * with `asEnd` it maps before it (where the footage before it stops), allowing for fractional durations that
+   * overshoot it by a few ms.
    */
   uploadToVod(u: number, asEnd = false): number {
     let t = Math.max(0, u) + this.delay
-    for (const s of this.cuts) if (asEnd ? s.start < t - BOUNDARY_EPS : s.start <= t) t += s.end - s.start
+    for (const s of this.holes) if (asEnd ? s.start < t - BOUNDARY_EPS : s.start <= t) t += s.end - s.start
     return t
   }
 
-  /** VOD time → upload time. Times inside a cut map to the cut's end; times inside the delay map to 0. */
+  /** VOD time → upload time. Times inside a cut or gap map to its end; times inside the delay map to 0. */
   vodToUpload(t: number): number {
-    const inCut = this.cutAt(t)
-    const at = inCut ? inCut.end : Math.max(0, t)
+    const inHole = cutAt(this.holes, t)
+    const at = inHole ? inHole.end : Math.max(0, t)
     let removed = 0
-    for (const s of this.cuts) {
+    for (const s of this.holes) {
       if (s.start >= at) break
       removed += Math.min(at, s.end) - s.start
     }
     return Math.max(0, at - removed - this.delay)
   }
 
-  /** The watchable VOD time closest to `t` (skips forward out of cuts, clamps to the ends). */
+  /** The watchable VOD time closest to `t` (skips forward out of cuts and gaps, clamps to the ends). */
   watchable(t: number): number {
     if (this.isEmpty) return 0
     return this.toVod(this.locate(t))
@@ -222,11 +260,17 @@ export class Timeline implements PlayableTimeline {
     return null
   }
 
-  /** VOD-time span covered by each upload (for the part picker and the timeline bar). */
+  /**
+   * VOD-time span covered by each upload (for the part picker and the timeline bar). A gap at the end of an upload
+   * (a recording that stopped early) is that upload's: its span runs to the gap's end.
+   */
   partSpans(): Span[] {
-    return this.uploads.map((_, i) => ({
-      start: this.uploadToVod(this.starts[i]!),
-      end: this.uploadToVod(this.starts[i]! + this.lengths[i]!, true),
-    }))
+    return this.uploads.map((_, i) => {
+      const start = this.starts[i]!
+      const end = start + this.lengths[i]!
+      let trailing = 0
+      for (const g of this.gaps) if (g.at > start && Math.abs(g.at - end) <= BOUNDARY_EPS) trailing += g.length
+      return { start: this.uploadToVod(start), end: this.uploadToVod(end, true) + trailing }
+    })
   }
 }

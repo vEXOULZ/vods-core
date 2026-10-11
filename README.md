@@ -112,7 +112,7 @@ const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0
 | `config` | `defineVodsConfig`: validates the channel settings and parses numbers (the old `REACT_APP_DEFAULT_DELAY` was a string and got concatenated). |
 | `api` | `ArchiveClient`: `listVods` (title / exact game / date filters, combinable), `getVod`, `gamesPlayed`, `liveStream`, `vodEmotes`, `thirdPartyEmotes`, `badges`, `commentsAt` / `commentsAfter`. Normalizes VODs: chapter `end` becomes an absolute time (the API's `length`, or its older length-as-`end`), `duration` becomes seconds, box art prefers the `{width}x{height}` template, and chapters without a Twitch category are named `NO_CATEGORY`. |
 | `time` | `parseTimestamp` (`1h2m3s`, `1:02:03`, seconds), `toHMS`, `toClock`, `toSeconds`. |
-| `timeline` | `Timeline`: VOD time ↔ YouTube part + offset, restricted (cut) chapters, the start delay, chapter at a time, part spans, `?t=` / `?part=` resolution. |
+| `timeline` | `Timeline`: VOD time ↔ YouTube part + offset, restricted (cut) chapters, a live recording's gaps (`missing`), the start delay, chapter at a time, part spans, `?t=` / `?part=` resolution. |
 | `composite` | `SegmentTimeline`: a synthetic VOD (a merge, a split, a playthrough) played from windows of other VODs, with the same surface as `Timeline` (`PlayableTimeline`) plus `segmentAt` for chat; `supersededTarget` for links to a VOD a merge or split replaced. |
 | `player` | `WatchPlayer`: drives the YouTube IFrame player across parts: seeks, auto-advance, part errors (`missing` / `blocked` / `processing`), VOD-time ticks, playback speed. `mountYouTube` wires the real player. |
 | `chat` | `ChatReplay` (paged, prefetching, seek-aware), `loadEmotes` (the channel and global sets the archive saved for the VOD, with today's 7TV globals only for rows saved before globals were kept; for VODs without saved sets, the channel's current sets, which the archive caches), `tokenize` / `resolveBadges` / `toChatMessage` (render-ready tokens, never HTML; zero-width emotes come as overlays of the emote they cover, BTTV / FFZ modifiers as effects on the emote they apply to). Chat has two sources: Twitch's replay of the VOD (`replay`) and doomtp-bot's live log (`bot`, with notices, redeems, cheers and removed messages, all on `ChatMessage`); `ChatReplay`'s `source` option picks one, and `sources` has how many messages each has. `loginOf` gives a username (the bot's, or a plain-ASCII display name in lower case). |
@@ -139,16 +139,19 @@ watch(account.user, (u, before) => u && !before && progress.merge())
 ## The time model
 
 A VOD is uploaded to YouTube as several parts. Restricted chapters (copyright) are cut out of the uploads, so the
-parts laid end to end are the VOD with those spans removed. When the parts are shorter than the VOD minus the cuts,
-the missing footage is at the start: the **delay**.
+parts laid end to end are the VOD with those spans removed. A live recording also misses the ads Twitch stitches into
+the stream: each upload's `gaps` (from the archive's `youtube[].gaps`) say where in that upload, and for how long, the
+VOD skips ahead. They hold for that upload set only (the `vod` uploads have the whole VOD), and the timeline lists them
+as `missing` spans, hatched on the bar. Whatever else the parts are short of the VOD is missing at the start: the
+**delay** (`duration − parts − gaps − cuts`).
 
 ```
 VOD time    0 ──── part 1 ──── part 2 ─┤ restricted ├─ part 3 ──── part 4 ─── end
 upload time 0 ──── part 1 ──── part 2 ─┤─ part 3 ──── part 4 ─── end
 ```
 
-- `?t=` is **VOD time**, the same clock as chapters, chat and Twitch's own VOD links. A time inside a cut starts at
-  the end of the cut.
+- `?t=` is **VOD time**, the same clock as chapters, chat and Twitch's own VOD links. A time inside a cut or a gap
+  starts at its end.
 - The chat clock is VOD time minus the viewer's chat offset.
 - Upload durations are fractional (8771.99 s); boundaries allow half a second of slack so a seek never lands a few
   milliseconds before the end of the previous part.
