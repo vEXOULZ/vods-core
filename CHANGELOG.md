@@ -1,5 +1,11 @@
 # @vexoulz/vods-core
 
+## 0.26.0
+
+### Minor Changes
+
+- 5f4bf4c: The kit exports `viewerTile` and `linkTwitch`, so a site with its own Manage screens can show the ad-free Twitch account tile.
+
 ## 0.25.0
 
 ### Minor Changes
