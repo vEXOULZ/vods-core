@@ -106,6 +106,12 @@ export function useTimeline(props: TimelineProps, options: { seek: (t: number) =
   const unplayableBars = computed(() =>
     spans.value.flatMap((s, i) => (unplayable(props.status[i]) ? [{ left: pct(s.start), width: width(s.start, s.end) }] : [])),
   )
+  /** Time the uploads skip (a live recording's ad breaks): watchable on Twitch, not here. */
+  const missingBars = computed(() =>
+    props.timeline.missing
+      .filter((s) => s.end > props.range.start && s.start < props.range.end)
+      .map((s) => ({ left: pct(s.start), width: width(s.start, s.end) })),
+  )
   const tickLefts = computed(() => ticks.value.map((s) => pct(s.start)))
   const jumpBars = computed(() => jumpList.value.map((j) => ({ at: j.at, left: pct(j.at) })))
   const labelLefts = computed(() => spans.value.map((s) => pct(s.start)))
@@ -251,11 +257,12 @@ export function useTimeline(props: TimelineProps, options: { seek: (t: number) =
   )
   const hoverChapter = computed(() => (hover.value ? props.timeline.chapterAt(hover.value.t) : null))
   const hoverCut = computed(() => (hover.value ? props.timeline.cutAt(hover.value.t) : null))
+  const hoverMissing = computed(() => (hover.value ? props.timeline.missingAt(hover.value.t) : null))
   // The frame under the pointer, from the archive's preview sheets of the upload there; none over a break, a jump,
-  // a gap, a cut or a part that can't play.
+  // a gap, a cut, missing time or a part that can't play.
   const hoverPreview = computed(() => {
     const h = hover.value
-    if (!h || h.brk || h.jump || hoverChapter.value?.kind === 'gap' || hoverCut.value) return null
+    if (!h || h.brk || h.jump || hoverChapter.value?.kind === 'gap' || hoverCut.value || hoverMissing.value) return null
     const pos = props.timeline.locate(h.t)
     const upload = props.timeline.uploads[pos.index]
     if (!upload || unplayable(props.status[pos.index])) return null
@@ -288,6 +295,7 @@ export function useTimeline(props: TimelineProps, options: { seek: (t: number) =
     breakSpans,
     chapterBars,
     unplayableBars,
+    missingBars,
     tickLefts,
     jumpBars,
     labelLefts,
@@ -296,6 +304,7 @@ export function useTimeline(props: TimelineProps, options: { seek: (t: number) =
     tipShift,
     hoverChapter,
     hoverCut,
+    hoverMissing,
     hoverPreview,
     shown,
     snailMode,

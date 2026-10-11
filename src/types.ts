@@ -28,6 +28,14 @@ export interface Upload {
   thumbnail: string | null
   /** Seek-bar preview sheets the archive made of this upload; null until it has (see `previewFrame`). */
   preview: Preview | null
+  /** VOD time this upload skips (a live recording's ad breaks), sorted; absent when it skips none. */
+  gaps?: readonly UploadGap[]
+}
+
+/** At `at` seconds into its upload, the VOD jumps `length` seconds ahead: footage the recording doesn't have. */
+export interface UploadGap {
+  at: number
+  length: number
 }
 
 /**

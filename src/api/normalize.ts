@@ -1,5 +1,5 @@
 import { toSeconds } from '../time'
-import type { Chapter, GamePlayed, GameUpload, Preview, Synthetic, Upload, Vod } from '../types'
+import type { Chapter, GamePlayed, GameUpload, Preview, Synthetic, Upload, UploadGap, Vod } from '../types'
 import type { RawChapter, RawGamePlayed, RawGameUpload, RawPreview, RawSynthetic, RawUpload, RawVod } from './types'
 
 /** Name used for chapters where the stream had no Twitch category. */
@@ -27,15 +27,30 @@ function normalizePreview(p: RawPreview | null | undefined): Preview | null {
   return ok ? { interval, w, h, cols, rows, count } : null
 }
 
+const isNum = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
+
+/** An upload's `gaps`, sorted; malformed or empty ones are dropped. */
+function normalizeGaps(raw: unknown): UploadGap[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter((g): g is [number, number] => Array.isArray(g) && g.length === 2 && isNum(g[0]) && isNum(g[1]) && g[1] > 0)
+    .map(([at, length]) => ({ at: Math.max(0, at), length }))
+    .sort((a, b) => a.at - b.at)
+}
+
 export function normalizeUploads(raw: RawUpload[]): Upload[] {
-  const uploads = raw.map((u, i) => ({
-    id: u.id,
-    type: u.type,
-    part: u.part ?? i + 1,
-    duration: typeof u.duration === 'number' && u.duration > 0 ? u.duration : null,
-    thumbnail: u.thumbnail_url ?? null,
-    preview: normalizePreview(u.preview),
-  }))
+  const uploads = raw.map((u, i) => {
+    const gaps = normalizeGaps(u.gaps)
+    return {
+      id: u.id,
+      type: u.type,
+      part: u.part ?? i + 1,
+      duration: typeof u.duration === 'number' && u.duration > 0 ? u.duration : null,
+      thumbnail: u.thumbnail_url ?? null,
+      preview: normalizePreview(u.preview),
+      ...(gaps.length ? { gaps } : {}),
+    }
+  })
   // Stable sort per type: the API keeps upload order, but don't rely on it for the time math.
   return uploads.sort((a, b) => (a.type === b.type ? a.part - b.part : 0))
 }
