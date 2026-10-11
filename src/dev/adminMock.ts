@@ -214,6 +214,17 @@ const hidden = new Set<string>()
 const gameRows = new Map<string, Json[]>()
 const audit: Json[] = []
 let auditId = 0
+// The linked ad-free Twitch account (never a token: the worker keeps that) and device flows by id → polls so far.
+let viewer: { login: string; method: 'device' | 'paste'; connectedAt: string } | null = null
+const viewerFlows = new Map<string, number>()
+let viewerFlowSeq = 0
+/** A request body for the audit log: a pasted token never lands there (the worker logs only who it belonged to). */
+const redact = (b: Json): Json => ('token' in b ? { ...b, token: '(redacted)' } : b)
+const viewerStatus = () => ({
+  linked: !!viewer, valid: !!viewer, error: null, login: viewer?.login ?? null, userId: viewer ? '38656648' : null,
+  clientId: viewer ? 'mock-client' : null, method: viewer?.method ?? null, connectedAt: viewer?.connectedAt ?? null,
+  expiresAt: null, checkedAt: new Date().toISOString(),
+})
 
 async function publicJson(api: string, path: string): Promise<unknown> {
   const res = await fetch(`${api}${path}`)
@@ -745,7 +756,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             audit.unshift({
               id: ++auditId, at: iso(), actor_kind: 'user', actor_id: s.user ? s.user.id : 'password', actor_login: s.user?.login ?? null,
               via: 'web', action, target, scope: null, outcome: 'ok',
-              before: null, after: null, detail: Object.keys(b).length ? b : null, request_id: null, job_run_id: null,
+              before: null, after: null, detail: Object.keys(b).length ? redact(b) : null, request_id: null, job_run_id: null,
             })
           })
         }
@@ -756,9 +767,42 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             api: { ok: true },
             youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null },
             live: { live: false, streamId: null, startedAt: null },
+            twitchViewer: viewerStatus(),
             jobs: { counts: counts() },
           })
         if (path === '/admin/youtube/auth') return send(res, 200, { url: 'https://accounts.google.com/' })
+        // ---- the linked ad-free Twitch account: the device flow links on the second poll ----
+        if (path === '/admin/twitch/viewer' && method === 'GET') return send(res, 200, viewerStatus())
+        if (path === '/admin/twitch/viewer/device' && method === 'POST') {
+          const flowId = `flow-${++viewerFlowSeq}`
+          viewerFlows.set(flowId, 0)
+          return send(res, 200, { flowId, userCode: 'MOCKCODE', verificationUri: 'https://www.twitch.tv/activate?device-code=MOCKCODE', expiresIn: 1800, interval: 2 })
+        }
+        const vf = /^\/admin\/twitch\/viewer\/device\/([^/]+)$/.exec(path)
+        if (vf && method === 'GET') {
+          const id = decodeURIComponent(vf[1]!)
+          const polls = viewerFlows.get(id)
+          if (polls === undefined) return send(res, 200, { state: 'failed', error: 'This link expired; start again' })
+          if (polls < 1) {
+            viewerFlows.set(id, polls + 1)
+            return send(res, 200, { state: 'pending' })
+          }
+          viewerFlows.delete(id)
+          viewer = { login: s.user?.login ?? 'vexoul', method: 'device', connectedAt: iso() }
+          return send(res, 200, { state: 'linked', status: viewerStatus() })
+        }
+        if (path === '/admin/twitch/viewer' && method === 'PUT') {
+          const token = String(b.token ?? '').trim()
+          if (!token) return fail(res, 400, 'token is required')
+          // Anything that isn't 30 characters is what Twitch would refuse.
+          if (token.replace(/^OAuth /, '').length !== 30) return fail(res, 400, 'Twitch refused the token: invalid access token')
+          viewer = { login: s.user?.login ?? 'vexoul', method: 'paste', connectedAt: iso() }
+          return send(res, 200, viewerStatus())
+        }
+        if (path === '/admin/twitch/viewer' && method === 'DELETE') {
+          viewer = null
+          return send(res, 200, { error: false, msg: 'Twitch account unlinked' })
+        }
         if (path === '/api/v2/job-kinds' && method === 'GET')
           return send(res, 200, Object.entries(KINDS).map(([name, k]) => ({
             name, description: k.description ?? '', steps: k.steps, pause_before: k.manualSteps,
