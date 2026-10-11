@@ -1,5 +1,18 @@
 # @vexoulz/vods-core
 
+## 0.25.0
+
+### Minor Changes
+
+- cd5f120: Manage's Overview gains a "Twitch (ad-free)" tile: the broadcaster links the Twitch account live recordings are asked
+  for as (one with no ads on the channel, so the recording has no ad gaps) with Twitch's device flow, or by pasting a
+  token, and can switch or unlink it. `Health.twitchViewer` and the `AdminClient.twitchViewer*` methods talk to the
+  worker's `/admin/twitch/viewer` routes; a worker without them hides the tile.
+- b6e3418: Uploads carry the archive's `gaps` (a live recording's ad breaks, `Upload.gaps`), and `Timeline` places each upload's
+  footage where it was recorded: the delay is only what is missing before the first frame, and the gaps are skipped like
+  cuts. `PlayableTimeline` gains `missing` and `missingAt()`; the watch timeline hatches the missing spans and names them
+  on hover. Without gaps nothing changes.
+
 ## 0.24.0
 
 ### Minor Changes
