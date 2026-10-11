@@ -38,12 +38,19 @@ describe('linkTwitch', () => {
   })
 })
 
+const ago = (iso: string) => `at ${iso}`
+
 describe('viewerTile', () => {
   it('reads the status', () => {
-    expect(viewerTile(undefined)).toMatchObject({ status: 'off', linked: false })
-    expect(viewerTile({ linked: false, valid: false, error: null })).toMatchObject({ status: 'off', text: 'Not linked', linked: false })
-    expect(viewerTile(LINKED)).toMatchObject({ status: 'ok', text: 'vexoul', linked: true })
-    expect(viewerTile({ ...LINKED, valid: false, error: 'Twitch refused the token' })).toMatchObject({ status: 'warn', text: 'Token invalid', sub: 'Twitch refused the token' })
+    expect(viewerTile(undefined, ago)).toMatchObject({ status: 'off', linked: false })
+    expect(viewerTile({ linked: false, valid: false, error: null }, ago)).toMatchObject({ status: 'off', text: 'Not linked', linked: false })
+    expect(viewerTile(LINKED, ago)).toMatchObject({ status: 'ok', text: 'vexoul', linked: true })
+    expect(viewerTile({ ...LINKED, valid: false, error: 'Twitch refused the token' }, ago)).toMatchObject({ status: 'warn', text: 'Token invalid', sub: 'Twitch refused the token' })
+  })
+
+  it("words times with the site's own formatter", () => {
+    const st = { ...LINKED, method: 'paste' as const, connectedAt: 'T1', checkedAt: 'T2' }
+    expect(viewerTile(st, ago).sub).toBe('pasted token at T1 · checked at T2')
   })
 })
 
