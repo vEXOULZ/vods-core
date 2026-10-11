@@ -71,6 +71,21 @@ The existing `Authorization: Bearer <admin api key>` keeps working for scripts. 
 `youtube` may be cached (the real check refreshes a Google token; e.g. re-check at most every 10 minutes, and
 `POST /admin/youtube/status` or `GET /admin/youtube/status` forces one — that route **exists**).
 
+### 2b. The ad-free Twitch account (twitch-archive PR #112)
+
+`health.twitchViewer` (absent from an older worker, which hides the Overview tile; null when the check failed):
+`{linked, valid, error, login, userId, clientId, method: "device"|"paste", connectedAt, expiresAt, checkedAt}`. The
+account live playback tokens are asked for as, so a live recording has no stitched ads; the token never leaves the worker.
+
+- `GET /admin/twitch/viewer` → the same status, checked with Twitch now.
+- `POST /admin/twitch/viewer/device` → `{flowId, userCode, verificationUri, expiresIn, interval}`: Twitch's device
+  flow. The broadcaster enters `userCode` at `verificationUri`, signed in as the account to link.
+- `GET /admin/twitch/viewer/device/{flowId}`, every `interval` seconds → `{state: "pending"}`, then
+  `{state: "linked", status}` or `{state: "failed", error}`.
+- `PUT /admin/twitch/viewer` `{"token"}` → the status (400 when Twitch refuses the token): link with a pasted token
+  (twitch.tv's `auth-token` cookie).
+- `DELETE /admin/twitch/viewer` → `{error: false, msg}`: unlink (the token isn't revoked).
+
 ## 3. Jobs — mostly exists
 
 - `GET /admin/kinds` — exists.

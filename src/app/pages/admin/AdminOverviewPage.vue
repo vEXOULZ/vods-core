@@ -6,6 +6,7 @@ import { JobsTable, usePoll } from '@vexoulz/platform-web/vue'
 import { errorText } from '@vexoulz/platform-web'
 import type { Health } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
+import TwitchViewerTile from '../../admin/TwitchViewerTile.vue'
 import { platform } from '../../admin/platform'
 import { admin } from '../../admin/session'
 import { site } from '../../site'
@@ -130,6 +131,8 @@ async function connectYoutube() {
           <VxButton v-if="t.action === 'connect'" @click="connectYoutube">Connect YouTube</VxButton>
           <VxButton v-else-if="t.action === 'switch'" size="sm" title="Connect a different Google account or channel" @click="connectYoutube">Switch account</VxButton>
         </div>
+        <!-- A worker from before the ad-free account leaves twitchViewer out. -->
+        <TwitchViewerTile v-if="health.twitchViewer !== undefined" :status="health.twitchViewer" @changed="refresh" />
       </div>
 
       <section>

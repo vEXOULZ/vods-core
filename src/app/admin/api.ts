@@ -47,9 +47,47 @@ export interface Health {
     refreshTokenExpiresAt?: string | null
   } | null
   live: { live: boolean; streamId: string | null; startedAt: string | null } | null
+  /** The linked ad-free Twitch account; absent from a worker that predates it. */
+  twitchViewer?: TwitchViewerStatus | null
   /** Counts over every job, legacy ones too; the job runs themselves come from /api/v2/jobs (platform.ts). */
   jobs: { counts: Partial<Record<JobState, number>> }
 }
+
+/**
+ * The Twitch account the worker asks for live playback tokens as, so a live recording has no stitched ads (the
+ * account needs Turbo, or a sub where the channel gives subs ad-free viewing). The token itself never leaves the worker.
+ */
+export interface TwitchViewerStatus {
+  linked: boolean
+  /** Whether Twitch still accepts the token. */
+  valid: boolean
+  error: string | null
+  login?: string | null
+  userId?: string | null
+  clientId?: string | null
+  /** How it was linked: Twitch's device flow, or a pasted token. */
+  method?: 'device' | 'paste' | null
+  connectedAt?: string | null
+  /** When the access token ends (the worker refreshes a device-flow one); null when it doesn't. */
+  expiresAt?: string | null
+  checkedAt?: string | null
+}
+
+/** POST /admin/twitch/viewer/device: the code to enter at Twitch, and the flow to poll. */
+export interface TwitchDeviceFlow {
+  flowId: string
+  userCode: string
+  verificationUri: string
+  /** Seconds until the code ends. */
+  expiresIn: number
+  /** Seconds to wait between polls. */
+  interval: number
+}
+
+export type TwitchDevicePoll =
+  | { state: 'pending' }
+  | { state: 'linked'; status: TwitchViewerStatus | null }
+  | { state: 'failed'; error: string }
 
 export interface ActionResult {
   error: false
@@ -404,6 +442,25 @@ export class AdminClient {
   }
   youtubeAuthUrl(): Promise<{ url: string }> {
     return this.request('GET', '/admin/youtube/auth')
+  }
+  /** The linked ad-free Twitch account, checked with Twitch now (null when the check itself failed). */
+  twitchViewer(): Promise<TwitchViewerStatus | null> {
+    return this.request('GET', '/admin/twitch/viewer')
+  }
+  /** Start linking with Twitch's device flow: the broadcaster enters the code at Twitch. */
+  twitchViewerStart(): Promise<TwitchDeviceFlow> {
+    return this.request('POST', '/admin/twitch/viewer/device')
+  }
+  twitchViewerPoll(flowId: string): Promise<TwitchDevicePoll> {
+    return this.request('GET', `/admin/twitch/viewer/device/${encodeURIComponent(flowId)}`)
+  }
+  /** Link by pasting a token (twitch.tv's auth-token cookie); the worker checks it with Twitch. */
+  twitchViewerPaste(token: string): Promise<TwitchViewerStatus | null> {
+    return this.request('PUT', '/admin/twitch/viewer', { token })
+  }
+  /** Forget the account (the token isn't revoked: sign out on Twitch for that). */
+  twitchViewerUnlink(): Promise<ActionResult> {
+    return this.request('DELETE', '/admin/twitch/viewer')
   }
 
   // ---- VODs ----
