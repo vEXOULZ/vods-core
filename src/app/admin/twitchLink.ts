@@ -1,8 +1,10 @@
-import { timeAgo } from '@vexoulz/ui'
 import type { AdminClient, TwitchDeviceFlow, TwitchViewerStatus } from './api'
 
-/** The Overview tile's reading of the linked ad-free Twitch account. */
-export function viewerTile(st: TwitchViewerStatus | null | undefined): {
+/**
+ * The Overview tile's reading of the linked ad-free Twitch account. `ago` words a time ("3 hours ago"): the site's
+ * own, so the kit doesn't need @vexoulz/ui.
+ */
+export function viewerTile(st: TwitchViewerStatus | null | undefined, ago: (iso: string) => string): {
   status: 'ok' | 'warn' | 'off'
   text: string
   sub: string
@@ -11,7 +13,7 @@ export function viewerTile(st: TwitchViewerStatus | null | undefined): {
   if (!st) return { status: 'off', text: 'Unknown', sub: '', linked: false }
   if (!st.linked) return { status: 'off', text: 'Not linked', sub: 'Live recordings get stitched ads', linked: false }
   const how = st.method === 'paste' ? 'pasted token' : 'linked'
-  const sub = st.error ?? [st.connectedAt ? `${how} ${timeAgo(st.connectedAt)}` : '', st.checkedAt ? `checked ${timeAgo(st.checkedAt)}` : ''].filter(Boolean).join(' · ')
+  const sub = st.error ?? [st.connectedAt ? `${how} ${ago(st.connectedAt)}` : '', st.checkedAt ? `checked ${ago(st.checkedAt)}` : ''].filter(Boolean).join(' · ')
   return { status: st.valid ? 'ok' : 'warn', text: st.valid ? (st.login ?? 'Linked') : 'Token invalid', sub, linked: true }
 }
 

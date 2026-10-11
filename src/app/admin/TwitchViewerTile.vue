@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VxButton, VxCallout, VxDialog, VxField, VxInput, VxStatusDot, useToast } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxDialog, VxField, VxInput, VxStatusDot, timeAgo, useToast } from '@vexoulz/ui'
 import { errorText } from '@vexoulz/platform-web'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import type { TwitchDeviceFlow, TwitchViewerStatus } from './api'
@@ -15,7 +15,7 @@ const props = defineProps<{ status: TwitchViewerStatus | null | undefined }>()
 const emit = defineEmits<{ changed: [] }>()
 const toast = useToast()
 
-const tile = computed(() => viewerTile(props.status))
+const tile = computed(() => viewerTile(props.status, timeAgo))
 
 // ---- device flow ----
 const linkOpen = ref(false)
