@@ -9,7 +9,7 @@ import { createRouter, createWebHistory, RouterLink, type Router } from 'vue-rou
 import type { VodsConfig } from '../config'
 import { createVods } from '../vue'
 
-import './styles/platform.css'
+import '@vexoulz/ui/platform.css'
 import './styles/tags.css'
 
 import App from './App.vue'
