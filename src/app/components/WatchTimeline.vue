@@ -157,12 +157,12 @@ const {
 .track { position: relative; height: 8px; cursor: pointer; margin: 2px 0 4px; touch-action: none; border-radius: 2px; outline-offset: 4px; }
 .track:hover, .track:focus-visible { height: 10px; margin-top: 1px; margin-bottom: 3px; }
 .seg { position: absolute; top: 0; bottom: 0; border-right: 2px solid rgb(0 0 0 / 0.85); background: var(--c); }
-.seg.cut { background: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.18) 0 3px, transparent 3px 6px); }
+.seg.cut { background: var(--vx-hatch); }
 /* A merge's gap: the stream was down, so nothing to hatch; a dotted line through the middle marks the join. */
 .seg.gap { background: radial-gradient(circle, rgb(255 255 255 / 0.35) 1px, transparent 1.5px) 0 50% / 5px 100% repeat-x; }
 /* Time this upload set skips (a live recording's ad breaks): the chapter colour shows through, hatched over. */
-.miss { position: absolute; top: 0; bottom: 0; pointer-events: none; background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.55) 0 2px, transparent 2px 5px); }
-.unseg { position: absolute; top: 0; bottom: 0; pointer-events: none; background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--vx-bad) 55%, transparent) 0 2px, rgb(0 0 0 / 0.65) 2px 6px); }
+.miss { position: absolute; top: 0; bottom: 0; pointer-events: none; background: var(--vx-hatch-dark); }
+.unseg { position: absolute; top: 0; bottom: 0; pointer-events: none; background: var(--vx-hatch-bad); }
 .tick { position: absolute; top: -9px; bottom: -2px; width: 1px; background: var(--vx-muted); pointer-events: none; }
 /* Where a stream jumps within its VOD: a thin slit through the bar, with a notch above it. */
 .jump { position: absolute; top: -5px; bottom: 0; width: 3px; margin-left: -1.5px; z-index: 1; pointer-events: none; background: var(--vx-bg); }
