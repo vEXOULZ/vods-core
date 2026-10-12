@@ -50,6 +50,7 @@ const { app } = createVodsApp({
   site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' },
   adminBase: '/backend-admin',          // the worker's admin API (the default)
   authBase: 'https://auth.vexoul.net',  // vexoulz-auth; empty (the default) turns sign-in off
+  adminClientId: 'vods-admin',          // the archive's client id at vexoulz-auth (the default)
   commit: __COMMIT__,                   // shown in the footer
   art: { noThumbnail: VxNoThumbnail, twitchGlyph: VxTwitchGlyph }, // the site's own art; placeholders without
 })
@@ -64,6 +65,7 @@ app.mount('#app')
 | `site.twitchUrl` | The channel's Twitch page: the nav's "Live" and the watch page's link. |
 | `site.perPage` | VOD cards per page (24). |
 | `site.tags` | How VOD tags show until the archive has its own (edited on /manage/tags); `DEFAULT_TAGS` otherwise. |
+| `adminClientId` | The archive's client id at vexoulz-auth (the worker's `ARCHIVE_ADMIN_AUTH_CLIENT_ID`), for the quiet admin check that shows an admin Manage without a reload (docs/admin-api.md, 1c). Default `vods-admin`. |
 | `art.noThumbnail` | A component for a VOD with no thumbnail (fills a 16:9 box). Default: a plain placeholder. |
 | `art.twitchGlyph` | Twitch's mark on the Manage button and "Sign in with Twitch" (16 px). Default: a placeholder. |
 
@@ -75,6 +77,10 @@ API and serves `/backend-admin` with the mock:
 import { adminMock } from '@vexoulz/vods-core/dev'
 plugins: [vue(), adminMock('/backend-admin', 'https://vods.vexoul.net/backend')]
 ```
+
+The mock also serves a fake vexoulz-auth at `/auth-mock`: with `VITE_AUTH_BASE=/auth-mock`, "Sign in" signs in the
+fake admin (`?as=viewer` on its `/login`, or `MOCK_ACCOUNT=viewer`, signs in a plain viewer), and the quiet admin check
+runs against it. `MOCK_AUTH_CODES=<status>` and `MOCK_ADMIN_CODE=<status>` make the code mint or its hand-off fail.
 
 ## Using the engine on its own
 

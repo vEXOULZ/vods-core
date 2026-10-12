@@ -23,6 +23,12 @@ export interface Session {
   user?: AdminUser | null
 }
 
+/**
+ * POST /admin/session {code}: the worker's answer to a vexoulz-auth code (admin/quiet.ts). An admin gets the dashboard
+ * session (the same as GET /admin/session's, with `admin: true`); anyone else `{admin: false}` and no cookie.
+ */
+export type CodeSession = (Session & { admin: true }) | { admin: false }
+
 export interface AdminUser {
   id: string
   login: string
@@ -395,7 +401,13 @@ export class AdminClient {
     this.fetcher = opts.fetch ?? ((input, init) => globalThis.fetch(input, init))
   }
 
-  private async request<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    signal?: AbortSignal,
+    credentials: RequestCredentials = 'same-origin',
+  ): Promise<T> {
     const headers: Record<string, string> = { accept: 'application/json' }
     // A Blob (an uploaded file) goes as it is, with its own type; anything else as JSON.
     const raw = body instanceof Blob
@@ -405,7 +417,7 @@ export class AdminClient {
       method,
       headers,
       body: body === undefined ? undefined : raw ? body : JSON.stringify(body),
-      credentials: 'same-origin',
+      credentials,
       signal,
     })
     if (res.status === 204) return undefined as T
@@ -434,6 +446,10 @@ export class AdminClient {
   }
   logout(): Promise<void> {
     return this.request('DELETE', '/admin/session')
+  }
+  /** Trades a vexoulz-auth code (POST /v1/codes) for a dashboard session, if the account is one of the admins. */
+  codeSession(code: string): Promise<CodeSession> {
+    return this.request('POST', '/admin/session', { code }, undefined, 'include')
   }
 
   // ---- overview ----

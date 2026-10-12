@@ -38,11 +38,6 @@ export function twitchLoginUrl(next: string): string {
   return `${adminBase}/admin/signin?${new URLSearchParams({ next })}`
 }
 
-/** The quiet check (admin/quiet.ts): back to `next` with `admin=1` or `admin=0`, never a page of its own. */
-export function quietLoginUrl(next: string): string {
-  return `${adminBase}/admin/signin?${new URLSearchParams({ quiet: '1', next })}`
-}
-
 /** Why a Twitch sign-in came back to the login page (`?auth_error=` from the worker's callback). */
 export const SIGNIN_ERRORS: Record<string, string> = {
   denied: 'The sign-in was cancelled on Twitch.',
@@ -94,6 +89,18 @@ export function ensure(): Promise<void> {
 export async function login(password: string): Promise<void> {
   apply(await admin.login(password))
   state.notice = null
+}
+
+/**
+ * Hands the worker a vexoulz-auth code (admin/quiet.ts): true when the account is one of the archive's admins and the
+ * dashboard session now exists, false when it isn't. Anything else throws (a ProblemError).
+ */
+export async function signInWithCode(code: string): Promise<boolean> {
+  const s = await admin.codeSession(code)
+  if (!s.admin) return false
+  apply(s)
+  state.notice = null
+  return true
 }
 
 export async function logout(): Promise<void> {

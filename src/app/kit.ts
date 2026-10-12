@@ -58,9 +58,9 @@ export * from './composables/watchDebounced'
 
 // Manage: the worker's admin API, its session, and the editors' drafts and checks.
 export * from './admin/api'
-export { admin, adminBase, session, ensure, login, logout, twitchLoginUrl, quietLoginUrl, setExpiredHandler, SIGNIN_ERRORS } from './admin/session'
-// The quiet admin check for someone signed in to the account (admin/quiet.ts).
-export { answerOf, forget, recall, remember, shouldCheck, type Answer } from './admin/quiet'
+export { admin, adminBase, session, ensure, login, logout, signInWithCode, twitchLoginUrl, setExpiredHandler, SIGNIN_ERRORS } from './admin/session'
+// The quiet admin check for someone signed in to the account (admin/quiet.ts); installVodsSession runs it.
+export { ADMIN_CLIENT_ID, quietAdminCheck, type AdminCheck, type AuthRequests } from './admin/quiet'
 export { platform, vodSubject } from './admin/platform'
 export * from './admin/edits'
 export * from './admin/settings'
