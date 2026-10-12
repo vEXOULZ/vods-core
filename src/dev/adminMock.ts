@@ -1,6 +1,8 @@
 // Dev-only stand-in for the worker admin API (docs/admin-api.md), so `npm run dev` can show /manage without a real
 // archive. Fake data, in memory; jobs advance on their own. Password: "admin"; "Sign in with Twitch" signs in a fake
-// Twitch admin at once (no vexoulz-auth). The `dev` entry: only a site's vite config imports it, never its build.
+// Twitch admin at once. It also serves a fake vexoulz-auth (at `/auth-mock`, for a site whose VITE_AUTH_BASE points
+// there), so the quiet admin check runs without the real one. The `dev` entry: only a site's vite config imports it,
+// never its build.
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createHash, randomBytes } from 'node:crypto'
 import type { Plugin } from 'vite'
@@ -153,6 +155,21 @@ function sessionOf(req: IncomingMessage) {
   const m = /(?:^|;\s*)archive_admin=([^;]+)/.exec(req.headers.cookie ?? '')
   const s = m ? sessions.get(m[1]!) : undefined
   return s && s.expires > Date.now() ? { token: m![1]!, ...s } : null
+}
+
+// ---- a fake vexoulz-auth: its session, /v1/me and /v1/codes, and the codes the worker takes back ----
+// /login signs in the fake admin (id 42), or a plain viewer with ?as=viewer or MOCK_ACCOUNT=viewer.
+const VIEWER: User = { id: '7', login: 'viewer', displayName: 'viewer', avatar: null, color: '#1E90FF' }
+const AUTH_COOKIE = 'mock_auth'
+const authSessions = new Map<string, { csrf: string; user: User }>()
+const authCodes = new Map<string, { user: User; expires: number }>()
+/** The archive's client id there (the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID). */
+const ARCHIVE_CLIENT_ID = 'vods-admin'
+
+function authSessionOf(req: IncomingMessage) {
+  const m = /(?:^|;\s*)mock_auth=([^;]+)/.exec(req.headers.cookie ?? '')
+  const s = m ? authSessions.get(m[1]!) : undefined
+  return s ? { token: m![1]!, ...s } : null
 }
 
 function newSession(user: User | null) {
@@ -664,7 +681,48 @@ function storageJson() {
   }
 }
 
-export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vexoul.net/backend'): Plugin {
+/**
+ * The fake vexoulz-auth. `MOCK_AUTH_CODES=<status>` makes POST /v1/codes answer that status instead (429, 409...), and
+ * `MOCK_ADMIN_CODE=<status>` does the same for the worker's POST /admin/session {code} (503, 502...).
+ */
+async function fakeAuth(req: IncomingMessage, res: ServerResponse, url: URL) {
+  const path = url.pathname
+  const method = req.method ?? 'GET'
+  const s = authSessionOf(req)
+  if (path === '/login' && method === 'GET') {
+    const user = (url.searchParams.get('as') ?? process.env.MOCK_ACCOUNT) === 'viewer' ? VIEWER : TWITCH_ADMIN
+    const token = randomBytes(24).toString('hex')
+    authSessions.set(token, { csrf: randomBytes(16).toString('hex'), user })
+    let back = url.searchParams.get('return') ?? '/'
+    if (!/^(\/(?!\/)|https?:\/\/(127\.0\.0\.1|localhost)[:/])/.test(back)) back = '/'
+    res.writeHead(302, { location: back, 'set-cookie': `${AUTH_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/` })
+    return res.end()
+  }
+  if (path === '/v1/me' && method === 'GET') {
+    if (!s) return problem(res, 401, 'signed_out', 'Not signed in')
+    return send(res, 200, { ...s.user, csrf: s.csrf })
+  }
+  if (path === '/v1/logout' && method === 'POST') {
+    if (s) authSessions.delete(s.token)
+    res.writeHead(204, { 'set-cookie': `${AUTH_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0` })
+    return res.end()
+  }
+  if (path === '/v1/codes' && method === 'POST') {
+    if (!s) return problem(res, 401, 'signed_out', 'Not signed in')
+    if (req.headers['x-vexoulz-csrf'] !== s.csrf) return problem(res, 403, 'csrf', 'Missing or wrong X-Vexoulz-CSRF')
+    const forced = Number(process.env.MOCK_AUTH_CODES)
+    if (forced) return problem(res, forced, 'mock', `MOCK_AUTH_CODES=${forced}`)
+    const { client_id } = await body(req)
+    if (client_id !== ARCHIVE_CLIENT_ID) return problem(res, 400, 'unknown_client', `No client ${String(client_id)}`)
+    const code = randomBytes(16).toString('hex')
+    authCodes.set(code, { user: s.user, expires: Date.now() + 60_000 })
+    return send(res, 200, { code })
+  }
+  // Watch progress isn't kept here: the site falls back to the browser's.
+  return problem(res, 404, 'not_found', 'Not in the mock')
+}
+
+export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vexoul.net/backend', authBase = '/auth-mock'): Plugin {
   return {
     name: 'vods-admin-mock',
     apply: 'serve',
@@ -695,6 +753,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
         const { chaptersLocked: _c, botChat: _b, splices: _s, hidden: _h, ...pub } = adminVod(vods.get(id)!)
         return send(res, 200, pub)
       })
+      server.middlewares.use(authBase, (req, res) => void fakeAuth(req, res, new URL(req.url ?? '/', 'http://x')))
       server.middlewares.use(base, async (req, res) => {
         const url = new URL(req.url ?? '/', 'http://x')
         const path = url.pathname
@@ -704,11 +763,22 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
         if (path === '/admin/session') {
           if (method === 'GET') return send(res, 200, sessionJson(s))
           if (method === 'POST') {
+            const sent = await body(req)
+            // A vexoulz-auth code (the quiet admin check): the fake admin gets a session, anyone else {admin: false}.
+            if (typeof sent.code === 'string') {
+              const forced = Number(process.env.MOCK_ADMIN_CODE)
+              if (forced) return problem(res, forced, forced === 503 ? 'unavailable' : 'misconfigured', `MOCK_ADMIN_CODE=${forced}`)
+              const c = authCodes.get(sent.code)
+              authCodes.delete(sent.code)
+              if (!c || c.expires < Date.now()) return problem(res, 400, 'invalid_code', 'Unknown, expired or used code')
+              if (c.user.id !== TWITCH_ADMIN.id) return send(res, 200, { admin: false })
+              const token = newSession(TWITCH_ADMIN)
+              return send(res, 200, { admin: true, ...sessionJson({ token, ...sessions.get(token)! }) }, { 'set-cookie': sessionCookie(token) })
+            }
             const now = Date.now()
             while (failures.length && failures[0]! < now - 300_000) failures.shift()
             if (failures.length >= 5) return send(res, 429, { error: true, msg: 'Too many attempts' }, { 'retry-after': '300' })
-            const { password } = await body(req)
-            if (password !== 'admin') {
+            if (sent.password !== 'admin') {
               failures.push(now)
               return fail(res, 401, 'Wrong password')
             }
@@ -722,21 +792,11 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           }
         }
 
-        // The worker goes through vexoulz-auth here; the mock signs the fake Twitch admin in straight away. A quiet
-        // check (?quiet=1) comes back with admin=1, or admin=0 when MOCK_ADMIN_QUIET=no (a plain viewer).
+        // The worker goes through vexoulz-auth here; the mock signs the fake Twitch admin in straight away.
         if (path === '/admin/signin' && method === 'GET') {
           let next = url.searchParams.get('next') ?? ''
           if (!next.startsWith('/') || next.startsWith('//')) next = '/manage'
-          const quiet = url.searchParams.get('quiet') === '1'
-          const yes = !quiet || process.env.MOCK_ADMIN_QUIET !== 'no'
-          const headers: Record<string, string> = {}
-          if (yes) headers['set-cookie'] = sessionCookie(newSession(TWITCH_ADMIN))
-          if (quiet) {
-            const back = new URL(next, 'http://x')
-            back.searchParams.set('admin', yes ? '1' : '0')
-            next = back.pathname + back.search + back.hash
-          }
-          res.writeHead(302, { location: next, ...headers })
+          res.writeHead(302, { location: next, 'set-cookie': sessionCookie(newSession(TWITCH_ADMIN)) })
           return res.end()
         }
 

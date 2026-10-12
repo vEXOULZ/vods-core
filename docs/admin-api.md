@@ -46,12 +46,21 @@ The existing `Authorization: Bearer <admin api key>` keeps working for scripts. 
   null for the password, the API key and older entries).
 - The site keeps `/admin/login` working as a redirect to `/manage/login`, since that's where the worker sends errors.
 
-### 1c. The quiet check (twitch-archive PR #29)
+### 1c. The quiet check (twitch-archive PR #110)
 
-- `GET /admin/signin?quiet=1&next=/...` works the same, except that the callback never shows an error: it always goes
-  back to `next` with `admin=1` (a session was made) or `admin=0` (not on the list, denied, unavailable, anything).
-- The site only sends someone already signed in to the account, so vexoulz-auth answers at once and nobody sees
-  Twitch. It remembers the answer per browser and Twitch account (`src/app/admin/quiet.ts`).
+For someone already signed in to the account, `installVodsSession` asks once per page load whether they're an
+admin, with two requests and no redirect (`src/app/admin/quiet.ts`):
+
+1. vexoulz-auth (≥ v0.3.0): `GET /v1/me` for the CSRF token, then `POST /v1/codes {client_id}` with credentials and
+   `X-Vexoulz-CSRF`. The client id is the worker's `ARCHIVE_ADMIN_AUTH_CLIENT_ID` (`vods-admin` by default; the
+   site's `adminClientId` option). `200 {code}`, or `401 signed_out`.
+2. The worker: `POST /admin/session {code}`, credentialed. `200 {admin: true, ...the session}` sets the
+   `archive_admin` cookie (its `csrf` goes as `X-CSRF-Token`); `200 {admin: false}` is a signed-in viewer.
+
+Any other answer from either (`400 invalid_code|unknown_client`, `403 origin_not_allowed|csrf`, `404 signin_off`,
+`409 scope_missing`, `429`, `502 misconfigured`, `503 unavailable`) means "can't tell": the site shows nothing and
+doesn't ask again until the next page load. The site's origin has to be in the worker's
+`ARCHIVE_ADMIN_SITE_ORIGINS`. Errors are problem details; the site branches on `code`.
 
 ## 2. Health — new
 

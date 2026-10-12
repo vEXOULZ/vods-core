@@ -25,7 +25,7 @@ function adminSession(s: { authenticated?: boolean; twitchLogin?: boolean; user?
 }
 
 /** A fresh session module (its `ensure()` answers once per load) and the wiring on a memory router. */
-async function setup(opts: { user?: string | null; path?: string } = {}) {
+async function setup(opts: { user?: string | null; path?: string; clientId?: string } = {}) {
   vi.resetModules()
   const { installVodsSession, vodsRoutes } = await import('../../src/app/router')
   const session = await import('../../src/app/admin/session')
@@ -33,8 +33,8 @@ async function setup(opts: { user?: string | null; path?: string } = {}) {
   const user = ref(opts.user ? { id: opts.user } : null)
   const ready = ref(true)
   const navigate = vi.fn()
-  const account = { user, ready, request: vi.fn(async () => new Response('{}')) }
-  installVodsSession(router, account, { navigate })
+  const account = { user, ready, request: (p: string, i: RequestInit = {}) => fetch(`https://auth.test${p}`, { ...i, credentials: 'include' }) }
+  installVodsSession(router, account, { navigate, adminClientId: opts.clientId })
   await router.push(opts.path ?? '/')
   return { router, navigate, session, user }
 }
@@ -94,32 +94,96 @@ describe('the Manage guard', () => {
   })
 })
 
+/** vexoulz-auth and a worker with Twitch sign-in: the account is an admin (`admin`), a viewer, or the worker can't tell. */
+function quiet(answer: 'admin' | 'viewer' | 503) {
+  let signedIn = false
+  return vi.fn(async (url: string | URL | Request, init: RequestInit = {}) => {
+    const u = String(url)
+    const method = init.method ?? 'GET'
+    if (u.endsWith('/v1/me')) return Response.json({ id: '42', login: 'vexoulz', csrf: 'auth-csrf' })
+    if (u.endsWith('/v1/codes')) return Response.json({ code: 'c0de' })
+    if (u.endsWith('/admin/session') && method === 'POST') {
+      if (answer === 503) return Response.json({ status: 503, code: 'unavailable' }, { status: 503 })
+      if (answer === 'viewer') return Response.json({ admin: false })
+      signedIn = true
+      return Response.json({ admin: true, authenticated: true, csrf: 'w', expiresAt: null, passwordLogin: false, twitchLogin: true, user: { id: '42' } })
+    }
+    if (u.endsWith('/admin/session')) return Response.json({ authenticated: signedIn, csrf: null, expiresAt: null, passwordLogin: true, twitchLogin: true })
+    return new Response('{}', { status: 404 })
+  })
+}
+
+const settle = () => new Promise((r) => setTimeout(r, 10))
+const codesAsked = () => vi.mocked(fetch).mock.calls.filter(([u]) => String(u).endsWith('/v1/codes')).length
+
 describe('the quiet admin check', () => {
-  it('asks once for someone signed in to the account', async () => {
-    vi.stubGlobal('fetch', adminSession({ twitchLogin: true }))
-    const { navigate } = await setup({ user: '42', path: '/vods/1' })
-    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/backend-admin/admin/signin?quiet=1&next=%2Fvods%2F1'))
+  it('gives a signed-in admin the dashboard session on the page they are on', async () => {
+    vi.stubGlobal('fetch', quiet('admin'))
+    const { router, navigate, session } = await setup({ user: '42', path: '/vods/1' })
+    await vi.waitFor(() => expect(session.session.authenticated).toBe(true))
+    expect(navigate).not.toHaveBeenCalled()
+    expect(router.currentRoute.value.fullPath).toBe('/vods/1')
   })
 
-  it('never asks from a public page, nor for a known viewer', async () => {
-    vi.stubGlobal('fetch', adminSession({ twitchLogin: true }))
-    const first = await setup({ user: '42', path: '/manage/login' })
-    await nextTick()
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
-    await new Promise((r) => setTimeout(r))
-    expect(first.navigate).not.toHaveBeenCalled()
-
-    localStorage.setItem('vods-admin:7', 'no')
-    const second = await setup({ user: '7', path: '/vods/1' })
-    await new Promise((r) => setTimeout(r))
-    expect(second.navigate).not.toHaveBeenCalled()
+  it('never leaves the page, and keeps nothing in localStorage or sessionStorage', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    for (const answer of ['admin', 'viewer', 503] as const) {
+      vi.stubGlobal('fetch', quiet(answer))
+      const { navigate } = await setup({ user: '42', path: '/vods/1' })
+      await vi.waitFor(() => expect(codesAsked()).toBe(1))
+      await settle()
+      expect(navigate).not.toHaveBeenCalled()
+    }
+    expect(setItem).not.toHaveBeenCalled()
+    expect(localStorage.length).toBe(0)
+    expect(sessionStorage.length).toBe(0)
+    setItem.mockRestore()
   })
 
-  it("takes the worker's answer off the URL and remembers it", async () => {
-    vi.stubGlobal('fetch', adminSession({ twitchLogin: true }))
-    const { router, navigate } = await setup({ user: '42', path: '/vods/1?admin=0&t=5' })
-    await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/vods/1?t=5'))
-    expect(localStorage.getItem('vods-admin:42')).toBe('no')
+  it("shows a viewer nothing, and asks once however much they move around", async () => {
+    vi.stubGlobal('fetch', quiet('viewer'))
+    const { router, session } = await setup({ user: '7', path: '/vods/1' })
+    await vi.waitFor(() => expect(codesAsked()).toBe(1))
+    await router.push('/vods/2')
+    await router.push('/games/3')
+    await settle()
+    expect(codesAsked()).toBe(1)
+    expect(session.session.authenticated).toBe(false)
+  })
+
+  it("asks once when the worker can't tell, never in a loop", async () => {
+    vi.stubGlobal('fetch', quiet(503))
+    const { router, session } = await setup({ user: '42', path: '/vods/1' })
+    await vi.waitFor(() => expect(codesAsked()).toBe(1))
+    await router.push('/vods/2')
+    await settle()
+    expect(codesAsked()).toBe(1)
+    expect(session.session.authenticated).toBe(false)
+  })
+
+  it('asks nothing when signed out', async () => {
+    vi.stubGlobal('fetch', quiet('admin'))
+    const { navigate } = await setup({ path: '/vods/1' })
+    await settle()
+    expect(codesAsked()).toBe(0)
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it("asks again for another account, and sends the site's client id", async () => {
+    vi.stubGlobal('fetch', quiet('viewer'))
+    const { user } = await setup({ user: '7', path: '/vods/1', clientId: 'keeki-admin' })
+    await vi.waitFor(() => expect(codesAsked()).toBe(1))
+    user.value = { id: '8' }
+    await vi.waitFor(() => expect(codesAsked()).toBe(2))
+    const body = vi.mocked(fetch).mock.calls.find(([u]) => String(u).endsWith('/v1/codes'))![1]!.body
+    expect(JSON.parse(String(body))).toEqual({ client_id: 'keeki-admin' })
+  })
+
+  it('lets a signed-in admin into Manage without the Twitch sign-in', async () => {
+    vi.stubGlobal('fetch', quiet('admin'))
+    const { router, navigate } = await setup({ user: '42' })
+    await router.push('/manage/vods')
+    expect(router.currentRoute.value.path).toBe('/manage/vods')
     expect(navigate).not.toHaveBeenCalled()
   })
 })
@@ -132,5 +196,27 @@ describe('a dashboard session that ends', () => {
     await session.admin.health().catch(() => {})
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/manage/login'))
     expect(router.currentRoute.value.query.next).toBe('/manage/vods')
+  })
+
+  it("renews an admin's session quietly once, then sends them to the sign-in page", async () => {
+    vi.stubGlobal('fetch', quiet('admin'))
+    const { router, session, navigate } = await setup({ user: '42' })
+    await router.push('/manage/vods')
+    await vi.waitFor(() => expect(codesAsked()).toBe(1))
+    const expire = async () => {
+      const f = vi.mocked(fetch)
+      f.mockImplementationOnce(async () => new Response('{}', { status: 401 }))
+      await session.admin.health().catch(() => {})
+    }
+    await expire()
+    await vi.waitFor(() => expect(codesAsked()).toBe(2))
+    await vi.waitFor(() => expect(session.session.authenticated).toBe(true))
+    expect(router.currentRoute.value.path).toBe('/manage/vods')
+
+    // Ending again at once: no second renewal, so a session that won't stick can't loop.
+    await expire()
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/manage/login'))
+    expect(codesAsked()).toBe(2)
+    expect(navigate).not.toHaveBeenCalled()
   })
 })

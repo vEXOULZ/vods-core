@@ -5,8 +5,8 @@ import { watch, type Ref } from 'vue'
 import type { Router, RouteRecordRaw, RouteRecordSingleView } from 'vue-router'
 
 import { AccountProgressStore } from '../index'
-import { answerOf, recall, remember, shouldCheck } from './admin/quiet'
-import { ensure, quietLoginUrl, session, setExpiredHandler, twitchLoginUrl } from './admin/session'
+import { ADMIN_CLIENT_ID, quietAdminCheck, type AdminCheck } from './admin/quiet'
+import { ensure, session, setExpiredHandler, twitchLoginUrl } from './admin/session'
 import { site } from './site'
 
 /** A page: a component, or a function that imports one. */
@@ -86,7 +86,15 @@ export interface VodsSessionOptions {
   manageLogin?: string
   /** How the page leaves for the worker's sign-in. Default `window.location.assign` (tests replace it). */
   navigate?: (url: string) => void
+  /**
+   * The archive's client id at vexoulz-auth, for the quiet admin check: the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID.
+   * Default `vods-admin`.
+   */
+  adminClientId?: string
 }
+
+/** How long after a quiet renewal another one may follow, so a session that won't stick can't loop. */
+const RENEW_MS = 60_000
 
 export interface VodsSession {
   /** Watch progress, kept with the account while someone is signed in: `createVods(config, { progress })`. */
@@ -102,14 +110,43 @@ export function installVodsSession(router: Router, account: VodsAccount, options
   const loginPath = options.manageLogin ?? '/manage/login'
   const navigate = options.navigate ?? ((url: string) => window.location.assign(url))
   const toLogin = (next: string) => ({ path: loginPath, query: { next } })
+  const clientId = options.adminClientId ?? ADMIN_CLIENT_ID
 
-  // A dashboard session that ends mid-use: an admin still signed in to the account gets a new one quietly (one trip,
-  // admin/quiet.ts); anyone else goes to the sign-in page, which says why.
+  // The quiet admin check (admin/quiet.ts), once per account per page load: a later caller gets the same answer.
+  type Asked = { id: string; answer: Promise<AdminCheck>; result: AdminCheck | null }
+  let asked: Asked | null = null
+  const check = (id: string): Promise<AdminCheck> => {
+    if (asked?.id === id) return asked.answer
+    const entry: Asked = {
+      id,
+      result: null,
+      answer: (async (): Promise<AdminCheck> => {
+        await ensure()
+        if (session.authenticated) return 'admin'
+        if (!session.twitchLogin) return 'unknown'
+        return quietAdminCheck(account, clientId)
+      })().then((a) => (entry.result = a)),
+    }
+    asked = entry
+    return entry.answer
+  }
+  let renewedAt = -Infinity
+
+  // A dashboard session that ends mid-use: an admin still signed in to the account gets a new one quietly (at most
+  // once a minute); anyone else, or a renewal that fails, goes to the sign-in page, which says why.
   setExpiredHandler(() => {
     const here = router.currentRoute.value
     const user = account.user.value
-    if (user && recall(user.id) === 'yes' && shouldCheck(user.id)) return navigate(quietLoginUrl(here.fullPath))
-    if (isManagePath(here.path) && !here.meta.public) void router.push(toLogin(here.fullPath))
+    const toSignIn = () => {
+      if (isManagePath(here.path) && !here.meta.public) void router.push(toLogin(here.fullPath))
+    }
+    if (user && asked?.id === user.id && asked.result === 'admin' && Date.now() - renewedAt >= RENEW_MS) {
+      renewedAt = Date.now()
+      asked = null
+      void check(user.id).then((a) => a === 'admin' || toSignIn())
+      return
+    }
+    toSignIn()
   })
 
   // Manage pages need a dashboard session. Without one, the visitor goes through the worker's Twitch sign-in (which
@@ -119,6 +156,12 @@ export function installVodsSession(router: Router, account: VodsAccount, options
     if (!isManagePath(to.path) || to.meta.public) return true
     await ensure()
     if (session.authenticated) return true
+    // Someone signed in to the account may be an admin: the quiet check makes the session without leaving the page.
+    const user = account.ready.value ? account.user.value : null
+    if (user) {
+      await check(user.id)
+      if (session.authenticated) return true
+    }
     if (session.twitchLogin && !session.notice) {
       navigate(twitchLoginUrl(to.fullPath))
       return false
@@ -132,31 +175,16 @@ export function installVodsSession(router: Router, account: VodsAccount, options
     if (!failure && to.matched.at(-1) !== from.matched.at(-1)) document.title = site.name
   })
 
-  // Signed in to the account: read the quiet check's answer off the URL, and ask once if this browser doesn't know
-  // whether the account is one of the archive's admins. A known viewer never loads the dashboard session.
-  void router.isReady().then(() =>
-    watch(
-      () => [account.user.value, account.ready.value, router.currentRoute.value.query.admin] as const,
-      async ([user, ready]) => {
-        if (!ready) return
-        const here = router.currentRoute.value
-        const answer = answerOf(here.query)
-        if (here.query.admin !== undefined) {
-          const { admin: _a, ...query } = here.query
-          void router.replace({ path: here.path, query, hash: here.hash })
-        }
-        if (!user) return
-        if (answer) remember(user.id, answer)
-        if (recall(user.id) === 'no') return
-        await ensure()
-        if (session.authenticated) {
-          if (session.user?.id === user.id) remember(user.id, 'yes')
-          return
-        }
-        if (!answer && session.twitchLogin && !here.meta.public && shouldCheck(user.id)) navigate(quietLoginUrl(here.fullPath))
-      },
-      { immediate: true },
-    ),
+  // Signed in to the account: ask once whether it's one of the archive's admins. An admin's dashboard session (and
+  // Manage in the account menu) shows up without the page reloading; anyone else sees nothing.
+  watch(
+    () => [account.user.value?.id ?? null, account.ready.value] as const,
+    ([id, ready]) => {
+      if (!ready) return
+      if (!id) asked = null
+      else void check(id)
+    },
+    { immediate: true },
   )
 
   // Watch progress follows the signed-in account (vexoulz-auth); signed out it stays in this browser, and signing in

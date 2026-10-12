@@ -1,12 +1,10 @@
 <script setup lang="ts">
 // The header's account control, wired to the shared sign-in (@vexoulz/ui/account, set up by createVodsApp()). A dashboard session signed in
-// with the admin password (no account) shows as "admin". Signing out ends both, and forgets this browser's quiet
-// admin check for the account (admin/quiet.ts).
+// with the admin password (no account) shows as "admin". Signing out ends both.
 import { VxAccountMenu, VxMenuItem, type AccountUser } from '@vexoulz/ui'
 import { useAccount } from '@vexoulz/ui/account'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { forget } from '../admin/quiet'
 import { logout, session } from '../admin/session'
 
 const account = useAccount()
@@ -25,11 +23,7 @@ async function signOut() {
   } catch {
     // the session is dropped here either way
   }
-  const id = account.user.value?.id
-  if (id) {
-    forget(id)
-    await account.signOut({ everywhere: true })
-  }
+  if (account.user.value) await account.signOut({ everywhere: true })
   if (route.path.startsWith('/manage')) router.push('/')
 }
 </script>

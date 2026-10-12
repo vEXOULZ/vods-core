@@ -33,6 +33,11 @@ export interface VodsAppOptions {
    * out); a site that isn't registered with vexoulz-auth leaves it empty.
    */
   authBase?: string
+  /**
+   * The archive's client id at vexoulz-auth, for the quiet admin check: the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID.
+   * Default `vods-admin`.
+   */
+  adminClientId?: string
   /** The commit the site was built from, shown in the footer. */
   commit?: string
   /**
@@ -78,7 +83,7 @@ export function createVodsApp(options: VodsAppOptions): VodsApp {
     scrollBehavior: (to, from, saved) => saved ?? (to.path !== from.path ? { top: 0 } : undefined),
   })
   // The Manage guard, the tab's title, the quiet admin check and progress that follows the account (router.ts).
-  const { progress } = installVodsSession(router, account)
+  const { progress } = installVodsSession(router, account, { adminClientId: options.adminClientId })
 
   const app = createApp(App)
     .use(router)
