@@ -195,6 +195,32 @@ export interface AdminVod extends RawVod {
   botChat?: BotChatInfo | null
   /** Merges and splits touching this VOD, oldest first (undone ones included, with `undoneAt`). */
   splices?: Splice[]
+  /** What the uploads hide (missing from older workers): applied to every upload made after it was saved. */
+  censor?: CensorRange[]
+}
+
+/** A stretch of the VOD hidden in its YouTube uploads, for what Twitch allows and YouTube doesn't. */
+export interface CensorRange {
+  /** VOD seconds. */
+  start: number
+  end: number
+  /** Blur or black out the picture; null leaves it. */
+  video: 'blur' | 'black' | null
+  /** Silence the sound. A range covers the picture, mutes, or both. */
+  mute: boolean
+  /** Why (at most 200 characters). */
+  note?: string
+}
+
+/** POST /admin/vods/:id/youtube/delete. */
+export interface DeleteUploadsResult extends ActionResult {
+  /** Gone from YouTube and the VOD's list (one already gone from YouTube counts). */
+  deleted: string[]
+  /** YouTube refused these; they stay listed. */
+  failed: { id: string; error: string }[]
+  /** The describe jobs rewriting the remaining parts' descriptions. */
+  describeJobs: number[]
+  vod: AdminVod
 }
 
 /** The fields PATCH /admin/vods/:id changes. A merged VOD takes only `hidden`. */
@@ -618,6 +644,19 @@ export class AdminClient {
   }
   saveDrive(id: string, drive: RawDrive[]): Promise<AdminVod> {
     return this.request('PUT', `/admin/vods/${enc(id)}/drive`, { drive })
+  }
+  /** Replaces the censor ranges. The uploads already on YouTube keep what they had: re-archive for that. */
+  saveCensor(id: string, censor: CensorRange[]): Promise<AdminVod> {
+    return this.request('PUT', `/admin/vods/${enc(id)}/censor`, { censor })
+  }
+  /** Deletes uploads (ids from the VOD's list) from YouTube, 50 quota units each, and takes them off the VOD. */
+  deleteUploads(id: string, videos: string[]): Promise<DeleteUploadsResult> {
+    return this.request('POST', `/admin/vods/${enc(id)}/youtube/delete`, { videos })
+  }
+  /** Uploads the VOD (or one part) again with today's settings and censor ranges; each old upload is deleted from
+   * YouTube once its replacement is up. The source is `path`, the local copy, or Twitch while it still has it. */
+  rearchive(id: string, opts: { type?: 'vod' | 'live'; part?: number; path?: string } = {}): Promise<ActionResult> {
+    return this.request('POST', `/admin/vods/${enc(id)}/rearchive`, opts)
   }
   vodEmotes(id: string, signal?: AbortSignal): Promise<AdminEmotes | null> {
     return this.request('GET', `/admin/vods/${enc(id)}/emotes`, undefined, signal)

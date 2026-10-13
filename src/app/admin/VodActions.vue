@@ -56,6 +56,21 @@ function reupload() {
   run('reupload', () => admin.reuploadPart(props.vod.id, Number(ruPart.value), ruType.value))
 }
 
+// Re-archive: upload again with today's settings and censor ranges, replacing the old uploads
+const raOpen = ref(false)
+const raType = ref<'vod' | 'live'>('vod')
+const raPart = ref('')
+const raBad = computed(() => !!raPart.value.trim() && !(Number.isInteger(Number(raPart.value)) && Number(raPart.value) >= 1))
+const raOld = computed(() => {
+  const part = partNum(raPart.value)
+  return (props.vod.youtube ?? []).filter((u) => (u.type ?? 'vod') === raType.value && (part == null || (u.part ?? 1) === part)).length
+})
+const censored = computed(() => (props.vod.censor ?? []).length)
+function rearchive() {
+  raOpen.value = false
+  run('rearchive', () => admin.rearchive(props.vod.id, { type: raType.value, part: partNum(raPart.value) }))
+}
+
 const descType = ref<'vod' | 'live'>('vod')
 
 // A merged or split VOD no longer matches Twitch's VOD of that id: the archive refuses anything that re-fetches it.
@@ -94,6 +109,7 @@ function remove() {
         <VxButton :loading="busy === 'describe'" @click="run('describe', () => admin.updateDescriptions(vod.id, descType))">Update descriptions</VxButton>
         <VxButton :disabled="spliced" :title="spliced ? TWITCH_OFF : undefined" :loading="busy === 'reupload'" @click="ruOpen = true">Re-upload a part…</VxButton>
         <VxButton :disabled="spliced" :title="spliced ? TWITCH_OFF : undefined" :loading="busy === 'download'" @click="dlOpen = true">Download and upload again…</VxButton>
+        <VxButton :disabled="spliced" :title="spliced ? TWITCH_OFF : 'Upload again with today’s settings and censor ranges, deleting the old uploads'" :loading="busy === 'rearchive'" @click="raOpen = true">Re-archive…</VxButton>
       </div>
     </div>
     <div class="group">
@@ -133,6 +149,26 @@ function remove() {
       <template #actions="{ close }">
         <VxButton @click="close">Cancel</VxButton>
         <VxButton variant="primary" :disabled="ruBad" @click="reupload">Start</VxButton>
+      </template>
+    </VxDialog>
+
+    <VxDialog v-model:open="raOpen" title="Re-archive">
+      Uploads the VOD again from the saved video (or downloads it while Twitch still has it), with today's settings
+      <template v-if="censored">and its {{ censored }} censor {{ censored === 1 ? 'range' : 'ranges' }}</template><template v-else>(no censor ranges)</template>.
+      Each old upload is deleted from YouTube once its replacement is up, so the VOD is never left without one; an old
+      upload YouTube won't delete stays listed. Leave the part empty for the whole VOD.
+      <div class="form range">
+        <VxField label="Source">
+          <template #default="{ id }"><VxSelect :id="id" v-model="raType" :options="TYPES" width="100%" /></template>
+        </VxField>
+        <VxField label="Part" :error="raBad ? 'A whole number ≥ 1, or empty.' : undefined">
+          <template #default="{ id }"><VxInput :id="id" v-model="raPart" mono placeholder="all" :invalid="raBad" /></template>
+        </VxField>
+      </div>
+      <p class="vx-muted small">{{ raOld ? `Replaces ${raOld} ${raOld === 1 ? 'upload' : 'uploads'}.` : 'Nothing to replace: uploads it as new.' }}</p>
+      <template #actions="{ close }">
+        <VxButton @click="close">Cancel</VxButton>
+        <VxButton variant="primary" :disabled="raBad" @click="rearchive">Re-archive</VxButton>
       </template>
     </VxDialog>
 

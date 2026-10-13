@@ -1,7 +1,7 @@
 // Editing a VOD's chapters and uploads: draft rows for the forms, the same checks the worker makes (so mistakes show
 // next to the row before saving), and the request bodies. Pure functions; the pages hold the drafts.
 import { boxArt, toClock, toSeconds, type RawChapter, type RawDrive, type RawUpload } from '../../index'
-import type { AdminVod, ChapterEdit, GameRow, VodPatch, YoutubeEdit } from './api'
+import type { AdminVod, CensorRange, ChapterEdit, GameRow, VodPatch, YoutubeEdit } from './api'
 
 let nextKey = 1
 const key = () => nextKey++
@@ -227,6 +227,72 @@ export function driveErrors(rows: readonly DriveDraft[]): Map<number, string> {
 }
 
 export const driveEdits = (rows: readonly DriveDraft[]): RawDrive[] => rows.map((r) => ({ id: r.id.trim(), type: r.type }))
+
+// ---- censor ranges ----
+
+export type CensorVideo = 'none' | 'blur' | 'black'
+
+export interface CensorDraft {
+  key: number
+  /** VOD seconds; null while the time can't be read. */
+  start: number | null
+  end: number | null
+  video: CensorVideo
+  mute: boolean
+  note: string
+}
+
+export const CENSOR_NOTE_MAX = 200
+
+export const censorDrafts = (ranges: readonly CensorRange[] | null | undefined): CensorDraft[] =>
+  (ranges ?? []).map((r) => ({ key: key(), start: r.start, end: r.end, video: r.video ?? 'none', mute: r.mute, note: r.note ?? '' }))
+
+/** A new range: a minute after the last one (or from the start), blurred. */
+export function newCensor(rows: readonly CensorDraft[], duration: number): CensorDraft {
+  const after = rows.reduce((m, r) => Math.max(m, r.end ?? 0), 0)
+  const start = duration > 0 ? Math.min(after, Math.max(0, duration - 60)) : after
+  const end = duration > 0 ? Math.min(start + 60, duration) : start + 60
+  return { key: key(), start, end, video: 'blur', mute: false, note: '' }
+}
+
+/** The worker's checks: a start and an end inside the VOD, and something to do (cover the picture or mute). Ranges may
+ * overlap: black wins over blur where they do. */
+export function censorErrors(rows: readonly CensorDraft[], duration: number): Map<number, string> {
+  const errors = new Map<number, string>()
+  for (const r of rows) {
+    if (r.start == null || r.end == null || !Number.isFinite(r.start) || !Number.isFinite(r.end)) errors.set(r.key, 'Start and end are required.')
+    else if (r.start < 0) errors.set(r.key, 'Start must be 0 or later.')
+    else if (r.end <= r.start) errors.set(r.key, 'End must be after the start.')
+    else if (duration > 0 && r.end > duration + 1) errors.set(r.key, `Ends after the VOD (${toClock(duration)}).`)
+    else if (r.video === 'none' && !r.mute) errors.set(r.key, 'Blur or black out the picture, mute the sound, or both.')
+    else if (r.note.trim().length > CENSOR_NOTE_MAX) errors.set(r.key, `The note is longer than ${CENSOR_NOTE_MAX} characters.`)
+  }
+  return errors
+}
+
+export function censorEdits(rows: readonly CensorDraft[]): CensorRange[] {
+  return [...rows]
+    .sort((a, b) => (a.start ?? 0) - (b.start ?? 0) || (a.end ?? 0) - (b.end ?? 0))
+    .map((r) => ({
+      start: r.start ?? 0,
+      end: r.end ?? 0,
+      video: r.video === 'none' ? null : r.video,
+      mute: r.mute,
+      ...(r.note.trim() ? { note: r.note.trim() } : {}),
+    }))
+}
+
+/** How long the ranges hide, overlaps counted once (for "2:30 hidden"). */
+export function censoredSeconds(ranges: readonly Pick<CensorRange, 'start' | 'end'>[]): number {
+  let total = 0
+  let at = -Infinity
+  for (const r of [...ranges].sort((a, b) => a.start - b.start)) {
+    const from = Math.max(r.start, at)
+    if (r.end > from) total += r.end - from
+    at = Math.max(at, r.end)
+  }
+  return total
+}
 
 // ---- details (title, thumbnail, duration, date) ----
 
