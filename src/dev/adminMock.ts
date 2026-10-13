@@ -289,6 +289,29 @@ async function vodOf(api: string, id: string): Promise<Json | null> {
   return vods.get(id)!
 }
 
+// The channel's VODs still on Twitch (GET /admin/twitch/videos): the archive's newest few, plus some it doesn't have.
+type TwitchVideo = { id: string; title: string; createdAt: string; duration: string; thumbnailUrl: string | null }
+/** Twitch-only VODs added through POST /admin/twitch/import (the mock has no row for them). */
+const imported = new Set<string>()
+let twitchSeed: TwitchVideo[] | null = null
+async function twitchVideos(api: string): Promise<TwitchVideo[]> {
+  if (!twitchSeed) {
+    const newest = ((await publicJson(api, '/vods?$limit=4&$sort[createdAt]=-1').catch(() => ({ data: [] }))) as { data: Json[] }).data
+    for (const v of newest) vods.set(String(v.id), v)
+    const latest = Date.parse(newest[0]?.createdAt ?? iso(3 * 86_400_000))
+    const base = Math.max(...newest.map((v) => Number(v.id)).filter(Number.isFinite), 2300000000)
+    const fresh = [3, 2, 1].map((n) => ({
+      id: String(base + n * 1013), title: `Not archived yet #${n}`, createdAt: new Date(latest + n * 86_400_000).toISOString(),
+      duration: hms(3600 * (2 + n) + 754), thumbnailUrl: null,
+    }))
+    twitchSeed = [...fresh, ...newest.map((v) => ({
+      id: String(v.id), title: String(v.title ?? ''), createdAt: String(v.createdAt), duration: String(v.duration),
+      thumbnailUrl: (v.thumbnail_url as string | null) ?? null,
+    }))]
+  }
+  return twitchSeed.filter((v) => !deleted.has(v.id))
+}
+
 // Synthetic VODs: windows of real ones, placed on their own timeline.
 type Synth = { id: string; title: string | null; supersedes: boolean; tags: string[]; created_at: string | null; made_at: string; changed_at: string; segments: Json[] }
 const synthetics = new Map<string, Synth>()
@@ -1267,6 +1290,35 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             const err = e as Error & { status?: number; extra?: Json }
             return send(res, err.status ?? 400, { error: true, msg: err.message, ...(err.extra ?? {}) })
           }
+        }
+        if (path === '/admin/twitch/videos' && method === 'GET') {
+          return send(res, 200, { data: (await twitchVideos(publicApi)).map((v) => {
+            const job = jobs.find((j) => j.kind === 'archive' && j.vodId === v.id && isActive(j))
+            const row = imported.has(v.id) ? null : vods.get(v.id)
+            return {
+              id: v.id, title: v.title, createdAt: v.createdAt, duration: v.duration, thumbnailUrl: v.thumbnailUrl,
+              inArchive: imported.has(v.id) || !!row, uploaded: !!(row?.youtube as Json[] | undefined)?.length,
+              archiveJob: job ? { id: job.id, state: job.state, step: job.step } : null,
+            }
+          }) })
+        }
+        if (path === '/admin/twitch/import' && method === 'POST') {
+          const ids = b.vodIds as unknown
+          if (!Array.isArray(ids) || !ids.length || !ids.every((v) => typeof v === 'string' && v)) return fail(res, 400, 'vodIds must be a list of VOD ids')
+          const paused = b.paused !== false
+          const onTwitch = new Set((await twitchVideos(publicApi)).map((v) => v.id))
+          const added: Json[] = [], skipped: Json[] = []
+          for (const id of new Set(ids as string[])) {
+            const active = jobs.find((j) => j.kind === 'archive' && j.vodId === id && isActive(j))
+            if (!onTwitch.has(id)) skipped.push({ vodId: id, reason: 'Not on Twitch' })
+            else if (active) skipped.push({ vodId: id, reason: `Archive job ${active.id} is already ${active.state}` })
+            else {
+              if (!vods.has(id)) imported.add(id)
+              const job = add('archive', id, paused ? 'paused' : 'queued', 0, 0, { payload: { type: 'vod', stream_id: null } })
+              added.push({ vodId: id, jobId: job.id })
+            }
+          }
+          return send(res, 200, { error: false, msg: `${added.length} archive job(s) ${paused ? 'paused' : 'queued'}, ${skipped.length} skipped`, added, skipped })
         }
         if (path === '/admin/twitch/games') {
           const q = (url.searchParams.get('query') ?? '').trim().toLowerCase()

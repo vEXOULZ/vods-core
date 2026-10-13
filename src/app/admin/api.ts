@@ -368,6 +368,27 @@ export interface TwitchGame {
   imageTemplate: string | null
 }
 
+/** GET /admin/twitch/videos: a past broadcast Twitch still keeps for the channel, and what the archive has of it. */
+export interface TwitchVideo {
+  id: string
+  title: string | null
+  createdAt: string
+  duration: string
+  thumbnailUrl: string | null
+  /** The VOD has a row. */
+  inArchive: boolean
+  /** It has YouTube parts. */
+  uploaded: boolean
+  /** A queued, running or paused archive job for it. */
+  archiveJob: { id: number; state: string; step: string | null } | null
+}
+
+/** POST /admin/twitch/import: the archive jobs queued, and the VODs left out with why. */
+export interface TwitchImportResult extends ActionResult {
+  added: { vodId: string; jobId: number }[]
+  skipped: { vodId: string; reason: string }[]
+}
+
 export interface AdminEmotes extends RawEmoteSets {
   createdAt?: string
   updatedAt?: string
@@ -586,6 +607,15 @@ export class AdminClient {
   /** A VOD the monitor missed: create it from Twitch and run the whole archive pipeline. */
   archiveFromTwitch(vodId: string): Promise<ActionResult> {
     return this.request('POST', '/admin/hls/download', { vodId })
+  }
+  /** The channel's past broadcasts still on Twitch (7 to 60 days back), newest first. */
+  async twitchVideos(signal?: AbortSignal): Promise<TwitchVideo[]> {
+    return (await this.request<{ data: TwitchVideo[] }>('GET', '/admin/twitch/videos', undefined, signal)).data
+  }
+  /** An archive job for each VOD (its row created from Twitch when missing), paused before its first step unless
+   * `paused` is false. VODs gone from Twitch or already with an archive job come back in `skipped`. */
+  importFromTwitch(vodIds: string[], paused = true): Promise<TwitchImportResult> {
+    return this.request('POST', '/admin/twitch/import', { vodIds, paused })
   }
   /** Create the VOD row from Twitch (plus its chapters and emotes) without downloading anything. */
   createFromTwitch(vodId: string): Promise<ActionResult> {

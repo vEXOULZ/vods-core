@@ -24,6 +24,23 @@ describe('AdminClient', () => {
     expect((init2!.headers as Record<string, string>)['x-csrf-token']).toBe('tok')
   })
 
+  it('lists the channel VODs on Twitch and imports them paused', async () => {
+    const video = { id: '9', title: 't', createdAt: 'x', duration: '01:00:00', thumbnailUrl: null, inArchive: false, uploaded: false, archiveJob: null }
+    const fetch = vi.fn(async (url: string, _init?: RequestInit) =>
+      new Response(JSON.stringify(url.endsWith('/videos') ? { data: [video] } : { error: false, msg: 'ok', added: [{ vodId: '9', jobId: 1 }], skipped: [] }), { status: 200 }),
+    )
+    const c = new AdminClient({ base: '', fetch })
+    expect(await c.twitchVideos()).toEqual([video])
+    expect((await c.importFromTwitch(['9'])).added).toEqual([{ vodId: '9', jobId: 1 }])
+    await c.importFromTwitch(['9'], false)
+    const sent = fetch.mock.calls.map(([url, init]) => [url, init!.method, init!.body ?? null])
+    expect(sent).toEqual([
+      ['/admin/twitch/videos', 'GET', null],
+      ['/admin/twitch/import', 'POST', JSON.stringify({ vodIds: ['9'], paused: true })],
+      ['/admin/twitch/import', 'POST', JSON.stringify({ vodIds: ['9'], paused: false })],
+    ])
+  })
+
   it('lists VODs and edits synthetic ones through /api/v2', async () => {
     const fetch = fakeFetch(200, { items: [], next_cursor: null })
     const c = new AdminClient({ base: '', fetch })
