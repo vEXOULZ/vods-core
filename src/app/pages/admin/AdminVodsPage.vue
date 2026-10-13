@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // /manage/vods?q=&hidden=&synthetic=: find a VOD to edit (GET /api/v2/vods, so hidden, merged and synthetic ones too;
-// a title or an id), add ones the monitor missed (?add=<id> opens that with the id in), and make a synthetic one (a
-// playthrough, say).
+// a title or an id), add ones the monitor missed (?add=<id> opens that with the id in, "Find on Twitch" lists every one
+// Twitch still has), and make a synthetic one (a playthrough, say). Status: uploaded or details only, and each queued,
+// running or paused job.
 import { VxButton, VxCallout, VxChip, VxDialog, VxField, VxInput, VxSegmented, VxSkeleton, VxTable, useToast, type Option, type TableColumn } from '@vexoulz/ui'
 import { toClock } from '../../../index'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -9,7 +10,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { errorText } from '@vexoulz/platform-web'
 import type { VodListRow } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
+import TwitchImportDialog from '../../admin/TwitchImportDialog.vue'
 import { admin } from '../../admin/session'
+import { jobStatus, uploadStatus } from '../../admin/status'
 import { watchDebounced } from '../../composables/watchDebounced'
 import { site } from '../../site'
 
@@ -81,6 +84,7 @@ const more = () => load(true)
 const columns: TableColumn[] = [
   { key: 'id', label: 'Id', mono: true },
   { key: 'title', label: 'Title' },
+  { key: 'status', label: 'Status' },
   { key: 'date', label: 'Streamed', muted: true },
   { key: 'length', label: 'Length', mono: true, align: 'right' },
 ]
@@ -94,10 +98,16 @@ const rows = computed(() =>
     merged: v.merged_into?.id ?? null,
     synthetic: v.synthetic ? (v.synthetic.supersedes ? 'merge or split' : 'synthetic') : null,
     tags: v.tags,
+    // A synthetic VOD plays parts of others: nothing of its own is uploaded.
+    upload: v.synthetic ? null : uploadStatus(v.uploaded),
+    jobs: v.active_jobs.map((j) => ({ id: j.id, ...jobStatus(j) })),
     // A synthetic VOD is edited as its segments.
     to: v.synthetic ? `/manage/synthetic/${encodeURIComponent(v.id)}` : `/manage/vods/${v.id}`,
   })),
 )
+
+const findOpen = ref(false)
+const jobHref = (id: number) => `/manage/jobs/${id}`
 
 // Add a VOD the monitor missed
 const addOpen = ref(false)
@@ -134,6 +144,7 @@ onMounted(() => {
   <ManageShell title="VODs">
     <template #actions>
       <VxButton to="/manage/synthetic/new">New synthetic VOD</VxButton>
+      <VxButton @click="findOpen = true">Find on Twitch</VxButton>
       <VxButton variant="primary" @click="addId = ''; addOpen = true">Add from Twitch</VxButton>
     </template>
 
@@ -161,12 +172,20 @@ onMounted(() => {
           <VxChip v-if="row.hidden" tone="warn" title="Gone from the public site">hidden</VxChip>
           <VxChip v-if="row.merged" :title="`Merged into ${row.merged}`">merged</VxChip>
         </template>
+        <template #cell-status="{ row }">
+          <span class="status">
+            <VxChip v-if="row.upload" :tone="row.upload.tone" :title="row.upload.title">{{ row.upload.text }}</VxChip>
+            <RouterLink v-for="j in row.jobs" :key="j.id" :to="jobHref(j.id)" class="job"><VxChip :tone="j.tone" :title="j.title">{{ j.text }}</VxChip></RouterLink>
+          </span>
+        </template>
       </VxTable>
       <div class="more">
         <VxButton v-if="next" :loading="loading" @click="more">More</VxButton>
         <span class="vx-muted vx-mono small">{{ vods.length }} shown</span>
       </div>
     </template>
+
+    <TwitchImportDialog v-model:open="findOpen" @added="refresh" />
 
     <VxDialog v-model:open="addOpen" title="Add a VOD from Twitch" width="460px">
       For a stream the monitor missed, while Twitch still has the VOD.
@@ -191,6 +210,8 @@ a { color: inherit; }
 .search > :first-child { flex: 1 1 260px; max-width: 480px; }
 .sk { display: flex; flex-direction: column; gap: 6px; }
 .title { margin-right: 6px; }
+.status { display: flex; flex-wrap: wrap; gap: 4px; }
+.job { text-decoration: none; }
 .more { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 16px; }
 .small { font-size: 11px; }
 .form { margin-top: 12px; color: var(--vx-text, inherit); }

@@ -288,6 +288,17 @@ export interface VodListRow {
   tags: string[]
   /** Set on a synthetic VOD. */
   synthetic: { supersedes?: boolean } | null
+  /** It has YouTube parts. */
+  uploaded: boolean
+  /** Its queued, running and paused jobs, oldest first. */
+  active_jobs: VodActiveJob[]
+}
+
+export interface VodActiveJob {
+  id: number
+  kind: string
+  state: 'queued' | 'running' | 'paused'
+  step: string | null
 }
 
 /** A window `[start, end)` of a real VOD, placed at `at` on the synthetic VOD's timeline (seconds). */
