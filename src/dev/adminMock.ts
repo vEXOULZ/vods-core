@@ -920,6 +920,8 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             id: String(v.id), title: v.title ?? null, created_at: v.createdAt, duration: v.duration ?? null, duration_seconds: durOf(v),
             thumbnail_url: v.thumbnail_url ?? null, stream_id: v.stream_id ?? null, hidden: hidden.has(String(v.id)),
             merged_into: v.merged_into ?? null, tags: v.tags ?? [], synthetic: v.synthetic ? { supersedes: v.synthetic.supersedes } : null,
+            uploaded: ((v.youtube as Json[] | undefined) ?? []).length > 0,
+            active_jobs: activeJobsFor(String(v.id)).sort((a, b) => a.id - b.id).map((j) => ({ id: j.id, kind: j.kind, state: j.state, step: j.step })),
           }))
           return send(res, 200, { items, next_cursor: more ? String(page[page.length - 1]!.id) : null })
         }
