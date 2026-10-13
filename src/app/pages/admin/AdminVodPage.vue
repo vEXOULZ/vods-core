@@ -7,6 +7,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { isSpliced, type AdminVod } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
+import CensorEditor from '../../admin/CensorEditor.vue'
 import ChaptersEditor from '../../admin/ChaptersEditor.vue'
 import DetailsEditor from '../../admin/DetailsEditor.vue'
 import DriveEditor from '../../admin/DriveEditor.vue'
@@ -182,6 +183,11 @@ onMounted(() => (document.title = `VOD ${props.id} · Manage · ${site.name}`))
         <section class="panel vx-panel">
           <h2 class="vx-eyebrow">YouTube parts</h2>
           <YoutubeEditor :vod="vod" @saved="saved" />
+        </section>
+
+        <section class="panel vx-panel">
+          <h2 class="vx-eyebrow">Censor</h2>
+          <CensorEditor :vod="vod" :duration="duration" @saved="saved" />
         </section>
 
         <section class="panel vx-panel">

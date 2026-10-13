@@ -12,10 +12,10 @@ type State = 'queued' | 'running' | 'paused' | 'done' | 'failed' | 'cancelled'
 const STATES: State[] = ['queued', 'running', 'paused', 'done', 'failed', 'cancelled']
 // Same kinds and steps as the worker (twitch-archive README, "Job kinds"). manualSteps are the kind's default pause gates.
 const KINDS: Record<string, { steps: string[]; manualSteps: string[]; description?: string; cooperative?: boolean }> = {
-  archive: { steps: ['capture', 'finalize', 'chapters', 'chat', 'emotes', 'split', 'upload', 'describe', 'cleanup'], manualSteps: [], description: 'Record a live stream and publish it', cooperative: true },
-  download: { steps: ['ensure_source', 'chapters', 'split', 'upload', 'describe', 'cleanup'], manualSteps: [], description: 'Download a Twitch VOD and upload it to YouTube' },
-  reupload: { steps: ['ensure_source', 'split', 'upload', 'describe', 'cleanup'], manualSteps: ['upload'] },
-  dmca: { steps: ['ensure_source', 'dmca_edit', 'split', 'upload', 'describe', 'cleanup'], manualSteps: ['upload'] },
+  archive: { steps: ['capture', 'finalize', 'chapters', 'chat', 'emotes', 'censor', 'split', 'upload', 'describe', 'cleanup'], manualSteps: [], description: 'Record a live stream and publish it', cooperative: true },
+  download: { steps: ['ensure_source', 'chapters', 'censor', 'split', 'upload', 'describe', 'cleanup'], manualSteps: [], description: 'Download a Twitch VOD and upload it to YouTube' },
+  reupload: { steps: ['ensure_source', 'censor', 'split', 'upload', 'describe', 'cleanup'], manualSteps: ['upload'] },
+  dmca: { steps: ['ensure_source', 'dmca_edit', 'censor', 'split', 'upload', 'describe', 'cleanup'], manualSteps: ['upload'] },
   chat: { steps: ['chat'], manualSteps: [] },
   chapters: { steps: ['chapters'], manualSteps: [] },
   emotes: { steps: ['emotes'], manualSteps: [] },
@@ -434,6 +434,7 @@ const adminVod = (v: Json) => ({
   chaptersLocked: locked.has(String(v.id)),
   botChat: botChats.get(String(v.id)) ?? null,
   splices: splicesOf(String(v.id)),
+  censor: v.censor ?? [],
 })
 
 const hms = (s: number) => [Math.floor(s / 3600), Math.floor(s / 60) % 60, Math.floor(s % 60)].map((n) => String(n).padStart(2, '0')).join(':')
@@ -1241,7 +1242,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           }
         }
         // ---- VODs ----
-        const vm = /^\/admin\/vods\/([^/]+)(?:\/([\w-]+))?$/.exec(path)
+        const vm = /^\/admin\/vods\/([^/]+)(?:\/([\w-]+(?:\/[\w-]+)?))?$/.exec(path)
         if (vm) {
           const id = decodeURIComponent(vm[1]!)
           const vod = await vodOf(publicApi, id)
@@ -1363,6 +1364,49 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
                 thumbnail_url: old.get(y.id)?.thumbnail_url ?? `https://i.ytimg.com/vi/${y.id}/mqdefault.jpg`,
               }))
               return send(res, 200, adminVod(vod))
+            }
+            if (part === 'censor' && method === 'PUT') {
+              if (vod.merged_into) return fail(res, 409, `vod ${id} is merged into ${vod.merged_into.id}`)
+              if (!Array.isArray(b.censor)) return fail(res, 400, 'censor must be a list')
+              const dur = durOf(vod)
+              const out: Json[] = []
+              for (const [i, c] of (b.censor as Json[]).entries()) {
+                const start = Number(c.start)
+                const end = Number(c.end)
+                if (!Number.isFinite(start) || start < 0) return fail(res, 400, `censor[${i}].start must be a number of seconds >= 0`)
+                if (!Number.isFinite(end) || end <= start) return fail(res, 400, `censor[${i}] must end after it starts`)
+                if (dur > 0 && end > dur + 1) return fail(res, 400, `censor[${i}] ends at ${end}s, after the end of the VOD (${dur}s)`)
+                if (![null, 'blur', 'black'].includes(c.video ?? null)) return fail(res, 400, `censor[${i}].video must be blur, black or null`)
+                if (typeof c.mute !== 'boolean') return fail(res, 400, `censor[${i}].mute must be true or false`)
+                if (!c.video && !c.mute) return fail(res, 400, `censor[${i}] neither covers the video nor mutes`)
+                const note = typeof c.note === 'string' && c.note.trim() ? c.note.trim() : undefined
+                out.push({ start, end, video: c.video ?? null, mute: c.mute, ...(note ? { note } : {}) })
+              }
+              vod.censor = out.sort((x, y) => x.start - y.start || x.end - y.end)
+              return send(res, 200, adminVod(vod))
+            }
+            if (part === 'youtube/delete' && method === 'POST') {
+              const listed = new Set(((vod.youtube as Json[]) ?? []).map((y) => String(y.id)))
+              const asked = Array.isArray(b.videos) ? (b.videos as unknown[]).map(String) : []
+              if (!asked.length) return fail(res, 400, 'videos must be a non-empty list of video ids')
+              const unknown = asked.filter((v) => !listed.has(v))
+              if (unknown.length) return fail(res, 400, `not uploads of ${id}: ${unknown.join(', ')}`)
+              // A video id ending in "x" stands for one YouTube refuses to delete.
+              const failed = asked.filter((v) => v.endsWith('x')).map((v) => ({ id: v, error: 'forbidden: the connected channel doesn’t own it' }))
+              const gone = new Set(asked.filter((v) => !v.endsWith('x')))
+              vod.youtube = ((vod.youtube as Json[]) ?? []).filter((y) => !gone.has(String(y.id)))
+              const types = [...new Set(((vod.youtube as Json[]) ?? []).map((y) => y.type ?? 'vod'))]
+              const describeJobs = gone.size ? types.map((type) => add('describe', id, 'queued', 0, 0, { payload: { vodId: id, type } }).id) : []
+              const msg = `Deleted ${gone.size} of ${asked.length} from YouTube`
+              return send(res, 200, { error: false, msg, deleted: [...gone], failed, describeJobs, vod: adminVod(vod) })
+            }
+            if (part === 'rearchive' && method === 'POST') {
+              if (vod.merged_into || splicesOf(id).some((sp) => !sp.undoneAt)) return fail(res, 409, `vod ${id} was merged or split; it no longer matches Twitch's VOD of that id`)
+              const type = b.type ?? 'vod'
+              if (!['vod', 'live'].includes(type)) return fail(res, 400, 'type must be vod or live')
+              if (b.part != null && !(Number.isInteger(b.part) && b.part >= 1)) return fail(res, 400, 'part must be a whole number >= 1')
+              const job = add(b.part != null ? 'reupload' : 'download', id, 'queued', 0, 0, { payload: { vodId: id, type, ...(b.part != null ? { part: b.part } : {}), replace: true } })
+              return ok(res, b.part != null ? `Re-archiving ${id} part ${b.part}..` : `Re-archiving ${id}..`, job)
             }
             if (part === 'drive' && method === 'PUT') {
               vod.drive = ((b.drive as Json[]) ?? []).map((d) => ({ id: d.id, type: d.type }))

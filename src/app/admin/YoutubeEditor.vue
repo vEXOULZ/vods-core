@@ -1,7 +1,10 @@
 <script setup lang="ts">
 // A VOD's YouTube parts: video id (paste a URL or the id), vod/live set, part number, duration. Existing videos keep
 // their thumbnail; leave duration empty to keep the archive's (or while YouTube is processing).
-import { VxInput, VxButton, VxCallout, VxSelect, useToast, type Option } from '@vexoulz/ui'
+import { VxInput, VxButton, VxCallout, VxCheckbox, VxDialog, VxSelect, useToast, type Option } from '@vexoulz/ui'
+import { errorText } from '@vexoulz/platform-web'
+import { computed, ref } from 'vue'
+import type { RawUpload } from '../../index'
 import type { AdminVod } from './api'
 import { newYoutube, youtubeDrafts, youtubeEdits, youtubeErrors, youtubeId, type YoutubeDraft } from './edits'
 import { admin } from './session'
@@ -27,6 +30,34 @@ const { rows, error, saving, dirty, errors, reset, save, remove } = useDraftEdit
     toast.show('YouTube parts saved', { duration: 3000 })
   },
 })
+
+// Delete uploads from YouTube (the saved ones; unsaved rows aren't on the VOD yet)
+const delOpen = ref(false)
+const delPick = ref<string[]>([])
+const deleting = ref(false)
+const saved = computed(() => (props.vod.youtube ?? []).filter((u) => u.id))
+const label = (u: RawUpload) => `${u.type === 'live' ? 'Live' : 'VOD'} part ${u.part ?? 1} · ${u.id}`
+function openDelete() {
+  delPick.value = []
+  delOpen.value = true
+}
+function pick(id: string, on: boolean) {
+  delPick.value = on ? [...delPick.value.filter((x) => x !== id), id] : delPick.value.filter((x) => x !== id)
+}
+async function deleteUploads() {
+  deleting.value = true
+  try {
+    const res = await admin.deleteUploads(props.vod.id, delPick.value)
+    delOpen.value = false
+    emit('saved', res.vod)
+    const failed = res.failed.map((f) => `${f.id}: ${f.error}`).join('; ')
+    toast.show(failed ? `${res.msg} Not deleted: ${failed}` : res.msg, failed ? { kind: 'error', duration: 10000 } : { duration: 4000 })
+  } catch (e) {
+    toast.show(errorText(e), { kind: 'error', duration: 6000 })
+  } finally {
+    deleting.value = false
+  }
+}
 
 function add() {
   rows.value.push(newYoutube(rows.value, rows.value.some((r) => r.type === 'live') && !rows.value.some((r) => r.type === 'vod') ? 'live' : 'vod'))
@@ -66,10 +97,28 @@ function setId(r: YoutubeDraft, value: string) {
     <VxCallout v-if="error" tone="error" title="Couldn't save the YouTube parts">{{ error }}</VxCallout>
     <div class="foot">
       <VxButton @click="add">+ Add part</VxButton>
+      <VxButton variant="danger" :disabled="!saved.length || dirty" :title="dirty ? 'Save or undo the changes first' : undefined" @click="openDelete">Delete from YouTube…</VxButton>
       <span class="spacer" />
       <VxButton :disabled="!dirty || saving" @click="reset">Undo changes</VxButton>
       <VxButton variant="primary" :loading="saving" :disabled="!dirty || errors.size > 0" @click="save">Save parts</VxButton>
     </div>
+
+    <VxDialog v-model:open="delOpen" title="Delete from YouTube">
+      Deletes the ticked videos from YouTube and takes them off this VOD; the other parts' descriptions are rewritten.
+      Each delete costs 50 units of the daily YouTube quota. This can't be undone; to replace uploads instead, use
+      Re-archive in the actions.
+      <ul class="pick">
+        <li v-for="u in saved" :key="u.id">
+          <VxCheckbox :model-value="delPick.includes(u.id)" @update:model-value="pick(u.id, $event)">{{ label(u) }}</VxCheckbox>
+        </li>
+      </ul>
+      <template #actions="{ close }">
+        <VxButton @click="close">Keep them</VxButton>
+        <VxButton variant="danger-solid" :loading="deleting" :disabled="!delPick.length" @click="deleteUploads">
+          Delete {{ delPick.length || '' }}
+        </VxButton>
+      </template>
+    </VxDialog>
   </div>
 </template>
 
@@ -91,4 +140,5 @@ function setId(r: YoutubeDraft, value: string) {
 .err { flex-basis: 100%; margin: 0; color: var(--vx-bad); font-size: 12px; }
 .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .spacer { flex: 1; }
+.pick { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 </style>
