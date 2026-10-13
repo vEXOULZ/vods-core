@@ -37,6 +37,75 @@ export interface AdminUser {
   color?: string | null
 }
 
+/** The YouTube Data API units spent since midnight Pacific, when Google's daily count starts again. */
+export interface YoutubeQuota {
+  used: number
+  /** The project's daily units (the worker's `youtube_daily_quota` setting). */
+  limit: number
+  resetsAt: string
+  /** Calls by API method, e.g. `videos.insert` (1600 units each). */
+  calls: Record<string, number>
+}
+
+/** One thing wrong with a VOD's uploads. `bad`: part of the VOD isn't watchable there; `warn`: it is, with a catch. */
+export interface YoutubeIssue {
+  kind: 'removed' | 'rejected' | 'failed' | 'processing' | 'blocked' | 'ageRestricted' | 'shorter' | 'missingPart' | 'incomplete'
+  severity: 'bad' | 'warn'
+  detail: string
+  /** The copy: `vod` (Twitch's VOD) or `live` (the live recording). */
+  type?: string
+  part?: number
+  /** The YouTube video id; null for a missing part, absent for the whole copy. */
+  video?: string | null
+}
+
+export interface YoutubeCopy {
+  type: string
+  parts: number
+  /** Seconds the watchable parts hold, by YouTube's own length. */
+  seconds: number
+  /** Ad breaks a live recording missed, which count as covered. */
+  gaps: number
+  /** seconds over the VOD's length, at most 1. */
+  share: number
+}
+
+export interface YoutubeVodReport {
+  id: string
+  title: string | null
+  /** The VOD's length. */
+  seconds: number
+  /** What the uploads were meant to hold: the VOD less the restricted games' chapters. */
+  planned: number
+  /** The best copy's share of the VOD. */
+  share: number
+  copies: YoutubeCopy[]
+  issues: YoutubeIssue[]
+}
+
+/** The last check of every upload on YouTube (the worker runs it every `youtube_check_hours`). */
+export interface YoutubeCheck {
+  checkedAt: string
+  videos: number
+  vods: number
+  /** VODs with nothing bad. */
+  whole: number
+  /** VODs with something bad, and VODs with only warnings. */
+  bad: number
+  warn: number
+  /** All VODs' length, and how much of it is on YouTube. */
+  seconds: number
+  onYoutube: number
+  /** Only the VODs with an issue. */
+  problems: YoutubeVodReport[]
+}
+
+export interface YoutubeVideos {
+  running: boolean
+  /** Null before the first check. */
+  last: YoutubeCheck | null
+}
+
 export interface Health {
   worker: { ok: boolean; runningJobs: number; startedAt?: string | null }
   api: { ok: boolean } | null
@@ -51,6 +120,8 @@ export interface Health {
     connectedAt?: string | null
     /** When Google said the refresh token ends (only for a time-limited grant). */
     refreshTokenExpiresAt?: string | null
+    /** API units the worker spent today (it counts its own calls; Google shows none), absent from an older worker. */
+    quota?: YoutubeQuota | null
   } | null
   live: { live: boolean; streamId: string | null; startedAt: string | null } | null
   /** The linked ad-free Twitch account; absent from a worker that predates it. */
@@ -273,6 +344,12 @@ export interface SplitPoint {
   to: number
 }
 
+/** The fields PATCH /api/v2/vods/:id changes here. `tags` replaces the VOD's list; only site tags are taken. */
+export interface VodPatchV2 {
+  hidden?: boolean
+  tags?: string[]
+}
+
 /** A row of GET /api/v2/vods: every VOD, hidden, merged and synthetic ones too. */
 export interface VodListRow {
   id: string
@@ -491,6 +568,14 @@ export class AdminClient {
   youtubeAuthUrl(): Promise<{ url: string }> {
     return this.request('GET', '/admin/youtube/auth')
   }
+  /** The last check of every upload on YouTube. */
+  youtubeVideos(signal?: AbortSignal): Promise<YoutubeVideos> {
+    return this.request('GET', '/admin/youtube/videos', undefined, signal)
+  }
+  /** Checks them now (a few API units); 409 while a check runs. */
+  checkYoutubeVideos(): Promise<YoutubeVideos> {
+    return this.request('POST', '/admin/youtube/videos/check')
+  }
   /** The linked ad-free Twitch account, checked with Twitch now (null when the check itself failed). */
   twitchViewer(): Promise<TwitchViewerStatus | null> {
     return this.request('GET', '/admin/twitch/viewer')
@@ -562,12 +647,26 @@ export class AdminClient {
   }
 
   // ---- /api/v2: the VOD list and synthetic VODs ----
-  /** Newest first; `q` is an exact id or part of a title; `synthetic` keeps only those (or only real ones). */
+  /** Newest first; `q` is an exact id or part of a title; `synthetic` keeps only those (or only real ones);
+   * `uploaded` is whether any part is on YouTube, `busy` whether a job is queued, running or paused for it. */
   vodList(
-    q: { q?: string; hidden?: boolean; synthetic?: boolean; tag?: string; cursor?: string; limit?: number } = {},
+    q: {
+      q?: string
+      hidden?: boolean
+      synthetic?: boolean
+      tag?: string
+      uploaded?: boolean
+      busy?: boolean
+      cursor?: string
+      limit?: number
+    } = {},
     signal?: AbortSignal,
   ): Promise<{ items: VodListRow[]; next_cursor: string | null }> {
     return this.request('GET', `/api/v2/vods${query(q)}`, undefined, signal)
+  }
+  /** Hide or show a VOD, or replace its tags (audited as `vod.update`). */
+  patchVod(id: string, patch: VodPatchV2): Promise<VodListRow> {
+    return this.request('PATCH', `/api/v2/vods/${enc(id)}`, patch)
   }
   synthetic(id: string, signal?: AbortSignal): Promise<SyntheticVod> {
     return this.request('GET', `/api/v2/synthetic/${enc(id)}`, undefined, signal)

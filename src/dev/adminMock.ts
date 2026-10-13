@@ -275,6 +275,60 @@ async function liveFiltered(api: string, rawUrl: string, res: ServerResponse) {
   }
 }
 
+// What the worker's YouTube calls spent today: an upload is 1600 units, so a few uploads show.
+function quotaJson() {
+  const now = new Date()
+  const pacific = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))
+  const reset = new Date(now.getTime() + (24 * 3600_000 - (pacific.getHours() * 3600 + pacific.getMinutes() * 60 + pacific.getSeconds()) * 1000))
+  return { used: 3 * 1600 + 4 * 50 + 9, limit: 10_000, resetsAt: reset.toISOString(), calls: { 'videos.insert': 3, 'videos.update': 4, 'videos.list': 6, 'channels.list': 3 } }
+}
+
+// The worker's YouTube check (GET /admin/youtube/videos), over the newest VODs with uploads and their best copy: the newest has its last
+// part removed, the next was cut short in Studio and the third is blocked in two countries; the rest are whole.
+let ytCheck: Json | null = null
+async function youtubeCheckJson(api: string): Promise<Json> {
+  const { page } = await listVods(api, new URLSearchParams({ limit: '30' }), null)
+  const uploaded = page.filter((v) => ((v.youtube as Json[] | undefined) ?? []).length > 0)
+  const reports = uploaded.map((v, n) => {
+    const seconds = durOf(v)
+    const issues: Json[] = []
+    const byType = new Map<string, Json[]>()
+    for (const u of (v.youtube as Json[]) ?? []) byType.set(u.type ?? 'vod', [...(byType.get(u.type ?? 'vod') ?? []), u])
+    const copies = [...byType].map(([type, parts]) => {
+      parts.sort((x, y) => x.part - y.part)
+      const held = parts.reduce((sum, u) => sum + (Number(u.duration) || seconds / parts.length), 0)
+      return { type, parts, held }
+    })
+    const best = copies.reduce((x, y) => (y.held > x.held ? y : x))
+    const last = best.parts[best.parts.length - 1]!
+    if (n === 0) {
+      const lost = Number(last.duration) || seconds / best.parts.length
+      best.held -= lost
+      issues.push({ kind: 'removed', severity: 'bad', detail: 'Not on YouTube any more: deleted, or not visible to the connected channel', type: best.type, part: last.part ?? 1, video: last.id })
+      issues.push({ kind: 'incomplete', severity: 'bad', detail: `${Math.round(lost / 60)} min of the planned uploads isn't on YouTube`, type: best.type })
+    } else if (n === 1) {
+      best.held -= 754
+      issues.push({ kind: 'shorter', severity: 'warn', detail: 'Cut on YouTube: 12:34 shorter than uploaded', type: best.type, part: last.part ?? 1, video: last.id })
+    } else if (n === 2) {
+      issues.push({ kind: 'blocked', severity: 'warn', detail: 'Blocked in 2 countries', type: best.type, part: best.parts[0]!.part ?? 1, video: best.parts[0]!.id })
+    }
+    const share = (held: number) => (seconds ? Math.min(1, Math.max(0, held) / seconds) : 0)
+    return {
+      id: String(v.id), title: v.title ?? null, seconds: Math.round(seconds), planned: Math.round(seconds), share: share(best.held),
+      copies: copies.map((c) => ({ type: c.type, parts: c.parts.length, seconds: Math.round(Math.max(0, c.held)), gaps: 0, share: share(c.held) })),
+      issues,
+    }
+  })
+  const problems = reports.filter((r) => r.issues.length)
+  const bad = problems.filter((r) => r.issues.some((i) => i.severity === 'bad')).length
+  return {
+    checkedAt: iso(), videos: uploaded.reduce((n, v) => n + (v.youtube as Json[]).length, 0), vods: reports.length,
+    whole: reports.length - bad, bad, warn: problems.length - bad,
+    seconds: reports.reduce((n, r) => n + r.seconds, 0), onYoutube: Math.round(reports.reduce((n, r) => n + r.share * r.seconds, 0)),
+    problems,
+  }
+}
+
 async function vodOf(api: string, id: string): Promise<Json | null> {
   if (!id || deleted.has(id)) return null
   const sv = synthetics.get(id)
@@ -848,7 +902,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           return send(res, 200, {
             worker: { ok: true, runningJobs: jobs.filter((j) => j.state === 'running').length, startedAt: iso(3 * 86400_000) },
             api: { ok: true },
-            youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null },
+            youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null, quota: quotaJson() },
             live: { live: false, streamId: null, startedAt: null },
             twitchViewer: viewerStatus(),
             jobs: { counts: counts() },
@@ -923,7 +977,29 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             uploaded: ((v.youtube as Json[] | undefined) ?? []).length > 0,
             active_jobs: activeJobsFor(String(v.id)).sort((a, b) => a.id - b.id).map((j) => ({ id: j.id, kind: j.kind, state: j.state, step: j.step })),
           }))
-          return send(res, 200, { items, next_cursor: more ? String(page[page.length - 1]!.id) : null })
+          // The worker filters uploaded and busy in SQL; here a fetched page is filtered, so a page can come back short.
+          const flag = (k: string) => (url.searchParams.has(k) ? url.searchParams.get(k) === 'true' : null)
+          const uploaded = flag('uploaded')
+          const busy = flag('busy')
+          const kept = items.filter((v) => (uploaded == null || v.uploaded === uploaded) && (busy == null || v.active_jobs.length > 0 === busy))
+          return send(res, 200, { items: kept, next_cursor: more ? String(page[page.length - 1]!.id) : null })
+        }
+        // v2 PATCH: hidden and tags (the batch actions on /manage/vods).
+        const v2vod = /^\/api\/v2\/vods\/([^/]+)$/.exec(path)
+        if (v2vod && method === 'PATCH') {
+          const id = decodeURIComponent(v2vod[1]!)
+          const vod = await vodOf(publicApi, id)
+          if (!vod) return problem(res, 404, 'vod_not_found', `no VOD ${id}`)
+          if ('hidden' in b) {
+            if (typeof b.hidden !== 'boolean') return problem(res, 422, 'invalid_vod', 'hidden must be true or false')
+            if (b.hidden) hidden.add(id)
+            else hidden.delete(id)
+          }
+          if ('tags' in b) {
+            if (!Array.isArray(b.tags)) return problem(res, 422, 'invalid_vod', 'tags must be a list')
+            vod.tags = [...new Set((b.tags as unknown[]).map((t) => String(t).trim()).filter(Boolean))]
+          }
+          return send(res, 200, { id, title: vod.title ?? null, hidden: hidden.has(id), tags: vod.tags ?? [] })
         }
 
         // ---- synthetic VODs (/api/v2/synthetic) ----
@@ -1022,6 +1098,17 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             tagsChanged = { at: iso(), by }
             return send(res, 200, siteTagsJson(true))
           }
+        }
+
+        // ---- YouTube check ----
+        if (path === '/admin/youtube/videos' && method === 'GET') {
+          ytCheck ??= await youtubeCheckJson(publicApi)
+          return send(res, 200, { running: false, last: ytCheck })
+        }
+        if (path === '/admin/youtube/videos/check' && method === 'POST') {
+          await new Promise((r) => setTimeout(r, 600))
+          ytCheck = await youtubeCheckJson(publicApi)
+          return send(res, 200, { running: false, last: ytCheck })
         }
 
         // ---- storage ----
