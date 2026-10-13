@@ -47,6 +47,65 @@ export interface YoutubeQuota {
   calls: Record<string, number>
 }
 
+/** One thing wrong with a VOD's uploads. `bad`: part of the VOD isn't watchable there; `warn`: it is, with a catch. */
+export interface YoutubeIssue {
+  kind: 'removed' | 'rejected' | 'failed' | 'processing' | 'blocked' | 'ageRestricted' | 'shorter' | 'missingPart' | 'incomplete'
+  severity: 'bad' | 'warn'
+  detail: string
+  /** The copy: `vod` (Twitch's VOD) or `live` (the live recording). */
+  type?: string
+  part?: number
+  /** The YouTube video id; null for a missing part, absent for the whole copy. */
+  video?: string | null
+}
+
+export interface YoutubeCopy {
+  type: string
+  parts: number
+  /** Seconds the watchable parts hold, by YouTube's own length. */
+  seconds: number
+  /** Ad breaks a live recording missed, which count as covered. */
+  gaps: number
+  /** seconds over the VOD's length, at most 1. */
+  share: number
+}
+
+export interface YoutubeVodReport {
+  id: string
+  title: string | null
+  /** The VOD's length. */
+  seconds: number
+  /** What the uploads were meant to hold: the VOD less the restricted games' chapters. */
+  planned: number
+  /** The best copy's share of the VOD. */
+  share: number
+  copies: YoutubeCopy[]
+  issues: YoutubeIssue[]
+}
+
+/** The last check of every upload on YouTube (the worker runs it every `youtube_check_hours`). */
+export interface YoutubeCheck {
+  checkedAt: string
+  videos: number
+  vods: number
+  /** VODs with nothing bad. */
+  whole: number
+  /** VODs with something bad, and VODs with only warnings. */
+  bad: number
+  warn: number
+  /** All VODs' length, and how much of it is on YouTube. */
+  seconds: number
+  onYoutube: number
+  /** Only the VODs with an issue. */
+  problems: YoutubeVodReport[]
+}
+
+export interface YoutubeVideos {
+  running: boolean
+  /** Null before the first check. */
+  last: YoutubeCheck | null
+}
+
 export interface Health {
   worker: { ok: boolean; runningJobs: number; startedAt?: string | null }
   api: { ok: boolean } | null
@@ -508,6 +567,14 @@ export class AdminClient {
   }
   youtubeAuthUrl(): Promise<{ url: string }> {
     return this.request('GET', '/admin/youtube/auth')
+  }
+  /** The last check of every upload on YouTube. */
+  youtubeVideos(signal?: AbortSignal): Promise<YoutubeVideos> {
+    return this.request('GET', '/admin/youtube/videos', undefined, signal)
+  }
+  /** Checks them now (a few API units); 409 while a check runs. */
+  checkYoutubeVideos(): Promise<YoutubeVideos> {
+    return this.request('POST', '/admin/youtube/videos/check')
   }
   /** The linked ad-free Twitch account, checked with Twitch now (null when the check itself failed). */
   twitchViewer(): Promise<TwitchViewerStatus | null> {
