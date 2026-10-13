@@ -37,6 +37,16 @@ export interface AdminUser {
   color?: string | null
 }
 
+/** The YouTube Data API units spent since midnight Pacific, when Google's daily count starts again. */
+export interface YoutubeQuota {
+  used: number
+  /** The project's daily units (the worker's `youtube_daily_quota` setting). */
+  limit: number
+  resetsAt: string
+  /** Calls by API method, e.g. `videos.insert` (1600 units each). */
+  calls: Record<string, number>
+}
+
 export interface Health {
   worker: { ok: boolean; runningJobs: number; startedAt?: string | null }
   api: { ok: boolean } | null
@@ -51,6 +61,8 @@ export interface Health {
     connectedAt?: string | null
     /** When Google said the refresh token ends (only for a time-limited grant). */
     refreshTokenExpiresAt?: string | null
+    /** API units the worker spent today (it counts its own calls; Google shows none), absent from an older worker. */
+    quota?: YoutubeQuota | null
   } | null
   live: { live: boolean; streamId: string | null; startedAt: string | null } | null
   /** The linked ad-free Twitch account; absent from a worker that predates it. */
@@ -271,6 +283,12 @@ export interface SplitPoint {
   at: number
   from: number
   to: number
+}
+
+/** The fields PATCH /api/v2/vods/:id changes here. `tags` replaces the VOD's list; only site tags are taken. */
+export interface VodPatchV2 {
+  hidden?: boolean
+  tags?: string[]
 }
 
 /** A row of GET /api/v2/vods: every VOD, hidden, merged and synthetic ones too. */
@@ -562,12 +580,26 @@ export class AdminClient {
   }
 
   // ---- /api/v2: the VOD list and synthetic VODs ----
-  /** Newest first; `q` is an exact id or part of a title; `synthetic` keeps only those (or only real ones). */
+  /** Newest first; `q` is an exact id or part of a title; `synthetic` keeps only those (or only real ones);
+   * `uploaded` is whether any part is on YouTube, `busy` whether a job is queued, running or paused for it. */
   vodList(
-    q: { q?: string; hidden?: boolean; synthetic?: boolean; tag?: string; cursor?: string; limit?: number } = {},
+    q: {
+      q?: string
+      hidden?: boolean
+      synthetic?: boolean
+      tag?: string
+      uploaded?: boolean
+      busy?: boolean
+      cursor?: string
+      limit?: number
+    } = {},
     signal?: AbortSignal,
   ): Promise<{ items: VodListRow[]; next_cursor: string | null }> {
     return this.request('GET', `/api/v2/vods${query(q)}`, undefined, signal)
+  }
+  /** Hide or show a VOD, or replace its tags (audited as `vod.update`). */
+  patchVod(id: string, patch: VodPatchV2): Promise<VodListRow> {
+    return this.request('PATCH', `/api/v2/vods/${enc(id)}`, patch)
   }
   synthetic(id: string, signal?: AbortSignal): Promise<SyntheticVod> {
     return this.request('GET', `/api/v2/synthetic/${enc(id)}`, undefined, signal)

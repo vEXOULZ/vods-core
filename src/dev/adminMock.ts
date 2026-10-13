@@ -275,6 +275,14 @@ async function liveFiltered(api: string, rawUrl: string, res: ServerResponse) {
   }
 }
 
+// What the worker's YouTube calls spent today: an upload is 1600 units, so a few uploads show.
+function quotaJson() {
+  const now = new Date()
+  const pacific = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))
+  const reset = new Date(now.getTime() + (24 * 3600_000 - (pacific.getHours() * 3600 + pacific.getMinutes() * 60 + pacific.getSeconds()) * 1000))
+  return { used: 3 * 1600 + 4 * 50 + 9, limit: 10_000, resetsAt: reset.toISOString(), calls: { 'videos.insert': 3, 'videos.update': 4, 'videos.list': 6, 'channels.list': 3 } }
+}
+
 async function vodOf(api: string, id: string): Promise<Json | null> {
   if (!id || deleted.has(id)) return null
   const sv = synthetics.get(id)
@@ -848,7 +856,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           return send(res, 200, {
             worker: { ok: true, runningJobs: jobs.filter((j) => j.state === 'running').length, startedAt: iso(3 * 86400_000) },
             api: { ok: true },
-            youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null },
+            youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null, quota: quotaJson() },
             live: { live: false, streamId: null, startedAt: null },
             twitchViewer: viewerStatus(),
             jobs: { counts: counts() },
@@ -923,7 +931,29 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             uploaded: ((v.youtube as Json[] | undefined) ?? []).length > 0,
             active_jobs: activeJobsFor(String(v.id)).sort((a, b) => a.id - b.id).map((j) => ({ id: j.id, kind: j.kind, state: j.state, step: j.step })),
           }))
-          return send(res, 200, { items, next_cursor: more ? String(page[page.length - 1]!.id) : null })
+          // The worker filters uploaded and busy in SQL; here a fetched page is filtered, so a page can come back short.
+          const flag = (k: string) => (url.searchParams.has(k) ? url.searchParams.get(k) === 'true' : null)
+          const uploaded = flag('uploaded')
+          const busy = flag('busy')
+          const kept = items.filter((v) => (uploaded == null || v.uploaded === uploaded) && (busy == null || v.active_jobs.length > 0 === busy))
+          return send(res, 200, { items: kept, next_cursor: more ? String(page[page.length - 1]!.id) : null })
+        }
+        // v2 PATCH: hidden and tags (the batch actions on /manage/vods).
+        const v2vod = /^\/api\/v2\/vods\/([^/]+)$/.exec(path)
+        if (v2vod && method === 'PATCH') {
+          const id = decodeURIComponent(v2vod[1]!)
+          const vod = await vodOf(publicApi, id)
+          if (!vod) return problem(res, 404, 'vod_not_found', `no VOD ${id}`)
+          if ('hidden' in b) {
+            if (typeof b.hidden !== 'boolean') return problem(res, 422, 'invalid_vod', 'hidden must be true or false')
+            if (b.hidden) hidden.add(id)
+            else hidden.delete(id)
+          }
+          if ('tags' in b) {
+            if (!Array.isArray(b.tags)) return problem(res, 422, 'invalid_vod', 'tags must be a list')
+            vod.tags = [...new Set((b.tags as unknown[]).map((t) => String(t).trim()).filter(Boolean))]
+          }
+          return send(res, 200, { id, title: vod.title ?? null, hidden: hidden.has(id), tags: vod.tags ?? [] })
         }
 
         // ---- synthetic VODs (/api/v2/synthetic) ----

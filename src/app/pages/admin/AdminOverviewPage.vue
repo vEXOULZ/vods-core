@@ -4,7 +4,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { JobsTable, usePoll } from '@vexoulz/platform-web/vue'
 import { errorText } from '@vexoulz/platform-web'
-import type { Health } from '../../admin/api'
+import type { Health, StorageView } from '../../admin/api'
+import { STUCK_QUERY, diskLine, quotaLine, stuckLine, stuckVods } from '../../admin/health'
 import ManageShell from '../../admin/ManageShell.vue'
 import TwitchViewerTile from '../../admin/TwitchViewerTile.vue'
 import { platform } from '../../admin/platform'
@@ -27,7 +28,17 @@ const COUNT_STATES = [
   { state: 'cancelled', tone: 'default' },
 ] as const
 
-onMounted(() => (document.title = `Overview · Manage · ${site.name}`))
+// Uploads and storage: the VODs nothing is archiving, and the disk (the worker caches its walk, so once is enough).
+const { data: stuck } = usePoll((signal) => stuckVods(signal), 60_000)
+const storage = ref<StorageView | null>(null)
+onMounted(async () => {
+  document.title = `Overview · Manage · ${site.name}`
+  try {
+    storage.value = await admin.storage()
+  } catch {
+    storage.value = null // the tile says unknown; /manage/storage has the error
+  }
+})
 
 type Dot = 'live' | 'ok' | 'warn' | 'off'
 const DAY = 86_400_000
@@ -75,6 +86,27 @@ const tiles = computed(() => {
       sub: h.live?.live && h.live.startedAt ? `started ${timeAgo(h.live.startedAt)}` : '',
     },
   ]
+})
+
+/** The YouTube quota spent today, the stuck VODs and the disk, each with where to look further. */
+const uploadTiles = computed(() => {
+  const quota = health.value?.youtube?.quota
+  const disk = storage.value?.disk
+  const out: { name: string; status: Dot; text: string; sub: string; to?: string; title?: string }[] = []
+  if (quota) {
+    const q = quotaLine(quota)
+    const calls = Object.entries(quota.calls).map(([k, n]) => `${k} × ${n}`).join(', ')
+    out.push({ name: 'YouTube quota', status: q.warn ? 'warn' : 'ok', text: q.text, sub: q.sub, title: calls || 'No calls today' })
+  }
+  if (stuck.value) {
+    const s = stuckLine(stuck.value)
+    out.push({ name: 'Stuck VODs', status: s.warn ? 'warn' : 'ok', text: s.text, sub: s.sub, to: s.warn ? `/manage/vods?upload=${STUCK_QUERY.upload}` : undefined })
+  }
+  if (disk) {
+    const d = diskLine(disk)
+    out.push({ name: 'Disk', status: d.warn ? 'warn' : 'ok', text: d.text, sub: d.sub, to: '/manage/storage' })
+  }
+  return out
 })
 
 const router = useRouter()
@@ -130,6 +162,12 @@ async function connectYoutube() {
           <div v-if="t.age" class="small" :class="t.age.soon ? 'tile-soon' : 'vx-muted'">{{ t.age.text }}</div>
           <VxButton v-if="t.action === 'connect'" @click="connectYoutube">Connect YouTube</VxButton>
           <VxButton v-else-if="t.action === 'switch'" size="sm" title="Connect a different Google account or channel" @click="connectYoutube">Switch account</VxButton>
+        </div>
+        <div v-for="t in uploadTiles" :key="t.name" class="tile vx-panel" :title="t.title">
+          <div class="vx-eyebrow">{{ t.name }}</div>
+          <div class="tile-main"><VxStatusDot :status="t.status" />{{ t.text }}</div>
+          <div class="vx-muted small">{{ t.sub }}</div>
+          <RouterLink v-if="t.to" class="tile-link small" :to="t.to">{{ t.name === 'Disk' ? 'Storage' : 'List them' }}</RouterLink>
         </div>
         <!-- A worker from before the ad-free account leaves twitchViewer out. -->
         <TwitchViewerTile v-if="health.twitchViewer !== undefined" :status="health.twitchViewer" @changed="refresh" />
