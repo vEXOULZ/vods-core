@@ -1,5 +1,11 @@
 # @vexoulz/vods-core
 
+## 0.31.1
+
+### Patch Changes
+
+- 276632c: Manage's jobs use @vexoulz/platform-web 0.7.0: a job waiting for a YouTube daily limit to lift reads "scheduled", with when it starts again and why.
+
 ## 0.31.0
 
 ### Minor Changes
