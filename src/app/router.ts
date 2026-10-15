@@ -22,7 +22,7 @@ export interface VodsPages {
   games: VodsPage
   notFound: VodsPage
   /** Manage: the archive's admin pages. Every one but `login` needs a dashboard session (installVodsSession). */
-  manage: Record<'login' | 'overview' | 'jobs' | 'job' | 'vods' | 'vod' | 'synthetic' | 'storage' | 'settings' | 'tags' | 'audit', VodsPage>
+  manage: Record<'login' | 'overview' | 'jobs' | 'job' | 'vods' | 'vod' | 'synthetic' | 'storage' | 'youtube' | 'settings' | 'tags' | 'audit', VodsPage>
 }
 
 /** The routes of a vods site, with its own pages. */
@@ -58,6 +58,7 @@ export function vodsRoutes(pages: VodsPages): RouteRecordRaw[] {
     { path: '/manage/synthetic/new', component: m.synthetic },
     { path: '/manage/synthetic/:id', component: m.synthetic, props: true },
     { path: '/manage/storage', component: m.storage },
+    { path: '/manage/youtube', component: m.youtube },
     { path: '/manage/settings', component: m.settings },
     { path: '/manage/tags', component: m.tags },
     { path: '/manage/audit', component: m.audit },

@@ -11,8 +11,8 @@ const pages = {
   games: Page,
   notFound: Page,
   manage: Object.fromEntries(
-    ['login', 'overview', 'jobs', 'job', 'vods', 'vod', 'synthetic', 'storage', 'settings', 'tags', 'audit'].map((k) => [k, Page]),
-  ) as Record<'login' | 'overview' | 'jobs' | 'job' | 'vods' | 'vod' | 'synthetic' | 'storage' | 'settings' | 'tags' | 'audit', typeof Page>,
+    ['login', 'overview', 'jobs', 'job', 'vods', 'vod', 'synthetic', 'storage', 'youtube', 'settings', 'tags', 'audit'].map((k) => [k, Page]),
+  ) as Record<'login' | 'overview' | 'jobs' | 'job' | 'vods' | 'vod' | 'synthetic' | 'storage' | 'youtube' | 'settings' | 'tags' | 'audit', typeof Page>,
 }
 
 /** The worker's answer to GET /admin/session. */

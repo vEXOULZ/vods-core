@@ -73,6 +73,8 @@ export interface YoutubeCopy {
 export interface YoutubeVodReport {
   id: string
   title: string | null
+  /** When the VOD was streamed; absent from a check made by an older worker. */
+  createdAt?: string | null
   /** The VOD's length. */
   seconds: number
   /** What the uploads were meant to hold: the VOD less the restricted games' chapters. */
@@ -126,8 +128,28 @@ export interface Health {
   live: { live: boolean; streamId: string | null; startedAt: string | null } | null
   /** The linked ad-free Twitch account; absent from a worker that predates it. */
   twitchViewer?: TwitchViewerStatus | null
+  /** The connection to doomtp-bot (its chat log); absent from a worker that predates it. */
+  doomtp?: DoomtpStatus | null
   /** Counts over every job, legacy ones too; the job runs themselves come from /api/v2/jobs (platform.ts). */
   jobs: { counts: Partial<Record<JobState, number>> }
+}
+
+/** Whether the worker reaches doomtp-bot, and whether the bot is in the channel's chat (its /log/coverage, asked at most once a minute). */
+export interface DoomtpStatus {
+  /** Whether the worker has the bot's URL; without it bot chat is off and nothing else is set. */
+  configured: boolean
+  /** Whether it reads with an API key (moderation and removed messages included). */
+  keyed: boolean
+  /** The channel on the bot. */
+  login: string
+  /** Whether the bot answered; null when not configured. */
+  ok: boolean | null
+  /** Whether the bot is in the channel's chat now; null when it didn't answer. */
+  listening: boolean | null
+  /** Since when it has been in chat, or when it left. */
+  since: string | null
+  error: string | null
+  checkedAt: string
 }
 
 /**

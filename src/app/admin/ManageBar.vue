@@ -12,6 +12,7 @@ const LINKS = [
   { label: 'Jobs', to: '/manage/jobs' },
   { label: 'VODs', to: '/manage/vods' },
   { label: 'Storage', to: '/manage/storage' },
+  { label: 'YouTube', to: '/manage/youtube' },
   { label: 'Settings', to: '/manage/settings' },
   { label: 'Tags', to: '/manage/tags' },
   { label: 'Audit', to: '/manage/audit' },
