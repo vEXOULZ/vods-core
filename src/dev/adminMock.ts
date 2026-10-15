@@ -314,7 +314,7 @@ async function youtubeCheckJson(api: string): Promise<Json> {
     }
     const share = (held: number) => (seconds ? Math.min(1, Math.max(0, held) / seconds) : 0)
     return {
-      id: String(v.id), title: v.title ?? null, seconds: Math.round(seconds), planned: Math.round(seconds), share: share(best.held),
+      id: String(v.id), title: v.title ?? null, createdAt: v.createdAt ?? null, seconds: Math.round(seconds), planned: Math.round(seconds), share: share(best.held),
       copies: copies.map((c) => ({ type: c.type, parts: c.parts.length, seconds: Math.round(Math.max(0, c.held)), gaps: 0, share: share(c.held) })),
       issues,
     }
@@ -906,6 +906,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null, quota: quotaJson() },
             live: { live: false, streamId: null, startedAt: null },
             twitchViewer: viewerStatus(),
+            doomtp: { configured: true, keyed: true, login: 'vexoulz', ok: true, listening: true, since: iso(26 * 3_600_000), error: null, checkedAt: iso(30_000) },
             jobs: { counts: counts() },
           })
         if (path === '/admin/youtube/auth') return send(res, 200, { url: 'https://accounts.google.com/' })

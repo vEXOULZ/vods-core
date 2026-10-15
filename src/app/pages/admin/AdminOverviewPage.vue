@@ -6,14 +6,12 @@ import { JobsTable, usePoll } from '@vexoulz/platform-web/vue'
 import { errorText } from '@vexoulz/platform-web'
 import type { Health, StorageView } from '../../admin/api'
 import {
+  RECENT_PROBLEM_DAYS,
   STUCK_QUERY,
-  YOUTUBE_ISSUES,
   diskLine,
-  issueLink,
-  issueWhere,
-  percent,
+  doomtpLine,
   quotaLine,
-  sortedProblems,
+  splitProblems,
   stuckLine,
   stuckVods,
   youtubeCheckLine,
@@ -21,10 +19,10 @@ import {
 } from '../../admin/health'
 import ManageShell from '../../admin/ManageShell.vue'
 import TwitchViewerTile from '../../admin/TwitchViewerTile.vue'
+import YoutubeProblems from '../../admin/YoutubeProblems.vue'
 import { platform } from '../../admin/platform'
 import { admin } from '../../admin/session'
 import { site } from '../../site'
-import { toClock } from '../../../time'
 
 const { data: health, error, loading, refresh } = usePoll((signal) => admin.health(signal), 15_000)
 const toast = useToast()
@@ -47,7 +45,8 @@ const { data: stuck } = usePoll((signal) => stuckVods(signal), 60_000)
 const storage = ref<StorageView | null>(null)
 // Whether the uploads are still on YouTube and whole: the worker's last check (an older worker has none: no tile).
 const { data: ytCheck, refresh: refreshYtCheck } = usePoll((signal) => admin.youtubeVideos(signal), 60_000)
-const problems = computed(() => sortedProblems(ytCheck.value?.last))
+// The last two weeks' VODs here; the older problems (some never fixable) are on /manage/youtube.
+const problems = computed(() => splitProblems(ytCheck.value?.last))
 const checking = ref(false)
 async function checkYoutube() {
   checking.value = true
@@ -92,6 +91,7 @@ const tiles = computed(() => {
   const h = health.value
   if (!h) return []
   const yt = h.youtube
+  const bot = h.doomtp ? doomtpLine(h.doomtp, timeAgo) : null
   return [
     {
       name: 'Worker',
@@ -116,6 +116,8 @@ const tiles = computed(() => {
       text: h.live?.live ? 'Live' : 'Offline',
       sub: h.live?.live && h.live.startedAt ? `started ${timeAgo(h.live.startedAt)}` : '',
     },
+    // doomtp-bot, where bot chat comes from; a worker from before it leaves `doomtp` out.
+    ...(bot ? [{ name: 'DTP bot', status: bot.status as Dot, text: bot.text, sub: bot.sub }] : []),
   ]
 })
 
@@ -132,7 +134,7 @@ const uploadTiles = computed(() => {
   if (ytCheck.value) {
     const y = youtubeCheckLine(ytCheck.value)
     const at = ytCheck.value.last?.checkedAt
-    out.push({ name: 'On YouTube', status: y.warn ? 'warn' : ytCheck.value.last ? 'ok' : 'off', text: y.text, sub: at ? `${y.sub} · checked ${timeAgo(at)}` : y.sub, to: problems.value.length ? '#youtube-uploads' : undefined, toText: 'See them' })
+    out.push({ name: 'On YouTube', status: y.warn ? 'warn' : ytCheck.value.last ? 'ok' : 'off', text: y.text, sub: at ? `${y.sub} · checked ${timeAgo(at)}` : y.sub, to: problems.value.recent.length ? '#youtube-uploads' : problems.value.older.length ? '/manage/youtube' : undefined, toText: 'See them' })
   }
   if (stuck.value) {
     const s = stuckLine(stuck.value)
@@ -230,26 +232,17 @@ async function connectYoutube() {
           <VxButton size="sm" :loading="checking || ytCheck.running" title="Look up every upload on YouTube now (1 API unit per 50 videos)" @click="checkYoutube">Check now</VxButton>
         </div>
         <p v-if="!ytCheck.last" class="vx-muted small">Not checked yet.</p>
-        <p v-else-if="!problems.length" class="vx-muted small">
+        <p v-else-if="!problems.recent.length && !problems.older.length" class="vx-muted small">
           Every upload of {{ ytCheck.last.vods }} VODs is on YouTube and whole (checked {{ timeAgo(ytCheck.last.checkedAt) }}).
         </p>
-        <ul v-else class="problems">
-          <li v-for="p in problems" :key="p.id" class="problem vx-panel">
-            <div class="problem-head">
-              <RouterLink :to="`/manage/vods/${p.id}`" class="problem-title">{{ p.title || p.id }}</RouterLink>
-              <span class="vx-muted small" :title="p.planned < p.seconds ? 'Restricted games are left out of the uploads on purpose' : undefined">
-                {{ percent(p.share) }} of {{ toClock(p.seconds) }} on YouTube<template v-if="p.planned < p.seconds - 60"> · {{ toClock(p.planned) }} planned</template>
-              </span>
-            </div>
-            <ul class="issues">
-              <li v-for="(i, n) in p.issues" :key="n" class="issue">
-                <VxChip :tone="i.severity === 'bad' ? 'bad' : 'warn'">{{ YOUTUBE_ISSUES[i.kind] ?? i.kind }}</VxChip>
-                <span class="small">{{ issueWhere(i) }}: {{ i.detail }}</span>
-                <a v-if="issueLink(i)" class="tile-link small" :href="issueLink(i)" target="_blank" rel="noopener">Open</a>
-              </li>
-            </ul>
-          </li>
-        </ul>
+        <template v-else>
+          <p v-if="!problems.recent.length" class="vx-muted small">No problems with VODs from the last {{ RECENT_PROBLEM_DAYS }} days.</p>
+          <YoutubeProblems v-else :problems="problems.recent" />
+          <p v-if="problems.older.length" class="vx-muted small older">
+            {{ problems.older.length }} older VOD{{ problems.older.length === 1 ? '' : 's' }} with problems.
+            <RouterLink class="tile-link" to="/manage/youtube">See them all</RouterLink>
+          </p>
+        </template>
       </section>
     </template>
   </ManageShell>
@@ -269,11 +262,5 @@ h2 { margin: 0 0 10px; }
 .count { text-decoration: none; }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .section-head h2 { margin: 0; }
-.problems, .issues { list-style: none; margin: 0; padding: 0; }
-.problems { display: flex; flex-direction: column; gap: 8px; }
-.problem { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
-.problem-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
-.problem-title { color: var(--vx-ink); font-weight: 600; overflow-wrap: anywhere; }
-.issues { display: flex; flex-direction: column; gap: 6px; }
-.issue { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.older { margin: 10px 0 0; }
 </style>

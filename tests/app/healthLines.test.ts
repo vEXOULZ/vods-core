@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  type DoomtpStatus,
   type YoutubeCheck,
+  RECENT_PROBLEM_DAYS,
   diskLine,
+  doomtpLine,
   issueLink,
   issueWhere,
   percent,
   quotaLine,
   sortedProblems,
+  splitProblems,
   stuckLine,
   stuckVods,
   youtubeCheckLine,
@@ -74,5 +78,40 @@ describe('YouTube check lines', () => {
     expect(issueWhere({ ...i, type: 'live', part: undefined })).toBe('Live copy')
     expect(issueLink(i)).toBe('https://www.youtube.com/watch?v=abc')
     expect(issueLink({ ...i, kind: 'removed' })).toBeUndefined()
+  })
+})
+
+describe('recent upload problems', () => {
+  const now = Date.parse('2026-10-15T12:00:00Z')
+  const dated = (id: string, createdAt: string | null | undefined, share = 0.5) => ({ ...report(id, share, 'bad'), createdAt })
+
+  it('keeps the last two weeks on the overview and sends the rest to their own page', () => {
+    const c = check({
+      problems: [
+        dated('old', '2026-09-01T00:00:00Z', 0.1),
+        dated('new', '2026-10-10T00:00:00Z'),
+        dated('edge', '2026-10-01T12:00:00Z'),
+        dated('undated', undefined),
+      ],
+    })
+    const { recent, older } = splitProblems(c, now)
+    expect(recent.map((r) => r.id)).toEqual(['undated', 'new', 'edge'])
+    expect(older.map((r) => r.id)).toEqual(['old'])
+    expect(RECENT_PROBLEM_DAYS).toBe(14)
+    expect(splitProblems(null, now)).toEqual({ recent: [], older: [] })
+  })
+})
+
+describe('doomtp-bot tile', () => {
+  const base: DoomtpStatus = {
+    configured: true, keyed: true, login: 'vexoulz', ok: true, listening: true, since: '2026-10-15T10:00:00Z', error: null, checkedAt: '2026-10-15T12:00:00Z',
+  }
+  const ago = (iso: string) => `@${iso.slice(11, 16)}`
+
+  it('says whether the bot answers and is in chat', () => {
+    expect(doomtpLine(base, ago)).toEqual({ text: 'In chat', sub: 'since @10:00 · with a key', warn: false, status: 'ok' })
+    expect(doomtpLine({ ...base, listening: false, keyed: false }, ago)).toEqual({ text: 'Not in chat', sub: 'left @10:00 · public log only', warn: true, status: 'warn' })
+    expect(doomtpLine({ ...base, ok: false, listening: null, error: 'ConnectError' }, ago)).toMatchObject({ text: 'Unreachable', sub: 'ConnectError', status: 'warn' })
+    expect(doomtpLine({ ...base, configured: false, ok: null }, ago)).toMatchObject({ text: 'Not set up', status: 'off', warn: false })
   })
 })

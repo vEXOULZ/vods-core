@@ -1,7 +1,7 @@
 // What the overview says about uploads and storage: the YouTube quota spent today, the VODs nothing is archiving,
 // the worker's disk and whether the uploads are still on YouTube. The words and the warning thresholds, without the look, so keeki's overview reads the same.
 import { bytes } from '@vexoulz/platform-web'
-import type { StorageView, YoutubeCheck, YoutubeIssue, YoutubeQuota, YoutubeVideos, YoutubeVodReport } from './api'
+import type { DoomtpStatus, StorageView, YoutubeCheck, YoutubeIssue, YoutubeQuota, YoutubeVideos, YoutubeVodReport } from './api'
 import { admin } from './session'
 
 /** Units an upload costs (videos.insert). */
@@ -114,4 +114,32 @@ export function issueLink(i: YoutubeIssue): string | undefined {
 export function sortedProblems(c: YoutubeCheck | null | undefined): YoutubeVodReport[] {
   const bad = (r: YoutubeVodReport) => (r.issues.some((i) => i.severity === 'bad') ? 0 : 1)
   return [...(c?.problems ?? [])].sort((a, b) => bad(a) - bad(b) || a.share - b.share || b.id.localeCompare(a.id))
+}
+
+/** How far back the overview lists upload problems; older ones are on /manage/youtube. */
+export const RECENT_PROBLEM_DAYS = 14
+
+/** The problems of VODs streamed in the last RECENT_PROBLEM_DAYS days, and the rest, each as sortedProblems orders
+ * them. A report without a date (a check by an older worker) counts as recent, so nothing drops out of sight. */
+export function splitProblems(
+  c: YoutubeCheck | null | undefined,
+  now = Date.now(),
+): { recent: YoutubeVodReport[]; older: YoutubeVodReport[] } {
+  const since = now - RECENT_PROBLEM_DAYS * 86_400_000
+  const recent: YoutubeVodReport[] = []
+  const older: YoutubeVodReport[] = []
+  for (const r of sortedProblems(c)) {
+    const at = r.createdAt ? Date.parse(r.createdAt) : NaN
+    ;(Number.isNaN(at) || at >= since ? recent : older).push(r)
+  }
+  return { recent, older }
+}
+
+/** The doomtp-bot tile: whether the worker reaches the bot and the bot is in chat. `status` is the tile's dot. */
+export function doomtpLine(d: DoomtpStatus, ago: (iso: string) => string): HealthLine & { status: 'ok' | 'warn' | 'off' } {
+  if (!d.configured) return { text: 'Not set up', sub: 'No bot URL: bot chat is off', warn: false, status: 'off' }
+  const access = d.keyed ? 'with a key' : 'public log only'
+  if (!d.ok) return { text: 'Unreachable', sub: d.error ?? 'No answer', warn: true, status: 'warn' }
+  if (d.listening) return { text: 'In chat', sub: `${d.since ? `since ${ago(d.since)}` : `#${d.login}`} · ${access}`, warn: false, status: 'ok' }
+  return { text: 'Not in chat', sub: `${d.since ? `left ${ago(d.since)}` : `#${d.login}`} · ${access}`, warn: true, status: 'warn' }
 }
