@@ -49,6 +49,7 @@ export function toChatMessage(c: RawComment, emotes?: EmoteSet | null, badges?: 
     at: c.content_offset_seconds,
     user: c.display_name,
     login: loginOf(c),
+    userId: c.user_id ?? null,
     color: c.user_color || null,
     badges: resolveBadges(c.user_badges, badges),
     tokens: tokenize(c.message, emotes),
