@@ -2,6 +2,7 @@
 // its own config and branding: its main.ts calls createVodsApp() and mounts what it returns.
 import { VxBuild, useToast } from '@vexoulz/ui'
 import { createAccount } from '@vexoulz/ui/account'
+import { twitchUserLookup } from '@vexoulz/platform-web/chat'
 import { createPlatformUi } from '@vexoulz/platform-web/vue'
 import { createApp, type App as VueApp } from 'vue'
 import { createRouter, createWebHistory, RouterLink, type Router } from 'vue-router'
@@ -45,6 +46,11 @@ export interface VodsAppOptions {
    * e.g. `{ noThumbnail: VxNoThumbnail, twitchGlyph: VxTwitchGlyph }` from vexoulz-ui.
    */
   art?: VodsArt
+  /**
+   * Where chat's user cards look a chatter up on Twitch: doomtp-bot's `/api/v2/twitch/users`, with this site's origin
+   * in the bot's USER_LOOKUP_ORIGINS. Unset, a card shows only what the chat line knows.
+   */
+  userLookupUrl?: string
 }
 
 export interface VodsApp {
@@ -103,6 +109,7 @@ export function createVodsApp(options: VodsAppOptions): VodsApp {
         },
         notify: (msg, kind) => useToast().show(msg, { kind, duration: kind === 'error' ? 5000 : 3000 }),
         appName: 'worker',
+        userLookup: options.userLookupUrl ? twitchUserLookup(options.userLookupUrl) : undefined,
       }),
     )
   return { app, router }

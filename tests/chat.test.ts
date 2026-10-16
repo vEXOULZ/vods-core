@@ -106,9 +106,9 @@ describe('toChatMessage', () => {
     .add('bttv', [{ id: 'bt', code: 'catJAM' }, { id: 'bt2', code: 'Clap' }])
 
   it('reads the bot chat: usernames, notices, redeems, cheers, /me and removals', () => {
-    const base = { ...comment(0, 0), source: 'bot' as const, user_login: 'someone', display_name: 'Someone' }
+    const base = { ...comment(0, 0), source: 'bot' as const, user_id: '7', user_login: 'someone', display_name: 'Someone' }
     const msg = toChatMessage({ ...base, message_type: 'action', bot: { bits: 100, reward: { id: 'r', title: 'Hydrate', cost: 500, input: '' } } })
-    expect(msg).toMatchObject({ login: 'someone', source: 'bot', kind: 'message', action: true, bits: 100,
+    expect(msg).toMatchObject({ login: 'someone', userId: '7', source: 'bot', kind: 'message', action: true, bits: 100,
       reward: { title: 'Hydrate', cost: 500, input: null }, removed: null })
     const notice = toChatMessage({ ...base, kind: 'notice', bot: { type: 'raid' } })
     expect([notice.kind, notice.noticeType]).toEqual(['notice', 'raid'])
@@ -122,7 +122,7 @@ describe('toChatMessage', () => {
     expect(loginOf({ display_name: '日本語' })).toBeNull()
     expect(loginOf({ display_name: '日本語', user_login: 'nihongo' })).toBe('nihongo')
     const msg = toChatMessage(comment(0, 0))
-    expect([msg.source, msg.kind, msg.login, msg.removed]).toEqual(['replay', 'message', 'u0', null])
+    expect([msg.source, msg.kind, msg.login, msg.userId, msg.removed]).toEqual(['replay', 'message', 'u0', null, null])
   })
 
   it('converts a real comment', () => {
