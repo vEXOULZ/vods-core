@@ -2,9 +2,9 @@
 // /manage/tags: how each VOD tag shows on the site (GET /admin/site/tags): its label, whether it hangs off the
 // thumbnail or is a chip, its color and size, and its vector shape. One Save sends the whole list, all or none;
 // a shape uploads (or goes back to the placeholder) on its own, straight away, for a tag that's saved.
-import { timeAgo, VxButton, VxCallout, VxChip, VxField, VxInput, VxSelect, VxSkeleton, VxSwitch, useToast, type Option } from '@vexoulz/ui'
+import { timeAgo, VxButton, VxCallout, VxChip, VxField, VxInput, VxSelect, VxSkeleton, VxSwitch, useToast, type Option } from '@vex/ui'
 import { computed, onMounted, ref } from 'vue'
-import { errorText, ProblemError } from '@vexoulz/platform-web'
+import { errorText, ProblemError } from '@vex/platform-web'
 import { type SiteTags } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
 import TagColorInput from '../../admin/TagColorInput.vue'

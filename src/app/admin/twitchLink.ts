@@ -2,7 +2,7 @@ import type { AdminClient, TwitchDeviceFlow, TwitchViewerStatus } from './api'
 
 /**
  * The Overview tile's reading of the linked ad-free Twitch account. `ago` words a time ("3 hours ago"): the site's
- * own, so the kit doesn't need @vexoulz/ui.
+ * own, so the kit doesn't need @vex/ui.
  */
 export function viewerTile(st: TwitchViewerStatus | null | undefined, ago: (iso: string) => string): {
   status: 'ok' | 'warn' | 'off'

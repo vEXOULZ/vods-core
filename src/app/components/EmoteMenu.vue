@@ -3,7 +3,7 @@
 // the modifiers on each), linking to the emote's page on its provider's site. Twitch emotes have no such page, and
 // the channel one belongs to isn't saved with chat, so their row says so instead of linking.
 // One menu serves the whole chat. It follows its emote while chat scrolls and closes once the emote scrolls away.
-import { clampX, place, VxMenuItem } from '@vexoulz/ui'
+import { clampX, place, VxMenuItem } from '@vex/ui'
 import type { EmoteToken } from '../../index'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { emoteMenuRows, type EmoteSources } from '../lib/emoteMenu'

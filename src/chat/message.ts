@@ -1,6 +1,6 @@
 // Archive comments → chat lines with their VOD time. The parsing (tokens, badges, modifiers) lives in
-// @vexoulz/platform-web, shared with doomtp-web; it is re-exported here so existing imports keep working.
-import { resolveBadges, tokenize, type ChatLine, type Removal } from '@vexoulz/platform-web/chat'
+// @vex/platform-web, shared with doomtp-web; it is re-exported here so existing imports keep working.
+import { resolveBadges, tokenize, type ChatLine, type Removal } from '@vex/platform-web/chat'
 import type { ChatSource, RawBadges, RawComment } from '../api/types'
 import type { EmoteSet } from './emotes'
 
@@ -17,7 +17,7 @@ export {
   type NameMode,
   type Removal,
   type Token,
-} from '@vexoulz/platform-web/chat'
+} from '@vex/platform-web/chat'
 
 export interface ChatMessage extends ChatLine {
   /** VOD seconds. */

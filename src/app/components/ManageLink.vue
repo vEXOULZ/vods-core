@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // The header's way into Manage for the archive's admins, in Twitch purple with a Twitch mark so it stands out.
-import { VxButton } from '@vexoulz/ui'
+import { VxButton } from '@vex/ui'
 import { useRoute } from 'vue-router'
 import TwitchMark from './TwitchMark.vue'
 

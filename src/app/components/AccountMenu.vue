@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// The header's account control, wired to the shared sign-in (@vexoulz/ui/account, set up by createVodsApp()). A dashboard session signed in
+// The header's account control, wired to the shared sign-in (@vex/ui/account, set up by createVodsApp()). A dashboard session signed in
 // with the admin password (no account) shows as "admin". Signing out ends both.
-import { VxAccountMenu, VxMenuItem, type AccountUser } from '@vexoulz/ui'
-import { useAccount } from '@vexoulz/ui/account'
+import { VxAccountMenu, VxMenuItem, type AccountUser } from '@vex/ui'
+import { useAccount } from '@vex/ui/account'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { logout, session } from '../admin/session'

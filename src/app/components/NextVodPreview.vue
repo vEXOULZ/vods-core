@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // The VOD the end card suggests: its thumbnail (a link to it), title, when it was streamed and how long it is, and
 // where you'd pick it up.
-import { VxLink } from '@vexoulz/ui'
+import { VxLink } from '@vex/ui'
 import { toClock, watchPath, type Vod } from '../../index'
 import { computed } from 'vue'
 import { useThumbnail } from '../composables/useThumbnail'

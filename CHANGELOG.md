@@ -1,4 +1,4 @@
-# @vexoulz/vods-core
+# @vex/vods-core
 
 ## 0.33.0
 

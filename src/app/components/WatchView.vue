@@ -16,7 +16,7 @@ import {
   VxMenuItem,
   VxPopover,
   VxPosters,
-} from '@vexoulz/ui'
+} from '@vex/ui'
 import { boxArt, toClock, watchPath, type DriveFile, type PlayableTimeline, type Position, type SegmentTimeline, type Span, type Vod } from '../../index'
 import { computed, watchEffect } from 'vue'
 import ChatPanel from './ChatPanel.vue'

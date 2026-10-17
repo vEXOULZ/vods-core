@@ -2,7 +2,7 @@
 // The newest VOD, above the list: a big thumbnail, when it was streamed and for how long, how many parts it was
 // uploaded in, and every chapter with its game, start and length (each a link to that point). Resumes where you
 // stopped, if you did. "See all VODs" goes to the VODs page.
-import { gamePalette, learnGameColors, VxButton, VxChapterBar, VxChip, VxLink, VxPosters } from '@vexoulz/ui'
+import { gamePalette, learnGameColors, VxButton, VxChapterBar, VxChip, VxLink, VxPosters } from '@vex/ui'
 import { boxArt, isFinished, toClock, watchPath, type Progress, type Vod } from '../../index'
 import { computed, watchEffect } from 'vue'
 import SeeAllButton from './SeeAllButton.vue'

@@ -1,4 +1,4 @@
-import { ProblemError, parseRetryAfter } from '@vexoulz/platform-web'
+import { ProblemError, parseRetryAfter } from '@vex/platform-web'
 import type { RawDrive, RawEmoteSets, RawVod } from '../../index'
 import type { RawTag } from '../lib/vodTags'
 
@@ -17,14 +17,14 @@ export interface Session {
    * address is outside ARCHIVE_ADMIN_PASSWORD_NETWORKS (the local network by default).
    */
   passwordLogin: boolean
-  /** Whether "Sign in with Twitch" (through vexoulz-auth) is set up on the worker. Older workers omit it. */
+  /** Whether "Sign in with Twitch" (through vex-auth) is set up on the worker. Older workers omit it. */
   twitchLogin?: boolean
   /** The signed-in Twitch user; null for a password login. */
   user?: AdminUser | null
 }
 
 /**
- * POST /admin/session {code}: the worker's answer to a vexoulz-auth code (admin/quiet.ts). An admin gets the dashboard
+ * POST /admin/session {code}: the worker's answer to a vex-auth code (admin/quiet.ts). An admin gets the dashboard
  * session (the same as GET /admin/session's, with `admin: true`); anyone else `{admin: false}` and no cookie.
  */
 export type CodeSession = (Session & { admin: true }) | { admin: false }
@@ -604,7 +604,7 @@ export class AdminClient {
   logout(): Promise<void> {
     return this.request('DELETE', '/admin/session')
   }
-  /** Trades a vexoulz-auth code (POST /v1/codes) for a dashboard session, if the account is one of the admins. */
+  /** Trades a vex-auth code (POST /v1/codes) for a dashboard session, if the account is one of the admins. */
   codeSession(code: string): Promise<CodeSession> {
     return this.request('POST', '/admin/session', { code }, undefined, 'include')
   }

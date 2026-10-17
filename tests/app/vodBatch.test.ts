@@ -1,4 +1,4 @@
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { type BatchVod, useVodBatch, vodBatchTargets } from '../../src/app/kit'
 import { admin } from '../../src/app/admin/session'

@@ -104,7 +104,7 @@ describe('recent upload problems', () => {
 
 describe('doomtp-bot tile', () => {
   const base: DoomtpStatus = {
-    configured: true, keyed: true, login: 'vexoulz', ok: true, listening: true, since: '2026-10-15T10:00:00Z', error: null, checkedAt: '2026-10-15T12:00:00Z',
+    configured: true, keyed: true, login: 'vexouluna', ok: true, listening: true, since: '2026-10-15T10:00:00Z', error: null, checkedAt: '2026-10-15T12:00:00Z',
   }
   const ago = (iso: string) => `@${iso.slice(11, 16)}`
 

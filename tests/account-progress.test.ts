@@ -7,7 +7,7 @@ function memoryStorage(): KeyValueStorage {
   return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v), removeItem: (k) => void m.delete(k) }
 }
 
-/** vexoulz-auth's /v1/progress, in memory, newest winning per VOD. */
+/** vex-auth's /v1/progress, in memory, newest winning per VOD. */
 class FakeService implements AccountLink {
   signed = true
   down = false

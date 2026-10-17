@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // /manage/settings: the worker settings the dashboard can override (GET /admin/settings), grouped as the worker groups
 // them. Each shows its env default and when a change is seen; one Save sends every change, all or none.
-import { timeAgo, VxButton, VxCallout, VxChip, VxInput, VxSkeleton, VxSwitch, useToast } from '@vexoulz/ui'
+import { timeAgo, VxButton, VxCallout, VxChip, VxInput, VxSkeleton, VxSwitch, useToast } from '@vex/ui'
 import { computed, onMounted, ref } from 'vue'
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import type { RuntimeSetting } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
 import { admin } from '../../admin/session'

@@ -2,7 +2,7 @@
 // What the YouTube uploads hide: stretches to blur, black out or mute, for what Twitch allows and YouTube doesn't
 // (in-game nudity, say). The worker applies them to every upload after they're saved; the uploads already on YouTube
 // keep what they had until the VOD is re-archived (the actions above).
-import { VxButton, VxCallout, VxCheckbox, VxInput, VxSelect, useToast, type Option } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxCheckbox, VxInput, VxSelect, useToast, type Option } from '@vex/ui'
 import { computed } from 'vue'
 import { toClock } from '../../index'
 import type { AdminVod } from './api'

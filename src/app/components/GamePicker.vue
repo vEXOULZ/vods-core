@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Game filter for the list page: a dropdown of every game in the archive (most played first, with how many VODs
 // each is in), with a filter field for long lists. Empty value = all games.
-import { learnGameColors, VxButton, VxInput, VxMenuItem, VxPopover, VxPosters } from '@vexoulz/ui'
+import { learnGameColors, VxButton, VxInput, VxMenuItem, VxPopover, VxPosters } from '@vex/ui'
 import { boxArt, type GamePlayed } from '../../index'
 import { computed, ref } from 'vue'
 

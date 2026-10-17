@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // A VOD's details: title, thumbnail (a URL, or the default), duration and when it was streamed. Only what changed is
 // sent. A VOD merged into another keeps its details as they were.
-import { VxButton, VxCallout, VxField, VxInput, useToast } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxField, VxInput, useToast } from '@vex/ui'
 import { computed, ref, watch } from 'vue'
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import type { AdminVod } from './api'
 import { detailsDraft, detailsErrors, detailsPatch, type DetailsDraft } from './edits'
 import { admin } from './session'

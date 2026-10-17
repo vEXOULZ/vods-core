@@ -1,4 +1,4 @@
-import type { NavItem } from '@vexoulz/ui'
+import type { NavItem } from '@vex/ui'
 import { site } from '../site'
 
 /** The header's links. */

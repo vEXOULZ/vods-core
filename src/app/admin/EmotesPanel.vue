@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // The emote sets saved with a VOD (what its chat replay shows): counts per set, a preview, and re-capture actions.
-import { timeAgo, VxButton, VxCallout, VxChip, VxDialog, VxSkeleton, VxTabs, useToast, type Option } from '@vexoulz/ui'
+import { timeAgo, VxButton, VxCallout, VxChip, VxDialog, VxSkeleton, VxTabs, useToast, type Option } from '@vex/ui'
 import { emoteImage, type RawThirdPartyEmote } from '../../index'
 import { computed, ref, watch } from 'vue'
 import type { AdminEmotes } from './api'
-import { errorText, stamp } from '@vexoulz/platform-web'
+import { errorText, stamp } from '@vex/platform-web'
 import { admin } from './session'
 
 const props = defineProps<{ vodId: string; /** Merged or split: the archive won't capture from Twitch for it. */ spliced?: boolean }>()

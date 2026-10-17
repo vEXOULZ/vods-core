@@ -1,7 +1,7 @@
 // The admin session: one client and one reactive session for the whole app. The router guard calls `ensure()` for
 // the Manage pages, and createVodsApp() for anyone signed in to the account; any 401 from the API drops the session.
 import { reactive, readonly } from 'vue'
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import { AdminClient, type AdminUser, type Session } from './api'
 
 /** The worker's admin API, as the browser reaches it. configureAdmin() sets it before the app mounts. */
@@ -31,7 +31,7 @@ function apply(s: Session) {
 }
 
 /**
- * Where "Sign in with Twitch" starts: the worker sends the browser through vexoulz-auth (signing in to the site's
+ * Where "Sign in with Twitch" starts: the worker sends the browser through vex-auth (signing in to the site's
  * account on the way, if it wasn't) and back to `next`.
  */
 export function twitchLoginUrl(next: string): string {
@@ -46,7 +46,7 @@ export const SIGNIN_ERRORS: Record<string, string> = {
   not_allowed: "That Twitch account isn't one of the archive's admins (ARCHIVE_ADMIN_TWITCH_IDS).",
   unavailable: "The sign-in service couldn't be reached. Try again in a moment.",
   misconfigured:
-    "The sign-in service turned down the archive itself: its client ID or secret (ARCHIVE_ADMIN_AUTH_CLIENT_*) doesn't match vexoulz-auth's. The password still works from the local network.",
+    "The sign-in service turned down the archive itself: its client ID or secret (ARCHIVE_ADMIN_AUTH_CLIENT_*) doesn't match vex-auth's. The password still works from the local network.",
 }
 
 let onExpired: (() => void) | null = null
@@ -92,7 +92,7 @@ export async function login(password: string): Promise<void> {
 }
 
 /**
- * Hands the worker a vexoulz-auth code (admin/quiet.ts): true when the account is one of the archive's admins and the
+ * Hands the worker a vex-auth code (admin/quiet.ts): true when the account is one of the archive's admins and the
  * dashboard session now exists, false when it isn't. Anything else throws (a ProblemError).
  */
 export async function signInWithCode(code: string): Promise<boolean> {

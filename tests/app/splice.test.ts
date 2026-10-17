@@ -1,4 +1,4 @@
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope, nextTick, shallowReactive } from 'vue'
 import { Timeline } from '../../src/timeline'

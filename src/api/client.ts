@@ -1,4 +1,4 @@
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import type { GamePlayed, Vod, VodPage } from '../types'
 import { normalizeGamePlayed, normalizeVod } from './normalize'
 import { toQueryString, vodListQuery, type QueryObject, type VodListOptions } from './query'

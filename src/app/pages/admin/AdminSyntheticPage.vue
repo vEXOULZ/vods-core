@@ -2,11 +2,11 @@
 // /manage/synthetic/new and /manage/synthetic/:id: a VOD made of windows of real ones (GET/POST/PUT/DELETE
 // /api/v2/synthetic). A merge or split supersedes its sources (they leave the public lists and redirect into it); a
 // playthrough, built from a game's windows, is listed beside them and tagged `compilation`.
-import { VxButton, VxCallout, VxCheckbox, VxChip, VxDialog, VxField, VxInput, VxSkeleton, timeAgo, useToast } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxCheckbox, VxChip, VxDialog, VxField, VxInput, VxSkeleton, timeAgo, useToast } from '@vex/ui'
 import { toClock } from '../../../index'
 import { computed, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import type { PlaythroughWindow, SyntheticInput, SyntheticVod } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
 import PlaythroughBuilder from '../../admin/PlaythroughBuilder.vue'

@@ -4,10 +4,10 @@
 import {
   timeAgo, VxButton, VxCallout, VxCheckbox, VxChip, VxDialog, VxProgress, VxSegmented, VxSkeleton, VxTable, useToast,
   type Option, type TableColumn,
-} from '@vexoulz/ui'
+} from '@vex/ui'
 import { computed, onMounted, ref } from 'vue'
 import type { StorageFolder, StorageView } from '../../admin/api'
-import { bytes, errorText } from '@vexoulz/platform-web'
+import { bytes, errorText } from '@vex/platform-web'
 import ManageShell from '../../admin/ManageShell.vue'
 import { admin } from '../../admin/session'
 import { site } from '../../site'

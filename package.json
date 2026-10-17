@@ -1,10 +1,10 @@
 {
-  "name": "@vexoulz/vods-core",
+  "name": "@vex/vods-core",
   "version": "0.33.0",
   "private": true,
   "type": "module",
   "description": "The vods sites' engine and app: archive API client, part/restricted time math, YouTube player control, chat replay, watch progress, and (in ./app) the pages, Manage dashboard and router every vods site shares",
-  "repository": "github:vEXOULZ/vods-core",
+  "repository": "github:vexouLuna/vods-core",
   "sideEffects": [
     "**/*.css"
   ],
@@ -48,13 +48,13 @@
     "release": "changeset version"
   },
   "peerDependencies": {
-    "@vexoulz/ui": "*",
+    "@vex/ui": "*",
     "vite": "^7.0.0",
     "vue": "^3.5.43",
     "vue-router": "^4.6.4"
   },
   "peerDependenciesMeta": {
-    "@vexoulz/ui": {
+    "@vex/ui": {
       "optional": true
     },
     "vite": {
@@ -70,7 +70,7 @@
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
     "@types/node": "^22.20.5",
-    "@vexoulz/ui": "github:vEXOULZ/vexoulz-ui#v0.24.1",
+    "@vex/ui": "github:vexouLuna/vex-ui#v0.25.0",
     "@vitejs/plugin-vue": "^6.0.0",
     "happy-dom": "^20.14.5",
     "typescript": "~5.9.3",
@@ -81,7 +81,7 @@
     "vue-tsc": "^3.3.11"
   },
   "dependencies": {
-    "@vexoulz/platform-web": "github:vEXOULZ/vex-platform-web#v0.8.0"
+    "@vex/platform-web": "github:vexouLuna/vex-platform-web#v0.9.0"
   },
   "engines": {
     "node": ">=22"

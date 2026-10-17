@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // A VOD's Google Drive files (the watch page's download button). Paste a Drive link or the file id.
-import { VxInput, VxButton, VxCallout, VxSelect, useToast, type Option } from '@vexoulz/ui'
+import { VxInput, VxButton, VxCallout, VxSelect, useToast, type Option } from '@vex/ui'
 import type { AdminVod } from './api'
 import { driveDrafts, driveEdits, driveErrors, driveId, newDrive, type DriveDraft } from './edits'
 import { admin } from './session'

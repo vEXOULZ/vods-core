@@ -1,5 +1,5 @@
 // Real images: YouTube thumbnails for VODs and Twitch box art for games. Both CDNs allow CORS, which lets
-// vexoulz-ui read the box art's colour (learnGameColors).
+// vex-ui read the box art's colour (learnGameColors).
 import { boxArt, type Chapter } from '../../index'
 
 export interface GameArt {

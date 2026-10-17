@@ -39,7 +39,7 @@ describe('createVodsApp', () => {
 
   it("puts the site's name back in the tab when a page without a title of its own opens", async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-    const { router } = createVodsApp({ config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' } })
+    const { router } = createVodsApp({ config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexouluna' } })
     await router.push('/vods/1')
     document.title = 'A VOD · vods.vexoul.net'
     await router.push('/vods/1?t=30s')
@@ -50,7 +50,7 @@ describe('createVodsApp', () => {
 
   it('falls back to the built-in tags and /backend-admin', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-    createVodsApp({ config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' } })
+    createVodsApp({ config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexouluna' } })
     expect(site.tags).toBe(DEFAULT_TAGS)
     expect(admin.base).toBe('/backend-admin')
   })
@@ -58,7 +58,7 @@ describe('createVodsApp', () => {
   it("takes the site's art for the stand-ins, and goes back to the placeholders without it", () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     const NoThumb = defineComponent(() => () => h('div'))
-    const opts = { config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' } }
+    const opts = { config, site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexouluna' } }
     createVodsApp({ ...opts, art: { noThumbnail: NoThumb } })
     expect(art.noThumbnail).toBe(NoThumb)
     expect(art.twitchGlyph).toBeUndefined()

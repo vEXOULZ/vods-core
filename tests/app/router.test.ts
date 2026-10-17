@@ -94,13 +94,13 @@ describe('the Manage guard', () => {
   })
 })
 
-/** vexoulz-auth and a worker with Twitch sign-in: the account is an admin (`admin`), a viewer, or the worker can't tell. */
+/** vex-auth and a worker with Twitch sign-in: the account is an admin (`admin`), a viewer, or the worker can't tell. */
 function quiet(answer: 'admin' | 'viewer' | 503) {
   let signedIn = false
   return vi.fn(async (url: string | URL | Request, init: RequestInit = {}) => {
     const u = String(url)
     const method = init.method ?? 'GET'
-    if (u.endsWith('/v1/me')) return Response.json({ id: '42', login: 'vexoulz', csrf: 'auth-csrf' })
+    if (u.endsWith('/v1/me')) return Response.json({ id: '42', login: 'vexouluna', csrf: 'auth-csrf' })
     if (u.endsWith('/v1/codes')) return Response.json({ code: 'c0de' })
     if (u.endsWith('/admin/session') && method === 'POST') {
       if (answer === 503) return Response.json({ status: 503, code: 'unavailable' }, { status: 503 })

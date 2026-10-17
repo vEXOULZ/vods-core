@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // Jobs and fixes for one VOD, through the worker's existing routes. Each starts a job (shown in the VOD's job list);
 // delete removes the VOD from the archive after typing its id.
-import { VxButton, VxCheckbox, VxDialog, VxField, VxInput, VxSelect, useToast, type Option } from '@vexoulz/ui'
+import { VxButton, VxCheckbox, VxDialog, VxField, VxInput, VxSelect, useToast, type Option } from '@vex/ui'
 import { computed, ref } from 'vue'
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import { isSpliced, type ActionResult, type AdminVod } from './api'
 import { admin } from './session'
 

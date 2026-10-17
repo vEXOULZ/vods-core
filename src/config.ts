@@ -1,6 +1,6 @@
 /** Everything a vods site needs to know about its channel. Replaces the old REACT_APP_* variables. */
 export interface VodsConfig {
-  /** Display name of the channel, e.g. "vEXOULZ". */
+  /** Display name of the channel, e.g. "vexouLuna". */
   channel: string
   /** Twitch user id: third-party emote sets (BTTV, FFZ, 7TV) are looked up by it. */
   twitchId: string

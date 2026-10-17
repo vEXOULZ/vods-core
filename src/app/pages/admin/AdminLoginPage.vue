@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // /manage/login: where a Manage page sends someone without a dashboard session when the Twitch sign-in is off or
 // failed, or after a session ended; and the admin password, for the archive's local network.
-import { VxButton, VxCallout, VxField, VxInput } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxField, VxInput } from '@vex/ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import TwitchMark from '../../components/TwitchMark.vue'
 import VodsShell from '../../components/VodsShell.vue'
 import { ensure, login, session, SIGNIN_ERRORS, twitchLoginUrl } from '../../admin/session'

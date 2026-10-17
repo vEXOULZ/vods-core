@@ -1,6 +1,6 @@
 // What the overview says about uploads and storage: the YouTube quota spent today, the VODs nothing is archiving,
 // the worker's disk and whether the uploads are still on YouTube. The words and the warning thresholds, without the look, so keeki's overview reads the same.
-import { bytes } from '@vexoulz/platform-web'
+import { bytes } from '@vex/platform-web'
 import type { DoomtpStatus, StorageView, YoutubeCheck, YoutubeIssue, YoutubeQuota, YoutubeVideos, YoutubeVodReport } from './api'
 import { admin } from './session'
 

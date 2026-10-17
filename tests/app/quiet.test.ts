@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const AUTH = 'https://auth.test'
 
-/** A problem-details answer, as vexoulz-auth and the worker send them. */
+/** A problem-details answer, as vex-auth and the worker send them. */
 const problem = (status: number, code: string) =>
   new Response(JSON.stringify({ type: 'about:blank', title: code, status, code, detail: code }), {
     status,
@@ -17,15 +17,15 @@ const ADMIN_SESSION = {
   expiresAt: '2026-10-12T20:00:00Z',
   passwordLogin: false,
   twitchLogin: true,
-  user: { id: '42', login: 'vexoulz', displayName: 'vexoulz', avatar: null, color: null },
+  user: { id: '42', login: 'vexouluna', displayName: 'vexouLuna', avatar: null, color: null },
 }
 
-/** vexoulz-auth and the worker, each route answering as given (a function for a thrown network error). */
+/** vex-auth and the worker, each route answering as given (a function for a thrown network error). */
 function server(answers: { me?: () => Response; codes?: () => Response; session?: () => Response } = {}) {
   return vi.fn(async (url: string | URL | Request, init: RequestInit = {}) => {
     const u = String(url)
     const method = init.method ?? 'GET'
-    if (u === `${AUTH}/v1/me` && method === 'GET') return (answers.me ?? (() => Response.json({ id: '42', login: 'vexoulz', csrf: 'auth-csrf' })))()
+    if (u === `${AUTH}/v1/me` && method === 'GET') return (answers.me ?? (() => Response.json({ id: '42', login: 'vexouluna', csrf: 'auth-csrf' })))()
     if (u === `${AUTH}/v1/codes` && method === 'POST') return (answers.codes ?? (() => Response.json({ code: 'c0de' })))()
     if (u.endsWith('/admin/session') && method === 'POST') return (answers.session ?? (() => Response.json(ADMIN_SESSION)))()
     if (u.endsWith('/admin/session')) return Response.json({ authenticated: false, csrf: null, expiresAt: null, passwordLogin: true, twitchLogin: true })
@@ -33,7 +33,7 @@ function server(answers: { me?: () => Response; codes?: () => Response; session?
   })
 }
 
-/** The account's credentialed requests, as @vexoulz/ui/account makes them. */
+/** The account's credentialed requests, as @vex/ui/account makes them. */
 const account = { request: (path: string, init: RequestInit = {}) => fetch(`${AUTH}${path}`, { ...init, credentials: 'include' }) }
 
 async function load() {
@@ -52,7 +52,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('the quiet admin check', () => {
-  it("mints a code at vexoulz-auth, hands it to the worker, and takes the worker's session", async () => {
+  it("mints a code at vex-auth, hands it to the worker, and takes the worker's session", async () => {
     const f = server()
     vi.stubGlobal('fetch', f)
     const { quietAdminCheck, session, admin } = await load()
@@ -63,7 +63,7 @@ describe('the quiet admin check', () => {
 
     const [, codes] = calls(f, '/v1/codes')[0]!
     expect(codes!.credentials).toBe('include')
-    expect(new Headers(codes!.headers).get('X-Vexoulz-CSRF')).toBe('auth-csrf')
+    expect(new Headers(codes!.headers).get('X-Vex-CSRF')).toBe('auth-csrf')
     expect(JSON.parse(String(codes!.body))).toEqual({ client_id: 'vods-admin' })
 
     const [, handoff] = calls(f, '/admin/session')[0]!
@@ -100,7 +100,7 @@ describe('the quiet admin check', () => {
     expect(calls(f, '/v1/codes')).toHaveLength(0)
   })
 
-  it("is a viewer when vexoulz-auth answers the code with 401 signed_out", async () => {
+  it("is a viewer when vex-auth answers the code with 401 signed_out", async () => {
     const f = server({ codes: () => problem(401, 'signed_out') })
     vi.stubGlobal('fetch', f)
     const { quietAdminCheck } = await load()

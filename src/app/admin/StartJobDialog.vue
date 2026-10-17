@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // Start any job kind the worker knows (GET /api/v2/job-kinds): pick the kind, the VOD, where to start and where to
 // pause. Queued with POST /api/v2/jobs, the VOD as its `vod:<id>` subject.
-import { VxButton, VxCallout, VxCheckbox, VxDialog, VxField, VxInput, VxSelect, type Option } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxCheckbox, VxDialog, VxField, VxInput, VxSelect, type Option } from '@vex/ui'
 import { computed, ref, watch } from 'vue'
-import { ProblemError, errorText, type JobKindOut } from '@vexoulz/platform-web'
+import { ProblemError, errorText, type JobKindOut } from '@vex/platform-web'
 import { platform, vodSubject } from './platform'
 
 const props = defineProps<{ kinds: JobKindOut[]; vodId?: string }>()

@@ -1,6 +1,6 @@
 // The app's logic without its look: everything the vods pages and Manage do that isn't a component or a style, for a
 // site that draws its own pages (keekivods.vexoul.net) instead of using createVodsApp(). Nothing here imports
-// @vexoulz/ui. Pair it with the `vue` entry (createVods, useVods, useWatch, useChat, useProgress).
+// @vex/ui. Pair it with the `vue` entry (createVods, useVods, useWatch, useChat, useProgress).
 import type { VodsConfig } from '../config'
 import { configureAdmin } from './admin/session'
 import { configurePlatform } from './admin/platform'

@@ -2,8 +2,8 @@
 // "Find on Twitch": every VOD Twitch still keeps for the channel (7 to 60 days back), with what the archive has of
 // each. The ones it doesn't have are ticked; adding them queues an archive job for each, paused before its first step,
 // so nothing downloads until it's resumed on /manage/jobs.
-import { VxButton, VxCallout, VxCheckbox, VxChip, VxDialog, VxSkeleton, useToast } from '@vexoulz/ui'
-import { errorText } from '@vexoulz/platform-web'
+import { VxButton, VxCallout, VxCheckbox, VxChip, VxDialog, VxSkeleton, useToast } from '@vex/ui'
+import { errorText } from '@vex/platform-web'
 import { computed, ref, watch } from 'vue'
 import type { TwitchVideo } from './api'
 import { admin } from './session'

@@ -1,7 +1,7 @@
 // Batch actions on ticked VODs (/manage/vods): queue them to archive, refetch chapters, chat or emotes, hide or show
 // them, add or take off a tag. The worker takes one VOD per request (archiving takes the lot in one), so each VOD the
 // action applies to gets its own, a few at a time; the page then shows `message` its own way.
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import { ref } from 'vue'
 import type { VodListRow } from './api'
 import { admin } from './session'

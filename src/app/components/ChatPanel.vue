@@ -3,9 +3,9 @@
 // back down. Settings (which recording, delay, timestamps, badges, names, name colours, emote sources, size) are
 // the viewer's own. The live recording (doomtp-bot's) also has notices (subs, raids, redemptions), rewards, bits and
 // removed messages; the VOD recording (Twitch's replay) has none of those. A chatter's name opens their user card.
-import { VxButton, VxChip, VxPopover, VxSegmented, VxSlider, VxStepper, VxSwitch } from '@vexoulz/ui'
+import { VxButton, VxChip, VxPopover, VxSegmented, VxSlider, VxStepper, VxSwitch } from '@vex/ui'
 import { toClock, type ChatLine as Line, type ChatMessage, type ChatSource, type ChatSources, type EmoteToken } from '../../index'
-import { ChatLine, UserCard } from '@vexoulz/platform-web/vue'
+import { ChatLine, UserCard } from '@vex/platform-web/vue'
 import { computed, nextTick, ref, shallowRef, watch } from 'vue'
 import EmoteMenu from './EmoteMenu.vue'
 import { DELAY_LIMIT, WIDTH_DEFAULT, WIDTH_MAX, WIDTH_MIN, type ChatSettings } from '../composables/useChatSettings'

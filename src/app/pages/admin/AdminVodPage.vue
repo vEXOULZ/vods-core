@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // /manage/vods/:id: fix one VOD by hand (visibility, details, chapters, games, YouTube and Drive lists, emotes) and
 // run its jobs.
-import { timeAgo, VxButton, VxCallout, VxChip, VxDialog, VxSkeleton, VxSwitch, useToast } from '@vexoulz/ui'
+import { timeAgo, VxButton, VxCallout, VxChip, VxDialog, VxSkeleton, VxSwitch, useToast } from '@vex/ui'
 import { toClock } from '../../../index'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -15,8 +15,8 @@ import { vodSeconds } from '../../admin/edits'
 import EmotesPanel from '../../admin/EmotesPanel.vue'
 import GamesEditor from '../../admin/GamesEditor.vue'
 import SplicePanel from '../../admin/SplicePanel.vue'
-import { errorText, stamp } from '@vexoulz/platform-web'
-import { JobsTable, usePoll } from '@vexoulz/platform-web/vue'
+import { errorText, stamp } from '@vex/platform-web'
+import { JobsTable, usePoll } from '@vex/platform-web/vue'
 import { admin } from '../../admin/session'
 import { platform, vodSubject } from '../../admin/platform'
 import VodActions from '../../admin/VodActions.vue'

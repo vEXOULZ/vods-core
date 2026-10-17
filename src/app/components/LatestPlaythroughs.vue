@@ -2,7 +2,7 @@
 // The newest playthroughs on the home page: each card with what it is beside it (the game, how many streams it took
 // and when they were, its length, whether it's complete, how far you are), and a button to all of them. Hidden while
 // there are none or they couldn't load.
-import { gamePalette, VxChip, VxLink, VxPosters, VxSkeleton } from '@vexoulz/ui'
+import { gamePalette, VxChip, VxLink, VxPosters, VxSkeleton } from '@vex/ui'
 import { boxArt, isFinished, toClock, watchPath, type Progress, type Vod } from '../../index'
 import { computed } from 'vue'
 import SeeAllButton from './SeeAllButton.vue'

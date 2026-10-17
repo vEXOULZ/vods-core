@@ -1,13 +1,13 @@
-// Watch progress kept with the viewer's account (vexoulz-auth's /v1/progress), so it follows them between
+// Watch progress kept with the viewer's account (vex-auth's /v1/progress), so it follows them between
 // browsers. Signed out, or when the service can't be reached, it falls back to the browser's LocalProgressStore;
 // merge() moves those local entries to the account (newest wins per VOD) once someone signs in.
 import { LocalProgressStore, type Progress, type ProgressStore } from './progress'
 
-/** The signed-in account, as `@vexoulz/ui/account`'s Account provides it. */
+/** The signed-in account, as `@vex/ui/account`'s Account provides it. */
 export interface AccountLink {
   /** Whether someone is signed in right now. */
   signedIn(): boolean
-  /** A credentialed request to vexoulz-auth, with its CSRF header on writes. */
+  /** A credentialed request to vex-auth, with its CSRF header on writes. */
   request(path: string, init?: RequestInit): Promise<Response>
 }
 
