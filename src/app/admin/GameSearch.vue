@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // Pick a chapter's game from Twitch's categories (GET /admin/twitch/games). Shows the current game with its box art;
 // typing searches, arrows + Enter pick, "No category" clears it.
-import { VxButton, VxInput, VxSpinner } from '@vexoulz/ui'
+import { VxButton, VxInput, VxSpinner } from '@vex/ui'
 import { boxArt, NO_CATEGORY } from '../../index'
 import { computed, nextTick, ref, useId, watch } from 'vue'
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import type { TwitchGame } from './api'
 import type { GameValue } from './edits'
 import { admin } from './session'

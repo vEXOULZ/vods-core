@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Tag filter for the list page: the tags the open tab can be narrowed to (lib/listQuery, tagFilters), each drawn as
 // on the thumbnails at 2/3 size. Empty value = any tag.
-import { VxButton, VxMenuItem, VxPopover } from '@vexoulz/ui'
+import { VxButton, VxMenuItem, VxPopover } from '@vex/ui'
 import { computed } from 'vue'
 import TagMark from './TagMark.vue'
 import { tagFilters, type Tab } from '../lib/listQuery'

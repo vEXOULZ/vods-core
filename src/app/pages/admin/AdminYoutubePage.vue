@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // /manage/youtube: every problem the last YouTube check found (GET /admin/youtube/videos), the last two weeks' first and
 // then the older ones, which the overview leaves out. Some of those will never be fixed (a removed upload of an old VOD).
-import { timeAgo, VxButton, VxCallout, VxSkeleton, useToast } from '@vexoulz/ui'
+import { timeAgo, VxButton, VxCallout, VxSkeleton, useToast } from '@vex/ui'
 import { computed, onMounted, ref } from 'vue'
-import { usePoll } from '@vexoulz/platform-web/vue'
-import { errorText } from '@vexoulz/platform-web'
+import { usePoll } from '@vex/platform-web/vue'
+import { errorText } from '@vex/platform-web'
 import { RECENT_PROBLEM_DAYS, splitProblems, youtubeCheckMessage } from '../../admin/health'
 import ManageShell from '../../admin/ManageShell.vue'
 import YoutubeProblems from '../../admin/YoutubeProblems.vue'

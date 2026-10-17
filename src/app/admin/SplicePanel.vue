@@ -3,9 +3,9 @@
 // is appended to this one, the time between becoming a "Technical difficulties" gap chapter. Split: from a point
 // between two parts on becomes a new VOD. Both move chat with the video and can be undone (latest first). The logic
 // is useSplice's (kit); this draws it.
-import { VxButton, VxCallout, VxChip, VxDialog, VxField, VxInput, VxSkeleton, useToast } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxChip, VxDialog, VxField, VxInput, VxSkeleton, useToast } from '@vex/ui'
 import { toClock, toSeconds } from '../../index'
-import { stamp } from '@vexoulz/platform-web'
+import { stamp } from '@vex/platform-web'
 import type { AdminVod } from './api'
 import { useSplice } from '../composables/useSplice'
 

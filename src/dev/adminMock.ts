@@ -1,6 +1,6 @@
 // Dev-only stand-in for the worker admin API (docs/admin-api.md), so `npm run dev` can show /manage without a real
 // archive. Fake data, in memory; jobs advance on their own. Password: "admin"; "Sign in with Twitch" signs in a fake
-// Twitch admin at once. It also serves a fake vexoulz-auth (at `/auth-mock`, for a site whose VITE_AUTH_BASE points
+// Twitch admin at once. It also serves a fake vex-auth (at `/auth-mock`, for a site whose VITE_AUTH_BASE points
 // there), so the quiet admin check runs without the real one. The `dev` entry: only a site's vite config imports it,
 // never its build.
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -147,7 +147,7 @@ const counts = () => Object.fromEntries(STATES.map((s) => [s, jobs.filter((j) =>
 // ---- sessions ----
 type User = { id: string; login: string; displayName: string; avatar: null; color: string }
 const sessions = new Map<string, { csrf: string; expires: number; user: User | null }>()
-const TWITCH_ADMIN: User = { id: '42', login: 'vexoulz', displayName: 'vexoulz', avatar: null, color: '#9146FF' }
+const TWITCH_ADMIN: User = { id: '42', login: 'vexouluna', displayName: 'vexouLuna', avatar: null, color: '#9146FF' }
 const COOKIE = 'archive_admin'
 const failures: number[] = []
 
@@ -157,7 +157,7 @@ function sessionOf(req: IncomingMessage) {
   return s && s.expires > Date.now() ? { token: m![1]!, ...s } : null
 }
 
-// ---- a fake vexoulz-auth: its session, /v1/me and /v1/codes, and the codes the worker takes back ----
+// ---- a fake vex-auth: its session, /v1/me and /v1/codes, and the codes the worker takes back ----
 // /login signs in the fake admin (id 42), or a plain viewer with ?as=viewer or MOCK_ACCOUNT=viewer.
 const VIEWER: User = { id: '7', login: 'viewer', displayName: 'viewer', avatar: null, color: '#1E90FF' }
 const AUTH_COOKIE = 'mock_auth'
@@ -249,7 +249,7 @@ async function publicJson(api: string, path: string): Promise<unknown> {
   return res.json()
 }
 
-/** The list's `firstLiveAt` / `lastLiveAt` filters (vEXOULZ/twitch-archive#57) until the public API has them: the
+/** The list's `firstLiveAt` / `lastLiveAt` filters (vexouLuna/twitch-archive#57) until the public API has them: the
  * rest of the query from the public API, unpaged, then filtered and paged here. A regular VOD's are its createdAt. */
 async function liveFiltered(api: string, rawUrl: string, res: ServerResponse) {
   const url = new URL(rawUrl, 'http://x')
@@ -760,7 +760,7 @@ function storageJson() {
 }
 
 /**
- * The fake vexoulz-auth. `MOCK_AUTH_CODES=<status>` makes POST /v1/codes answer that status instead (429, 409...), and
+ * The fake vex-auth. `MOCK_AUTH_CODES=<status>` makes POST /v1/codes answer that status instead (429, 409...), and
  * `MOCK_ADMIN_CODE=<status>` does the same for the worker's POST /admin/session {code} (503, 502...).
  */
 async function fakeAuth(req: IncomingMessage, res: ServerResponse, url: URL) {
@@ -787,7 +787,7 @@ async function fakeAuth(req: IncomingMessage, res: ServerResponse, url: URL) {
   }
   if (path === '/v1/codes' && method === 'POST') {
     if (!s) return problem(res, 401, 'signed_out', 'Not signed in')
-    if (req.headers['x-vexoulz-csrf'] !== s.csrf) return problem(res, 403, 'csrf', 'Missing or wrong X-Vexoulz-CSRF')
+    if (req.headers['x-vex-csrf'] !== s.csrf) return problem(res, 403, 'csrf', 'Missing or wrong X-Vex-CSRF')
     const forced = Number(process.env.MOCK_AUTH_CODES)
     if (forced) return problem(res, forced, 'mock', `MOCK_AUTH_CODES=${forced}`)
     const { client_id } = await body(req)
@@ -842,7 +842,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           if (method === 'GET') return send(res, 200, sessionJson(s))
           if (method === 'POST') {
             const sent = await body(req)
-            // A vexoulz-auth code (the quiet admin check): the fake admin gets a session, anyone else {admin: false}.
+            // A vex-auth code (the quiet admin check): the fake admin gets a session, anyone else {admin: false}.
             if (typeof sent.code === 'string') {
               const forced = Number(process.env.MOCK_ADMIN_CODE)
               if (forced) return problem(res, forced, forced === 503 ? 'unavailable' : 'misconfigured', `MOCK_ADMIN_CODE=${forced}`)
@@ -870,7 +870,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
           }
         }
 
-        // The worker goes through vexoulz-auth here; the mock signs the fake Twitch admin in straight away.
+        // The worker goes through vex-auth here; the mock signs the fake Twitch admin in straight away.
         if (path === '/admin/signin' && method === 'GET') {
           let next = url.searchParams.get('next') ?? ''
           if (!next.startsWith('/') || next.startsWith('//')) next = '/manage'
@@ -906,7 +906,7 @@ export function adminMock(base = '/backend-admin', publicApi = 'https://vods.vex
             youtube: { authorized: true, valid: true, error: null, checkedAt: iso(4 * 60_000), channel: { id: 'UCmock', title: 'vexoul VODs', url: 'https://www.youtube.com/@vexoul' }, connectedAt: iso(3 * 86_400_000), refreshTokenExpiresAt: null, quota: quotaJson() },
             live: { live: false, streamId: null, startedAt: null },
             twitchViewer: viewerStatus(),
-            doomtp: { configured: true, keyed: true, login: 'vexoulz', ok: true, listening: true, since: iso(26 * 3_600_000), error: null, checkedAt: iso(30_000) },
+            doomtp: { configured: true, keyed: true, login: 'vexouluna', ok: true, listening: true, since: iso(26 * 3_600_000), error: null, checkedAt: iso(30_000) },
             jobs: { counts: counts() },
           })
         if (path === '/admin/youtube/auth') return send(res, 200, { url: 'https://accounts.google.com/' })

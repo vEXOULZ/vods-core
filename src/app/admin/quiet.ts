@@ -1,17 +1,17 @@
-// The quiet admin check: whether someone signed in to the site's account (vexoulz-auth) is one of the archive's
-// admins, asked with two requests and no trip away from the page. vexoulz-auth mints a one-time code for the archive
+// The quiet admin check: whether someone signed in to the site's account (vex-auth) is one of the archive's
+// admins, asked with two requests and no trip away from the page. vex-auth mints a one-time code for the archive
 // (POST /v1/codes), and the worker trades it for a dashboard session when the account is an admin (POST
 // /admin/session {code}). Nothing is kept in the browser: installVodsSession asks once per account per page load.
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import { signInWithCode } from './session'
 
-/** The archive's client id at vexoulz-auth: the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID, `vods-admin` by default. */
+/** The archive's client id at vex-auth: the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID, `vods-admin` by default. */
 export const ADMIN_CLIENT_ID = 'vods-admin'
 
 /** `admin`: the dashboard session exists now. `viewer`: signed out, or not an admin. `unknown`: couldn't tell. */
 export type AdminCheck = 'admin' | 'viewer' | 'unknown'
 
-/** The account's credentialed requests to vexoulz-auth (`VodsAccount.request`). */
+/** The account's credentialed requests to vex-auth (`VodsAccount.request`). */
 export interface AuthRequests {
   request(path: string, init?: RequestInit): Promise<Response>
 }
@@ -30,7 +30,7 @@ export async function quietAdminCheck(account: AuthRequests, clientId: string = 
     if (!csrf) return 'unknown'
     const res = await account.request('/v1/codes', {
       method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Vexoulz-CSRF': csrf },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Vex-CSRF': csrf },
       body: JSON.stringify({ client_id: clientId }),
     })
     if (!res.ok) throw await ProblemError.from(res)

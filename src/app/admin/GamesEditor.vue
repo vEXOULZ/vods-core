@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // Hand-edit a VOD's games rows: which game was played when, as the games pages list them (not the chapters). Laid out
 // like ChaptersEditor; "Copy from chapters" starts the rows from the chapters when a VOD has none.
-import { gamePalette, VxButton, VxCallout, VxSkeleton, useToast, clamp } from '@vexoulz/ui'
+import { gamePalette, VxButton, VxCallout, VxSkeleton, useToast, clamp } from '@vex/ui'
 import { toClock } from '../../index'
 import { computed, ref, watch } from 'vue'
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import type { AdminVod, GameRow } from './api'
 import { gameDrafts, gameEdits, gameErrors, gamesFromChapters, newGame, type GameDraft, type GameValue } from './edits'
 import GameSearch from './GameSearch.vue'

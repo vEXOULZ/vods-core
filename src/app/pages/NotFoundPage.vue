@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VxButton, VxEmptyState } from '@vexoulz/ui'
+import { VxButton, VxEmptyState } from '@vex/ui'
 import VodsShell from '../components/VodsShell.vue'
 </script>
 

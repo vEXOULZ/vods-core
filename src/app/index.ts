@@ -1,16 +1,16 @@
 // The vods site itself: its pages, the Manage dashboard, the router and the wiring between them. A site is this plus
 // its own config and branding: its main.ts calls createVodsApp() and mounts what it returns.
-import { VxBuild, useToast } from '@vexoulz/ui'
-import { createAccount } from '@vexoulz/ui/account'
-import { twitchUserLookup } from '@vexoulz/platform-web/chat'
-import { createPlatformUi } from '@vexoulz/platform-web/vue'
+import { VxBuild, useToast } from '@vex/ui'
+import { createAccount } from '@vex/ui/account'
+import { twitchUserLookup } from '@vex/platform-web/chat'
+import { createPlatformUi } from '@vex/platform-web/vue'
 import { createApp, type App as VueApp } from 'vue'
 import { createRouter, createWebHistory, RouterLink, type Router } from 'vue-router'
 
 import type { VodsConfig } from '../config'
 import { createVods } from '../vue'
 
-import '@vexoulz/ui/platform.css'
+import '@vex/ui/platform.css'
 import './styles/tags.css'
 
 import App from './App.vue'
@@ -30,12 +30,12 @@ export interface VodsAppOptions {
   /** The worker's admin API, for the Manage pages. Default `/backend-admin` on the same origin. */
   adminBase?: string
   /**
-   * vexoulz-auth's URL, the shared *.vexoul.net sign-in. Empty turns sign-in off (the menu's "Sign in" is greyed
-   * out); a site that isn't registered with vexoulz-auth leaves it empty.
+   * vex-auth's URL, the shared *.vexoul.net sign-in. Empty turns sign-in off (the menu's "Sign in" is greyed
+   * out); a site that isn't registered with vex-auth leaves it empty.
    */
   authBase?: string
   /**
-   * The archive's client id at vexoulz-auth, for the quiet admin check: the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID.
+   * The archive's client id at vex-auth, for the quiet admin check: the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID.
    * Default `vods-admin`.
    */
   adminClientId?: string
@@ -43,7 +43,7 @@ export interface VodsAppOptions {
   commit?: string
   /**
    * The site's own art for the app's stand-ins (a VOD with no thumbnail, the Twitch mark). Unset, plain placeholders:
-   * e.g. `{ noThumbnail: VxNoThumbnail, twitchGlyph: VxTwitchGlyph }` from vexoulz-ui.
+   * e.g. `{ noThumbnail: VxNoThumbnail, twitchGlyph: VxTwitchGlyph }` from vex-ui.
    */
   art?: VodsArt
   /**

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // A color on /manage/tags: typed (any color the site takes), picked, or one of the theme's swatches.
-import { VxInput } from '@vexoulz/ui'
+import { VxInput } from '@vex/ui'
 
 defineProps<{ id?: string; swatches: string[]; invalid?: boolean; placeholder?: string; pickLabel: string }>()
 const model = defineModel<string>({ required: true })

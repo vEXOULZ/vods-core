@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // Builds a playthrough: pick a game, then the windows of real VODs that played it
 // (GET /api/v2/playthrough-candidates, oldest first), and add them as segments, in that order.
-import { VxButton, VxCallout, VxCheckbox, VxSkeleton } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxCheckbox, VxSkeleton } from '@vex/ui'
 import { toClock } from '../../index'
 import { computed, ref, watch } from 'vue'
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import type { PlaythroughWindow } from './api'
 import type { GameValue } from './edits'
 import GameSearch from './GameSearch.vue'

@@ -3,7 +3,7 @@
 // included), /playthroughs the playthroughs (one game across streams, as one video). One filter bar (All resets, title
 // search, game dropdown with every game in the archive, tag, date range; all combinable and kept in the URL), a grid
 // of cards, and "load more". On phones the bar wraps. A tag on a card links here narrowed to it (ThumbTags).
-import { VxButton, VxCallout, VxDateRange, VxEmptyState, VxInput, VxPopover, VxSkeleton } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxDateRange, VxEmptyState, VxInput, VxPopover, VxSkeleton } from '@vex/ui'
 import { resumeProgress, type GamePlayed, type Progress, type Vod } from '../../index'
 import { useVods, useVodsContext } from '../../vue/index'
 import { computed, nextTick, ref, shallowRef, watch } from 'vue'

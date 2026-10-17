@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import { ArchiveClient } from '../src/api/client'
 
 const client = (status: number, body: unknown) =>

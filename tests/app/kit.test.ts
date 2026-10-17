@@ -38,9 +38,9 @@ describe('kit entry', () => {
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith('/api/v1/site/tags', expect.anything()))
   })
 
-  it('never reaches vexoulz-ui, components or styles', () => {
+  it('never reaches vex-ui, components or styles', () => {
     const { seen, packages } = reach(resolve(SRC, 'app/kit.ts'))
-    expect([...packages].filter((p) => p.startsWith('@vexoulz/ui'))).toEqual([])
+    expect([...packages].filter((p) => p.startsWith('@vex/ui'))).toEqual([])
     expect([...seen].filter((f) => !f.endsWith('.ts'))).toEqual([])
     expect(seen.size).toBeGreaterThan(20)
   })

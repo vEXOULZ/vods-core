@@ -98,7 +98,7 @@ describe('ChatReplay', () => {
   })
 })
 
-// Tokens, badges and emote URLs are tested in @vexoulz/platform-web, where that code lives.
+// Tokens, badges and emote URLs are tested in @vex/platform-web, where that code lives.
 describe('toChatMessage', () => {
   const emotes = new EmoteSet()
     .add('7tv', [{ id: 'sev', name: 'catJAM' }])

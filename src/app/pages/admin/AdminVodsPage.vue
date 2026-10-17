@@ -4,11 +4,11 @@
 // Twitch still has), and make a synthetic one (a playthrough, say). Status: uploaded or details only, and each queued,
 // running or paused job; `upload=stuck` keeps the ones not on YouTube with no job (the overview links there). Tick VODs
 // to queue them to archive, refetch their chapters, chat or emotes, hide or show them, or add or take off a tag.
-import { VxButton, VxCallout, VxCheckbox, VxChip, VxDialog, VxField, VxInput, VxSegmented, VxSelect, VxSkeleton, VxTable, useToast, type Option, type TableColumn } from '@vexoulz/ui'
+import { VxButton, VxCallout, VxCheckbox, VxChip, VxDialog, VxField, VxInput, VxSegmented, VxSelect, VxSkeleton, VxTable, useToast, type Option, type TableColumn } from '@vex/ui'
 import { toClock } from '../../../index'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { errorText } from '@vexoulz/platform-web'
+import { errorText } from '@vex/platform-web'
 import type { VodListRow } from '../../admin/api'
 import ManageShell from '../../admin/ManageShell.vue'
 import TwitchImportDialog from '../../admin/TwitchImportDialog.vue'

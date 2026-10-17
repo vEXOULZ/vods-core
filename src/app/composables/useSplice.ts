@@ -3,7 +3,7 @@
 // Split: from a point between two parts on becomes a new VOD. Both move chat with the video and can be undone (latest
 // first). SplicePanel.vue draws it; a site with its own UI binds the same refs.
 import { computed, ref, watch } from 'vue'
-import { duration as formatDuration, errorText } from '@vexoulz/platform-web'
+import { duration as formatDuration, errorText } from '@vex/platform-web'
 import { normalizeVod, Timeline, toClock, toSeconds } from '../../index'
 import { editedSince, validPoints, type AdminVod, type MergeCandidate, type MergeCandidates, type Splice, type SpliceResult, type SplitPoint } from '../admin/api'
 import { admin } from '../admin/session'

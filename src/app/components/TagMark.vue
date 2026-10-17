@@ -2,7 +2,7 @@
 // One drawn tag (ThumbTags; the preview on /manage/tags): its SVG in its own colors, with the currentColor (or black)
 // parts in the tag's color (lib/tagShape), or until it has one, a placeholder of the same size in that color (README,
 // "Assets still needed"). Its text, if it has any, sits on top; the label stays for screen readers.
-import { VxPlaceholder } from '@vexoulz/ui'
+import { VxPlaceholder } from '@vex/ui'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { shapeText, svgDataUrl, tintSvg } from '../lib/tagShape'
 import type { TagStyle } from '../site'

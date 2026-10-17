@@ -31,7 +31,7 @@ describe('time', () => {
 
 describe('config', () => {
   it('parses numbers from env strings, so delay math adds instead of concatenating', () => {
-    const c = defineVodsConfig({ channel: 'vEXOULZ', twitchId: 38656648, apiBase: 'https://api.example/', startDate: '2024-09-16', defaultPartDuration: '10800' })
+    const c = defineVodsConfig({ channel: 'vexouLuna', twitchId: 38656648, apiBase: 'https://api.example/', startDate: '2024-09-16', defaultPartDuration: '10800' })
     expect(c.defaultPartDuration).toBe(10800)
     expect(c.defaultPartDuration + 1).toBe(10801)
     expect(c.apiBase).toBe('https://api.example')

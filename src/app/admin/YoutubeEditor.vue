@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // A VOD's YouTube parts: video id (paste a URL or the id), vod/live set, part number, duration. Existing videos keep
 // their thumbnail; leave duration empty to keep the archive's (or while YouTube is processing).
-import { VxInput, VxButton, VxCallout, VxCheckbox, VxDialog, VxSelect, useToast, type Option } from '@vexoulz/ui'
-import { errorText } from '@vexoulz/platform-web'
+import { VxInput, VxButton, VxCallout, VxCheckbox, VxDialog, VxSelect, useToast, type Option } from '@vex/ui'
+import { errorText } from '@vex/platform-web'
 import { computed, ref } from 'vue'
 import type { RawUpload } from '../../index'
 import type { AdminVod } from './api'

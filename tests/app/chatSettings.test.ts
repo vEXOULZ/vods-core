@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chatName } from '@vexoulz/platform-web/chat'
+import { chatName } from '@vex/platform-web/chat'
 import { chatSourceFor, readSaved, WIDTH_DEFAULT } from '../../src/app/composables/useChatSettings'
 
 describe('chatSourceFor', () => {
@@ -25,7 +25,7 @@ describe('chatName', () => {
   })
 
   it('leaves the username out of "both" when unknown or only differing in case', () => {
-    expect(chatName('Vexoulz', 'vexoulz', 'both')).toEqual({ name: 'Vexoulz', login: null })
+    expect(chatName('Vexouluna', 'vexouluna', 'both')).toEqual({ name: 'Vexouluna', login: null })
     expect(chatName('チャット', null, 'both')).toEqual({ name: 'チャット', login: null })
     expect(chatName('チャット', null, 'login')).toEqual({ name: 'チャット', login: null })
   })

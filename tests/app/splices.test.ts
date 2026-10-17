@@ -1,6 +1,6 @@
 import type { Chapter } from '../../src/index'
 import { describe, expect, it, vi } from 'vitest'
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import { AdminClient, editedSince, isSpliced, validPoints, type Splice } from '../../src/app/admin/api'
 import { gamesWithArt } from '../../src/app/lib/art'
 import { cutNote } from '../../src/app/lib/cuts'

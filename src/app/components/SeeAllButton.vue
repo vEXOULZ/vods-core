@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // "See all VODs" / "See all playthroughs" on the home tiles: a link to that list's page, as a button in its own
 // colour, so it stands out from the green Watch and the plain controls around it: a solid fill in the info colour.
-import { VxButton } from '@vexoulz/ui'
+import { VxButton } from '@vex/ui'
 
 defineProps<{ to: string }>()
 </script>

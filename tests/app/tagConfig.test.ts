@@ -47,7 +47,7 @@ describe('isTagColor', () => {
       'oklch(from var(--vx-accent) calc(l - 0.15) c h)', 'color-mix(in oklch, var(--vx-ok) 60%, white)',
       'rgb(from var(--vx-bad) r g b / 0.5)', 'oklch(from #f00 clamp(0.2, l * 0.8, 0.9) c calc(h + 30))',
       'color-mix(in srgb, oklch(from var(--vx-info) l c h) 50%, transparent)',
-      // Any site's theme tokens, not only @vexoulz/ui's.
+      // Any site's theme tokens, not only @vex/ui's.
       'var(--k-accent)', 'oklch(from var(--k-ok) calc(l - 0.1) c h)', 'color-mix(in oklch, var(--k-bad) 60%, var(--accent-2))',
     ]) expect(isTagColor(c), c).toBe(true)
   })

@@ -2,7 +2,7 @@
 // Frame for every page: the site shell with the public nav, the account menu (the shared sign-in), and a "Manage"
 // button in the header while an admin's dashboard session is live (the Manage bar itself is on the Manage pages,
 // admin/ManageShell.vue). Slots pass through to VxSiteShell.
-import { VxSiteShell, type SiteId } from '@vexoulz/ui'
+import { VxSiteShell, type SiteId } from '@vex/ui'
 import { session } from '../admin/session'
 import AccountMenu from './AccountMenu.vue'
 import ManageLink from './ManageLink.vue'

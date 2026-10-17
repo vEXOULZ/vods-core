@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Twitch's mark on the Manage button and "Sign in with Twitch": the site's own art (createVodsApp's
 // `art.twitchGlyph`), or a placeholder of the same size.
-import { VxPlaceholder } from '@vexoulz/ui'
+import { VxPlaceholder } from '@vex/ui'
 import { art } from '../art'
 </script>
 

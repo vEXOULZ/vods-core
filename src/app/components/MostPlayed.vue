@@ -2,7 +2,7 @@
 // The most played games under the latest VOD, as a hand of box-art cards: by how long they can be watched in total
 // (the default), or by how many VODs they're in (the toggle, remembered in this browser). A card sets the game filter on the list
 // below; the game picker still has every game.
-import { learnGameColors, VxButton, VxPlaceholder, VxSegmented, VxSkeleton } from '@vexoulz/ui'
+import { learnGameColors, VxButton, VxPlaceholder, VxSegmented, VxSkeleton } from '@vex/ui'
 import { boxArt, type GamePlayed } from '../../index'
 import { computed, ref, watch, watchEffect } from 'vue'
 import { relativeDay } from '../lib/dates'

@@ -1,16 +1,16 @@
 # vods-core
 
-The engine and the app behind the vods sites: [vods.vexoul.net](https://github.com/vEXOULZ/vexoulz-vods) and
-[keekivods.vexoul.net](https://github.com/vEXOULZ/keeki-vods). Four parts:
+The engine and the app behind the vods sites: [vods.vexoul.net](https://github.com/vexouLuna/vex-vods) and
+[keekivods.vexoul.net](https://github.com/vexouLuna/keeki-vods). Four parts:
 
 - **the root entry and `vue`**: headless. The logic the old React site had spread across its components, with types
   and tests, and no UI.
 - **`app`**: the site itself, its pages, the Manage dashboard (the archive's admin pages) and the router, built from
-  the headless parts and [vexoulz-ui](https://github.com/vEXOULZ/vexoulz-ui). A site calls `createVodsApp()` with its
+  the headless parts and [vex-ui](https://github.com/vexouLuna/vex-ui). A site calls `createVodsApp()` with its
   channel and branding, and that's all it holds.
 - **`kit`**: the app without its look, for a site that draws its own pages (keekivods.vexoul.net): the pages' and
   Manage's logic (list filters, tags, most played, chat settings, the admin API and its editors' drafts) and
-  `setupVodsSite()`. Nothing in it imports vexoulz-ui.
+  `setupVodsSite()`. Nothing in it imports vex-ui.
 - **`dev`**: `adminMock()`, a vite plugin that serves an in-memory admin API, for working on the Manage pages
   without a worker.
 
@@ -31,26 +31,26 @@ git config core.hooksPath .conventions/githooks   # once per clone: branch-name 
 A vods site is `index.html`, its assets, and a `main.ts`:
 
 ```bash
-npm install github:vEXOULZ/vods-core#vX.Y.Z github:vEXOULZ/vexoulz-ui#vX.Y.Z github:vEXOULZ/vex-platform-web#vX.Y.Z vue vue-router
+npm install github:vexouLuna/vods-core#vX.Y.Z github:vexouLuna/vex-ui#vX.Y.Z github:vexouLuna/vex-platform-web#vX.Y.Z vue vue-router
 ```
 
 ```ts
 // main.ts
-import '@vexoulz/ui/fonts.css'
-import '@vexoulz/ui/style.css'
-import '@vexoulz/platform-web/style.css'
-import '@vexoulz/vods-core/app.css'
+import '@vex/ui/fonts.css'
+import '@vex/ui/style.css'
+import '@vex/platform-web/style.css'
+import '@vex/vods-core/app.css'
 
-import { defineVodsConfig } from '@vexoulz/vods-core'
-import { createVodsApp } from '@vexoulz/vods-core/app'
-import { VxNoThumbnail, VxTwitchGlyph } from '@vexoulz/ui'
+import { defineVodsConfig } from '@vex/vods-core'
+import { createVodsApp } from '@vex/vods-core/app'
+import { VxNoThumbnail, VxTwitchGlyph } from '@vex/ui'
 
 const { app } = createVodsApp({
-  config: defineVodsConfig({ channel: 'vEXOULZ', twitchId: '38656648', apiBase: '/backend', startDate: '2024-09-16' }),
-  site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexoulz' },
+  config: defineVodsConfig({ channel: 'vexouLuna', twitchId: '38656648', apiBase: '/backend', startDate: '2024-09-16' }),
+  site: { id: 'vods', name: 'vods.vexoul.net', twitchUrl: 'https://twitch.tv/vexouluna' },
   adminBase: '/backend-admin',          // the worker's admin API (the default)
-  authBase: 'https://auth.vexoul.net',  // vexoulz-auth; empty (the default) turns sign-in off
-  adminClientId: 'vods-admin',          // the archive's client id at vexoulz-auth (the default)
+  authBase: 'https://auth.vexoul.net',  // vex-auth; empty (the default) turns sign-in off
+  adminClientId: 'vods-admin',          // the archive's client id at vex-auth (the default)
   commit: __COMMIT__,                   // shown in the footer
   art: { noThumbnail: VxNoThumbnail, twitchGlyph: VxTwitchGlyph }, // the site's own art; placeholders without
 })
@@ -60,12 +60,12 @@ app.mount('#app')
 | option | what |
 |---|---|
 | `config` | The channel and its archive API (`defineVodsConfig`, below). |
-| `site.id` | The site's entry in vexoulz-ui's `SITES`: its accent, sky, switcher entry and repo links. A new site is added there first. |
+| `site.id` | The site's entry in vex-ui's `SITES`: its accent, sky, switcher entry and repo links. A new site is added there first. |
 | `site.name` | Its host, in page titles and on the Manage sign-in page. |
 | `site.twitchUrl` | The channel's Twitch page: the nav's "Live" and the watch page's link. |
 | `site.perPage` | VOD cards per page (24). |
 | `site.tags` | How VOD tags show until the archive has its own (edited on /manage/tags); `DEFAULT_TAGS` otherwise. |
-| `adminClientId` | The archive's client id at vexoulz-auth (the worker's `ARCHIVE_ADMIN_AUTH_CLIENT_ID`), for the quiet admin check that shows an admin Manage without a reload (docs/admin-api.md, 1c). Default `vods-admin`. |
+| `adminClientId` | The archive's client id at vex-auth (the worker's `ARCHIVE_ADMIN_AUTH_CLIENT_ID`), for the quiet admin check that shows an admin Manage without a reload (docs/admin-api.md, 1c). Default `vods-admin`. |
 | `art.noThumbnail` | A component for a VOD with no thumbnail (fills a 16:9 box). Default: a plain placeholder. |
 | `art.twitchGlyph` | Twitch's mark on the Manage button and "Sign in with Twitch" (16 px). Default: a placeholder. |
 
@@ -74,11 +74,11 @@ the server in front of the site forwards them. In dev, the site's `vite.config.t
 API and serves `/backend-admin` with the mock:
 
 ```ts
-import { adminMock } from '@vexoulz/vods-core/dev'
+import { adminMock } from '@vex/vods-core/dev'
 plugins: [vue(), adminMock('/backend-admin', 'https://vods.vexoul.net/backend')]
 ```
 
-The mock also serves a fake vexoulz-auth at `/auth-mock`: with `VITE_AUTH_BASE=/auth-mock`, "Sign in" signs in the
+The mock also serves a fake vex-auth at `/auth-mock`: with `VITE_AUTH_BASE=/auth-mock`, "Sign in" signs in the
 fake admin (`?as=viewer` on its `/login`, or `MOCK_ACCOUNT=viewer`, signs in a plain viewer), and the quiet admin check
 runs against it. `MOCK_AUTH_CODES=<status>` and `MOCK_ADMIN_CODE=<status>` make the code mint or its hand-off fail.
 
@@ -86,11 +86,11 @@ runs against it. `MOCK_AUTH_CODES=<status>` and `MOCK_ADMIN_CODE=<status>` make 
 
 ```ts
 // main.ts
-import { defineVodsConfig } from '@vexoulz/vods-core'
-import { createVods } from '@vexoulz/vods-core/vue'
+import { defineVodsConfig } from '@vex/vods-core'
+import { createVods } from '@vex/vods-core/vue'
 
 const config = defineVodsConfig({
-  channel: 'vEXOULZ',
+  channel: 'vexouLuna',
   twitchId: '38656648',
   apiBase: 'https://vods.example.net/backend',
   startDate: '2024-09-16',
@@ -122,16 +122,16 @@ const { resume } = useProgress({ vodId, duration: () => vod.value?.duration ?? 0
 | `composite` | `SegmentTimeline`: a synthetic VOD (a merge, a split, a playthrough) played from windows of other VODs, with the same surface as `Timeline` (`PlayableTimeline`) plus `segmentAt` for chat; `supersededTarget` for links to a VOD a merge or split replaced. |
 | `player` | `WatchPlayer`: drives the YouTube IFrame player across parts: seeks, auto-advance, part errors (`missing` / `blocked` / `processing`), VOD-time ticks, playback speed. `mountYouTube` wires the real player. |
 | `chat` | `ChatReplay` (paged, prefetching, seek-aware), `loadEmotes` (the channel and global sets the archive saved for the VOD, with today's 7TV globals only for rows saved before globals were kept; for VODs without saved sets, the channel's current sets, which the archive caches), `tokenize` / `resolveBadges` / `toChatMessage` (render-ready tokens, never HTML; zero-width emotes come as overlays of the emote they cover, BTTV / FFZ modifiers as effects on the emote they apply to). Chat has two sources: Twitch's replay of the VOD (`replay`) and doomtp-bot's live log (`bot`, with notices, redeems, cheers and removed messages, all on `ChatMessage`); `ChatReplay`'s `source` option picks one, and `sources` has how many messages each has. `loginOf` gives a username (the bot's, or a plain-ASCII display name in lower case). |
-| `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface. `AccountProgressStore` keeps it with the viewer's vexoulz account instead (see below). |
-| `vue` | `createVods`, `useVods`, `useWatch`, `useChat`, `useProgress`. Import from `@vexoulz/vods-core/vue`. |
-| `app` | `createVodsApp` and the site (`src/app/`): pages, components, the Manage dashboard, the router. Import from `@vexoulz/vods-core/app`, with its styles from `@vexoulz/vods-core/app.css`. |
-| `kit` | `setupVodsSite`, `vodsRoutes` and `installVodsSession` (the route table and the router's account and Manage wiring, with the site's own pages and account), and the app's logic without components or styles (`src/app/kit.ts`): `lib/`, `composables/`, the admin API (`AdminClient`, `admin`, `session`, `platform`) and the Manage editors' drafts, and the logic of the watch page, its timeline, merge and split, and the chapter editor (`useWatchView`, `useTimeline`, `useSplice`, `useChaptersDraft`) for a site to bind its own markup to. Import from `@vexoulz/vods-core/kit`, alongside `vue`. Needs `@vexoulz/platform-web`, never `@vexoulz/ui`. |
-| `dev` | `adminMock`, the dev server's admin API. Import from `@vexoulz/vods-core/dev` in a vite config. |
+| `progress` | `LocalProgressStore` (browser storage) behind a `ProgressStore` interface. `AccountProgressStore` keeps it with the viewer's vexoul.net account instead (see below). |
+| `vue` | `createVods`, `useVods`, `useWatch`, `useChat`, `useProgress`. Import from `@vex/vods-core/vue`. |
+| `app` | `createVodsApp` and the site (`src/app/`): pages, components, the Manage dashboard, the router. Import from `@vex/vods-core/app`, with its styles from `@vex/vods-core/app.css`. |
+| `kit` | `setupVodsSite`, `vodsRoutes` and `installVodsSession` (the route table and the router's account and Manage wiring, with the site's own pages and account), and the app's logic without components or styles (`src/app/kit.ts`): `lib/`, `composables/`, the admin API (`AdminClient`, `admin`, `session`, `platform`) and the Manage editors' drafts, and the logic of the watch page, its timeline, merge and split, and the chapter editor (`useWatchView`, `useTimeline`, `useSplice`, `useChaptersDraft`) for a site to bind its own markup to. Import from `@vex/vods-core/kit`, alongside `vue`. Needs `@vex/platform-web`, never `@vex/ui`. |
+| `dev` | `adminMock`, the dev server's admin API. Import from `@vex/vods-core/dev` in a vite config. |
 
 ## Progress with an account
 
-`AccountProgressStore` keeps where the viewer left off in their vexoulz account (vexoulz-auth's `/v1/progress`),
-so it follows them to another browser. It takes the account from `@vexoulz/ui/account` (anything with `signedIn()`
+`AccountProgressStore` keeps where the viewer left off in their vexoul.net account (vex-auth's `/v1/progress`),
+so it follows them to another browser. It takes the account from `@vex/ui/account` (anything with `signedIn()`
 and `request()`); while signed out, or when the service can't be reached, it uses the browser's
 `LocalProgressStore`. Call `merge()` on sign-in to move the local entries into the account (newest wins per VOD).
 
@@ -162,7 +162,7 @@ upload time 0 ──── part 1 ──── part 2 ─┤─ part 3 ───
 - Upload durations are fractional (8771.99 s); boundaries allow half a second of slack so a seek never lands a few
   milliseconds before the end of the previous part.
 
-Twitch name colours (defaults and the readable mode) are in vexoulz-ui (`twitchColor`); messages carry the user's
+Twitch name colours (defaults and the readable mode) are in vex-ui (`twitchColor`); messages carry the user's
 own colour or `null`.
 
 ## Infrastructure

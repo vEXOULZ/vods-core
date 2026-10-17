@@ -2,7 +2,7 @@
 // Hand-edit a VOD's chapters: game (Twitch category search), start / end times, restricted (cut for DMCA). A strip on
 // top shows the result against the VOD's length. "Lock" keeps the automatic chapters step from overwriting the edit.
 // The logic is useChaptersDraft's (kit); this draws it, with the game colours of the Deep Field palette.
-import { gamePalette, VxButton, VxCallout, VxCheckbox, VxChip, VxSwitch, useToast } from '@vexoulz/ui'
+import { gamePalette, VxButton, VxCallout, VxCheckbox, VxChip, VxSwitch, useToast } from '@vex/ui'
 import { toClock } from '../../index'
 import { computed } from 'vue'
 import type { AdminVod } from './api'

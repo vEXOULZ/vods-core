@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // The YouTube check's problems, one panel per VOD with each upload's issues: the overview's recent ones and /manage/youtube's all.
-import { VxChip } from '@vexoulz/ui'
+import { VxChip } from '@vex/ui'
 import type { YoutubeVodReport } from './api'
 import { YOUTUBE_ISSUES, issueLink, issueWhere, percent } from './health'
 import { toClock } from '../../time'

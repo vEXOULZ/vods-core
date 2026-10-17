@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { VxButton, VxCallout, VxDialog, VxField, VxInput, VxStatusDot, timeAgo, useToast } from '@vexoulz/ui'
-import { errorText } from '@vexoulz/platform-web'
+import { VxButton, VxCallout, VxDialog, VxField, VxInput, VxStatusDot, timeAgo, useToast } from '@vex/ui'
+import { errorText } from '@vex/platform-web'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import type { TwitchDeviceFlow, TwitchViewerStatus } from './api'
 import { admin } from './session'

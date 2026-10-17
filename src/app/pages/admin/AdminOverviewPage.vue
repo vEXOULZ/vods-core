@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { timeAgo, VxButton, VxCallout, VxChip, VxSkeleton, VxStatusDot, useToast } from '@vexoulz/ui'
+import { timeAgo, VxButton, VxCallout, VxChip, VxSkeleton, VxStatusDot, useToast } from '@vex/ui'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { JobsTable, usePoll } from '@vexoulz/platform-web/vue'
-import { errorText } from '@vexoulz/platform-web'
+import { JobsTable, usePoll } from '@vex/platform-web/vue'
+import { errorText } from '@vex/platform-web'
 import type { Health, StorageView } from '../../admin/api'
 import {
   RECENT_PROBLEM_DAYS,

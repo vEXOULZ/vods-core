@@ -73,12 +73,12 @@ export function isManagePath(path: string): boolean {
   return path === '/manage' || path.startsWith('/manage/')
 }
 
-/** The site's account (vexoulz-auth), as `@vexoulz/ui/account`'s Account provides it. */
+/** The site's account (vex-auth), as `@vex/ui/account`'s Account provides it. */
 export interface VodsAccount {
   readonly user: Readonly<Ref<{ readonly id: string } | null>>
   /** True once the account knows who is signed in (or that no one is). */
   readonly ready: Readonly<Ref<boolean>>
-  /** A credentialed request to vexoulz-auth. */
+  /** A credentialed request to vex-auth. */
   request(path: string, init?: RequestInit): Promise<Response>
 }
 
@@ -88,7 +88,7 @@ export interface VodsSessionOptions {
   /** How the page leaves for the worker's sign-in. Default `window.location.assign` (tests replace it). */
   navigate?: (url: string) => void
   /**
-   * The archive's client id at vexoulz-auth, for the quiet admin check: the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID.
+   * The archive's client id at vex-auth, for the quiet admin check: the worker's ARCHIVE_ADMIN_AUTH_CLIENT_ID.
    * Default `vods-admin`.
    */
   adminClientId?: string
@@ -188,7 +188,7 @@ export function installVodsSession(router: Router, account: VodsAccount, options
     { immediate: true },
   )
 
-  // Watch progress follows the signed-in account (vexoulz-auth); signed out it stays in this browser, and signing in
+  // Watch progress follows the signed-in account (vex-auth); signed out it stays in this browser, and signing in
   // moves what this browser has into the account.
   const progress = new AccountProgressStore({ signedIn: () => !!account.user.value, request: (p, i) => account.request(p, i) })
   watch(account.user, (user, before) => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // /manage/jobs/:id: one job run (/api/v2/jobs/:id): its steps, controls and log, polled while it can still change.
-import { JobDetail } from '@vexoulz/platform-web/vue'
+import { JobDetail } from '@vex/platform-web/vue'
 import { computed, onMounted } from 'vue'
 import ManageShell from '../../admin/ManageShell.vue'
 import { platform } from '../../admin/platform'

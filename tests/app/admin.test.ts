@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ProblemError } from '@vexoulz/platform-web'
+import { ProblemError } from '@vex/platform-web'
 import { AdminClient } from '../../src/app/admin/api'
 
 function fakeFetch(status: number, body: unknown, headers: Record<string, string> = {}) {

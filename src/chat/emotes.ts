@@ -1,6 +1,6 @@
 // The emote sets for a VOD, from what the archive saved. The emote types, lookup and image URLs live in
-// @vexoulz/platform-web, shared with doomtp-web; they are re-exported here so existing imports keep working.
-import { EmoteSet, SEVENTV_GLOBAL, type RawThirdPartyEmote } from '@vexoulz/platform-web/chat'
+// @vex/platform-web, shared with doomtp-web; they are re-exported here so existing imports keep working.
+import { EmoteSet, SEVENTV_GLOBAL, type RawThirdPartyEmote } from '@vex/platform-web/chat'
 import type { ArchiveClient, Fetch } from '../api/client'
 
 export {
@@ -17,7 +17,7 @@ export {
   type EmoteImage,
   type EmoteProvider,
   type ModifierEffect,
-} from '@vexoulz/platform-web/chat'
+} from '@vex/platform-web/chat'
 
 export interface LoadEmotesOptions {
   client: ArchiveClient

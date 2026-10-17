@@ -33,13 +33,13 @@ The existing `Authorization: Bearer <admin api key>` keeps working for scripts. 
   header, only trust it from a configured proxy address (setting, no default addresses in the repo).
 - `GET /admin/refreshtoken` stays as it is (Google's redirect target, proven by its signed `state`).
 
-### 1b. Twitch sign-in through vexoulz-auth (twitch-archive PR #22)
+### 1b. Twitch sign-in through vex-auth (twitch-archive PR #22)
 
 - The password only works from `ARCHIVE_ADMIN_PASSWORD_NETWORKS` (the local networks by default); `passwordLogin` in
   `GET /admin/session` says whether it is offered to the caller's address.
-- `GET /admin/session` also returns `twitchLogin: bool` (vexoulz-auth is configured) and `user` (the Twitch
+- `GET /admin/session` also returns `twitchLogin: bool` (vex-auth is configured) and `user` (the Twitch
   `{id, login, displayName, avatar, color}`, null for a password session).
-- `GET /admin/signin?next=/manage/...` → vexoulz-auth → `GET /admin/signin/callback`, which sets the same `archive_admin`
+- `GET /admin/signin?next=/manage/...` → vex-auth → `GET /admin/signin/callback`, which sets the same `archive_admin`
   cookie and redirects to `next`. Only `ARCHIVE_ADMIN_TWITCH_IDS` get a session. On failure it redirects to
   `/admin/login?auth_error=<denied|expired|twitch|not_allowed|unavailable|misconfigured>&next=...`.
 - Audit entries from a Twitch session record the actor as `twitch:<id>`, and carry `actorLogin` (the Twitch login;
@@ -51,8 +51,8 @@ The existing `Authorization: Bearer <admin api key>` keeps working for scripts. 
 For someone already signed in to the account, `installVodsSession` asks once per page load whether they're an
 admin, with two requests and no redirect (`src/app/admin/quiet.ts`):
 
-1. vexoulz-auth (≥ v0.3.0): `GET /v1/me` for the CSRF token, then `POST /v1/codes {client_id}` with credentials and
-   `X-Vexoulz-CSRF`. The client id is the worker's `ARCHIVE_ADMIN_AUTH_CLIENT_ID` (`vods-admin` by default; the
+1. vex-auth (≥ v0.3.0): `GET /v1/me` for the CSRF token, then `POST /v1/codes {client_id}` with credentials and
+   `X-Vex-CSRF`. The client id is the worker's `ARCHIVE_ADMIN_AUTH_CLIENT_ID` (`vods-admin` by default; the
    site's `adminClientId` option). `200 {code}`, or `401 signed_out`.
 2. The worker: `POST /admin/session {code}`, credentialed. `200 {admin: true, ...the session}` sets the
    `archive_admin` cookie (its `csrf` goes as `X-CSRF-Token`); `200 {admin: false}` is a signed-in viewer.
